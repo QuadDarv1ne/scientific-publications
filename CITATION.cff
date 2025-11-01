@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this repository in your research, please cite the following work."
+authors:
+  - family-names: "Dupley"
+    given-names: "Maksim I."
+    orcid: "0009-0007-7605-539X"
+title: "DevOps-подход к воспроизводимости научных вычислений: контейнеризация и оркестрация для задач обработки изображений и сигналов"
+version: 1.0
+doi: 10.5281/zenodo.17502178
+date-released: 2025-04-05
+url: https://doi.org/10.5281/zenodo.17502178
+license: CC-BY-4.0
+type: article
+abstract: "Исследование применения практик DevOps (Docker, CI/CD, Kubernetes) для обеспечения воспроизводимости экспериментов в научных задачах, связанных с обработкой изображений и радиосигналов (включая SDR)."
