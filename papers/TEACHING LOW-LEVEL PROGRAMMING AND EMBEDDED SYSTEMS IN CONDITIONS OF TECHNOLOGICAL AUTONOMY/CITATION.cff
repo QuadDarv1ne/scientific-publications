@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this work in your research, please cite it as below."
+authors:
+  - family-names: "Dupley"
+    given-names: "Maksim I."
+    orcid: "0009-0007-7605-539X"
+title: "Преподавание low-level программирования и встраиваемых систем в условиях технологической автономии"
+version: 1.0
+doi: 10.5281/zenodo.17502164
+date-released: 2025-04-05
+url: https://doi.org/10.5281/zenodo.17502164
+license: CC-BY-4.0
+type: article
+abstract: "Препринт, представленный на конференции по инженерному образованию. Рассматриваются методики обучения низкоуровневому программированию (C, ассемблер) и разработке для встраиваемых систем в условиях ограничений на импортные технологии."

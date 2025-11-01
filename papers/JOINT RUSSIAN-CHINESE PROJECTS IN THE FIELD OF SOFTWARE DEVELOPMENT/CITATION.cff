@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this work in your research, please cite it as below."
+authors:
+  - family-names: "Dupley"
+    given-names: "Maksim I."
+    orcid: "0009-0007-7605-539X"
+title: "Совместные российско-китайские проекты в области разработки ПО (вызовы и возможности)"
+version: 1.0
+doi: 10.5281/zenodo.17502184
+date-released: 2025-04-05
+url: https://doi.org/10.5281/zenodo.17502184
+license: CC-BY-4.0
+type: article
+abstract: "Анализ кооперации в сфере программного обеспечения между Россией и Китаем в условиях технологической автономии: правовые, культурные и технические аспекты взаимодействия."
