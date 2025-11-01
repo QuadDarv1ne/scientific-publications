@@ -2,9 +2,10 @@
 
 [![ORCID](https://img.shields.io/badge/ORCID-0009--0007--7605--539X-green?logo=orcid&logoColor=white)](https://orcid.org/0009-0007-7605-539X)
 
-![background](img/background.jpg)
-
-![alt text](img/autor/dupley-mi-2.jpg)
+<p align="center">
+  <img src="img/background.jpg" width="56%" />
+  <img src="img/autor/dupley-mi-2.jpg" width="37%" />
+</p>
 
 **Автор:** [Дуплей М.И.](https://stepik.org/users/150943726/teach) — старший преподаватель информационных технологий, аналитик, философ, музыкант и DevOps-инженер.  
 
@@ -30,9 +31,11 @@
   [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17494238.svg)](https://doi.org/10.5281/zenodo.17494238)  
   Историко-социологическое исследование, посвящённое влиянию студенческой активности на политические изменения в России и странах Западной Европы в XX веке.
 
-![alt text](img/autor/dupley-mi-1.jpg)
 
-![alt text](img/autor/dupley-mi-3.jpg)
+<p align="center">
+  <img src="img/autor/dupley-mi-1.jpg" width="49%" />
+  <img src="img/autor/dupley-mi-3.jpg" width="49%" />
+</p>
 
 > **При использовании материалов и цитировании обязательно указание авторства:**
 
