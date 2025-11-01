@@ -1,6 +1,8 @@
 # scientific-publications
 
-**Автор:** [Дуплей М.И.](https://orcid.org/0009-0007-7605-539X) — старший преподаватель информационных технологий, аналитик, философ, музыкант и DevOps-инженер.  
+[![ORCID](https://img.shields.io/badge/ORCID-0009--0007--7605--539X-green?logo=orcid&logoColor=white)](https://orcid.org/0009-0007-7605-539X)
+
+**Автор:** [Дуплей М.И.](https://stepik.org/users/150943726/teach) — старший преподаватель информационных технологий, аналитик, философ, музыкант и DevOps-инженер.  
 
 Основатель школы по программированию [Maestro7IT](https://school-maestro7it.ru/)
 
