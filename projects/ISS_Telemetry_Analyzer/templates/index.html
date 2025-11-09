@@ -61,6 +61,9 @@
             70% { box-shadow: 0 0 0 10px rgba(0, 123, 255, 0); }
             100% { box-shadow: 0 0 0 0 rgba(0, 123, 255, 0); }
         }
+        .export-btn {
+            margin: 0 5px;
+        }
     </style>
 </head>
 <body>
@@ -107,6 +110,9 @@
                             <button class="btn btn-primary" id="refreshParams">
                                 <i class="bi bi-arrow-repeat"></i> Обновить данные
                             </button>
+                            <button class="btn btn-success export-btn" onclick="exportData('orbital')">
+                                <i class="bi bi-download"></i> Экспорт CSV
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -138,6 +144,9 @@
                         <button class="btn btn-secondary btn-sm" id="refreshPosition">
                             <i class="bi bi-arrow-repeat"></i> Обновить положение
                         </button>
+                        <button class="btn btn-success btn-sm export-btn" onclick="exportData('position')">
+                            <i class="bi bi-download"></i> Экспорт
+                        </button>
                     </div>
                 </div>
             </div>
@@ -168,6 +177,9 @@
                         </div>
                         <button class="btn btn-secondary btn-sm" id="refreshRadiation">
                             <i class="bi bi-arrow-repeat"></i> Обновить данные
+                        </button>
+                        <button class="btn btn-success btn-sm export-btn" onclick="exportData('environment')">
+                            <i class="bi bi-download"></i> Экспорт
                         </button>
                     </div>
                 </div>
@@ -381,6 +393,15 @@
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Экспорт отчета -->
+        <div class="row">
+            <div class="col-12 text-center mb-4">
+                <button class="btn btn-success btn-lg" onclick="exportReport()">
+                    <i class="bi bi-file-earmark-arrow-down"></i> Экспорт полного отчета (JSON)
+                </button>
             </div>
         </div>
     </div>
@@ -642,6 +663,16 @@
                 .always(function() {
                     $('#trendLoading').hide();
                 });
+        }
+
+        // Функция для экспорта данных
+        function exportData(dataType) {
+            window.open('/api/export/data?type=' + dataType, '_blank');
+        }
+
+        // Функция для экспорта отчета
+        function exportReport() {
+            window.open('/api/export/report', '_blank');
         }
 
         // Обработчики событий

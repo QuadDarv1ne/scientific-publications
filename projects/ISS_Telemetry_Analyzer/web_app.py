@@ -8,14 +8,14 @@ Web interface for ISS Telemetry Analyzer
 import sys
 import os
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_file, make_response
 import json
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')  # Используем backend без GUI
 import matplotlib.pyplot as plt
 import base64
-from io import BytesIO
+from io import BytesIO, StringIO
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -412,6 +412,86 @@ def trend_analysis():
             'success': True,
             'image': img_str
         })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/export/data')
+def export_data():
+    """API для экспорта данных в формате CSV"""
+    try:
+        # Получение параметров запроса
+        data_type = request.args.get('type', 'orbital')
+        
+        # Создание CSV данных
+        csv_data = "timestamp,parameter,value,unit\n"
+        
+        # Симуляция данных в зависимости от типа
+        current_time = datetime.now()
+        if data_type == 'orbital':
+            csv_data += f"{current_time.isoformat()},altitude,408.0,km\n"
+            csv_data += f"{current_time.isoformat()},speed,27600,km/h\n"
+            csv_data += f"{current_time.isoformat()},period,92.9,min\n"
+        elif data_type == 'environment':
+            csv_data += f"{current_time.isoformat()},internal_temp,22,C\n"
+            csv_data += f"{current_time.isoformat()},external_temp,121,C\n"
+            csv_data += f"{current_time.isoformat()},radiation,30,uSv/h\n"
+        elif data_type == 'position':
+            csv_data += f"{current_time.isoformat()},latitude,51.6,degrees\n"
+            csv_data += f"{current_time.isoformat()},longitude,-123.4,degrees\n"
+        
+        # Создание ответа с CSV данными
+        response = make_response(csv_data)
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = f'attachment; filename=iss_{data_type}_data.csv'
+        
+        return response
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/export/report')
+def export_report():
+    """API для экспорта отчета в формате JSON"""
+    try:
+        # Симуляция данных отчета
+        report_data = {
+            "report_generated": datetime.now().isoformat(),
+            "iss_telemetry_report": {
+                "orbital_parameters": {
+                    "altitude_km": 408.0,
+                    "orbital_speed_kmh": 27600,
+                    "orbital_period_min": 92.9,
+                    "orbits_per_day": 15.5
+                },
+                "position_data": {
+                    "latitude": 51.6,
+                    "longitude": -123.4,
+                    "timestamp": datetime.now().isoformat()
+                },
+                "environmental_conditions": {
+                    "internal_temperature_c": 22,
+                    "external_temperature_sun_c": 121,
+                    "external_temperature_shadow_c": -157,
+                    "radiation_level_uSv_h": 30
+                },
+                "radiation_analysis": {
+                    "cumulative_dose_30_days_mSv": 1.2,
+                    "annual_extrapolated_dose_mSv": 14.6
+                }
+            }
+        }
+        
+        # Создание ответа с JSON данными
+        response = make_response(json.dumps(report_data, indent=2, ensure_ascii=False))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = 'attachment; filename=iss_telemetry_report.json'
+        
+        return response
     except Exception as e:
         return jsonify({
             'success': False,
