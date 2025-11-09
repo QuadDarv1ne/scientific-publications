@@ -102,6 +102,57 @@ class TestISSEnvironmentAnalyzer(unittest.TestCase):
         filename = TimeUtils.get_timestamp_filename('test', 'txt')
         self.assertTrue(filename.startswith('test_'))
         self.assertTrue(filename.endswith('.txt'))
+    
+    def test_analyze_radiation_peaks(self):
+        """Тест анализа пиков радиации"""
+        # Тест функции анализа пиков радиации
+        result = self.analyzer.analyze_radiation_peaks(days=7)
+        
+        # Проверяем, что результат не None
+        self.assertIsNotNone(result)
+        
+        # Проверяем наличие ключевых полей в результате
+        if result is not None:
+            self.assertIn('total_peaks', result)
+            self.assertIn('max_peak', result)
+            self.assertIn('avg_peak', result)
+            self.assertIn('std_peak', result)
+            self.assertIn('peak_frequency_per_day', result)
+            self.assertIn('peak_duration_avg_hours', result)
+            self.assertIn('peak_intensity_ratio', result)
+
+
+class TestNewFunctions(unittest.TestCase):
+    """Тесты для новых функций"""
+    
+    def test_parse_tle_data(self):
+        """Тест парсинга TLE данных"""
+        # Пример TLE данных МКС
+        line1 = "1 25544U 98067A   24310.54321876  .00012345  00000-0  12345-3 0  9999"
+        line2 = "2 25544  51.6400 123.4567 0001234  12.3456 123.4567 15.54567890123456"
+        
+        # Тестируем функцию парсинга TLE данных
+        from src.iss_environment_analysis import parse_tle_data
+        params = parse_tle_data(line1, line2)
+        
+        # Проверяем, что параметры были извлечены
+        self.assertIn('inclination', params)
+        self.assertIn('eccentricity', params)
+        self.assertIn('mean_motion', params)
+        self.assertIn('orbital_period_min', params)
+        self.assertIn('altitude_km', params)
+        
+        # Проверяем разумность значений
+        self.assertGreater(params['inclination'], 0)
+        self.assertLess(params['inclination'], 90)
+        self.assertGreater(params['eccentricity'], 0)
+        self.assertLess(params['eccentricity'], 1)
+        self.assertGreater(params['mean_motion'], 10)
+        self.assertLess(params['mean_motion'], 20)
+        self.assertGreater(params['orbital_period_min'], 80)
+        self.assertLess(params['orbital_period_min'], 100)
+        self.assertGreater(params['altitude_km'], 300)
+        self.assertLess(params['altitude_km'], 500)
 
 
 def run_tests():
@@ -112,6 +163,7 @@ def run_tests():
     
     # Добавление тестов
     suite.addTests(loader.loadTestsFromTestCase(TestISSEnvironmentAnalyzer))
+    suite.addTests(loader.loadTestsFromTestCase(TestNewFunctions))  # Добавляем новые тесты
     
     # Запуск тестов
     runner = unittest.TextTestRunner(verbosity=2)

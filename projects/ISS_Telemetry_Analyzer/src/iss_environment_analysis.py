@@ -34,8 +34,6 @@ RADIATION_BASE = 30  # мкЗв/час - базовый уровень ради�
 ISS_ALTITUDE = 408  # км - средняя высота МКС
 TLE_URL = "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE"
 
-
-
 # Настройка логирования
 logger = Logger.setup_logger('iss_environment_analysis')
 
@@ -159,8 +157,17 @@ class ISSEnvironmentAnalyzer:
                 logger.error("Некорректный формат TLE данных")
                 return None
                 
+        except requests.exceptions.Timeout:
+            logger.error("Таймаут при получении TLE данных")
+            return None
+        except requests.exceptions.ConnectionError:
+            logger.error("Ошибка подключения при получении TLE данных")
+            return None
         except requests.exceptions.RequestException as e:
             logger.error(f"Ошибка получения TLE: {e}")
+            return None
+        except Exception as e:
+            logger.error(f"Неожиданная ошибка при получении TLE данных: {e}")
             return None
     
     def simulate_temperature_profile(self, n_points=200, duration_hours=24):
@@ -181,41 +188,49 @@ class ISSEnvironmentAnalyzer:
         """
         logger.info(f"Симуляция температурного профиля: {duration_hours}ч, {n_points} точек")
         
-        time_hours = np.linspace(0, duration_hours, n_points)
-        
-        # Используем точный период обращения из TLE, если доступен
-        orbital_period = self.orbital_params['orbital_period_min'] if self.orbital_params else ORBITAL_PERIOD
-        orbital_period_hours = orbital_period / 60
-        
-        # Внутренняя температура (стабилизирована системами)
-        # Небольшие колебания из-за активности экипажа и оборудования
-        internal_temp = 22 + 2 * np.sin(2 * np.pi * time_hours / 12)
-        internal_temp += np.random.normal(0, 0.5, n_points)  # Случайные флуктуации
-        internal_temp = np.clip(internal_temp, INTERNAL_TEMP_MIN, INTERNAL_TEMP_MAX)
-        
-        # Внешняя температура (солнечная/теневая сторона)
-        # МКС делает ~16 витков в сутки, ~1.5 часа на виток
-        external_temp = []
-        
-        for t in time_hours:
-            # Фаза орбиты (0-1)
-            phase = (t % orbital_period_hours) / orbital_period_hours
+        try:
+            time_hours = np.linspace(0, duration_hours, n_points)
             
-            if phase < 0.6:  # Освещенная сторона (60% орбиты)
-                # Постепенный нагрев на солнце
-                temp = 40 + (EXTERNAL_TEMP_SUN - 40) * np.sin(np.pi * phase / 0.6)
-            else:  # Теневая сторона (40% орбиты)
-                # Быстрое охлаждение в тени
-                temp = EXTERNAL_TEMP_SHADOW + (40 - EXTERNAL_TEMP_SHADOW) * np.sin(np.pi * (phase - 0.6) / 0.4)
+            # Используем точный период обращения из TLE, если доступен
+            orbital_period = self.orbital_params['orbital_period_min'] if self.orbital_params else ORBITAL_PERIOD
+            orbital_period_hours = orbital_period / 60
+            
+            # Внутренняя температура (стабилизирована системами)
+            # Небольшие колебания из-за активности экипажа и оборудования
+            internal_temp = 22 + 2 * np.sin(2 * np.pi * time_hours / 12)
+            internal_temp += np.random.normal(0, 0.5, n_points)  # Случайные флуктуации
+            internal_temp = np.clip(internal_temp, INTERNAL_TEMP_MIN, INTERNAL_TEMP_MAX)
+            
+            # Внешняя температура (солнечная/теневая сторона)
+            # Векторизованный расчет для повышения производительности
+            phase = (time_hours % orbital_period_hours) / orbital_period_hours
+            
+            # Определение освещенной и теневой сторон
+            sun_side = phase < 0.6  # Освещенная сторона (60% орбиты)
+            shadow_side = ~sun_side  # Теневая сторона (40% орбиты)
+            
+            # Инициализация массива температур
+            external_temp = np.zeros_like(time_hours)
+            
+            # Расчет температуры на освещенной стороне
+            if np.any(sun_side):
+                sun_phase = phase[sun_side] / 0.6
+                external_temp[sun_side] = 40 + (EXTERNAL_TEMP_SUN - 40) * np.sin(np.pi * sun_phase)
+            
+            # Расчет температуры в тени
+            if np.any(shadow_side):
+                shadow_phase = (phase[shadow_side] - 0.6) / 0.4
+                external_temp[shadow_side] = EXTERNAL_TEMP_SHADOW + (40 - EXTERNAL_TEMP_SHADOW) * np.sin(np.pi * shadow_phase)
             
             # Добавление случайных вариаций
-            temp += np.random.normal(0, 5)
-            external_temp.append(temp)
-        
-        external_temp = np.array(external_temp)
-        
-        logger.info("Температурный профиль создан")
-        return time_hours, internal_temp, external_temp
+            external_temp += np.random.normal(0, 5, n_points)
+            
+            logger.info("Температурный профиль создан")
+            return time_hours, internal_temp, external_temp
+        except Exception as e:
+            logger.error(f"Ошибка при симуляции температурного профиля: {e}")
+            # Возвращаем пустые массивы в случае ошибки
+            return np.array([]), np.array([]), np.array([])
     
     def simulate_radiation_levels(self, n_points=200, duration_hours=24):
         """
@@ -235,43 +250,49 @@ class ISSEnvironmentAnalyzer:
         """
         logger.info(f"Симуляция радиационного профиля: {duration_hours}ч")
         
-        time_hours = np.linspace(0, duration_hours, n_points)
-        radiation = []
-        
-        # Используем точный период обращения из TLE, если доступен
-        orbital_period = self.orbital_params['orbital_period_min'] if self.orbital_params else ORBITAL_PERIOD
-        orbital_period_hours = orbital_period / 60
-        
-        for t in time_hours:
+        try:
+            time_hours = np.linspace(0, duration_hours, n_points)
+            radiation = np.zeros(n_points)
+            
+            # Используем точный период обращения из TLE, если доступен
+            orbital_period = self.orbital_params['orbital_period_min'] if self.orbital_params else ORBITAL_PERIOD
+            orbital_period_hours = orbital_period / 60
+            
+            # Векторизованный расчет для повышения производительности
+            orbit_numbers = time_hours / orbital_period_hours
+            
             # Базовый уровень ГКЛ с флуктуациями
-            level = RADIATION_BASE * (1 + 0.2 * np.random.randn())
+            radiation = RADIATION_BASE * (1 + 0.2 * np.random.randn(n_points))
             
-            # Пролет через Южно-Атлантическую аномалию (SAA)
-            # SAA встречается примерно 2-3 раза в сутки на орбите с наклонением 51.6°
-            orbit_number = t / orbital_period_hours
+            # Пролеты через Южно-Атлантическую аномалию (SAA)
+            # Векторизованный расчет
+            saa_condition = ((orbit_numbers % 7) < 0.3) | ((orbit_numbers % 13) < 0.3)
+            saa_multiplier = np.where(saa_condition, 2 + 2 * np.random.rand(n_points), 1)
+            radiation *= saa_multiplier
             
-            # Проверка пролета через SAA
-            if (orbit_number % 7 < 0.3) or (orbit_number % 13 < 0.3):
-                # Резкое повышение радиации в SAA
-                saa_multiplier = 2 + 2 * np.random.rand()
-                level *= saa_multiplier
+            # Солнечные вспышки (2% вероятность на каждую точку)
+            flare_condition = np.random.rand(n_points) < 0.02
+            flare_multiplier = np.where(flare_condition, 5 + 5 * np.random.rand(n_points), 1)
+            radiation *= flare_multiplier
             
-            # Редкие солнечные вспышки (2% вероятность на каждую точку)
-            if np.random.rand() < 0.02:
-                solar_flare_multiplier = 5 + 5 * np.random.rand()
-                level *= solar_flare_multiplier
-                logger.debug(f"Солнечная вспышка в t={t:.1f}ч, уровень={level:.1f}")
+            # Логирование солнечных вспышек
+            flare_indices = np.where(flare_condition)[0]
+            for idx in flare_indices:
+                logger.debug(f"Солнечная вспышка в t={time_hours[idx]:.1f}ч, уровень={radiation[idx]:.1f}")
             
             # Вариации от солнечной активности (11-летний цикл - упрощено)
-            solar_cycle_factor = 1 + 0.3 * np.sin(2 * np.pi * t / (24 * 365 * 5.5))
-            level *= solar_cycle_factor
+            solar_cycle_factor = 1 + 0.3 * np.sin(2 * np.pi * time_hours / (24 * 365 * 5.5))
+            radiation *= solar_cycle_factor
             
-            radiation.append(max(level, 0))
-        
-        radiation = np.array(radiation)
-        
-        logger.info(f"Радиационный профиль создан. Средний уровень: {np.mean(radiation):.1f} мкЗв/ч")
-        return time_hours, radiation
+            # Обеспечиваем неотрицательные значения
+            radiation = np.maximum(radiation, 0)
+            
+            logger.info(f"Радиационный профиль создан. Средний уровень: {np.mean(radiation):.1f} мкЗв/ч")
+            return time_hours, radiation
+        except Exception as e:
+            logger.error(f"Ошибка при симуляции радиационного профиля: {e}")
+            # Возвращаем пустые массивы в случае ошибки
+            return np.array([]), np.array([])
     
     def simulate_altitude_profile(self, n_points=200, duration_hours=24):
         """
@@ -290,38 +311,43 @@ class ISSEnvironmentAnalyzer:
         """
         logger.info(f"Симуляция профиля высоты: {duration_hours}ч")
         
-        time_hours = np.linspace(0, duration_hours, n_points)
-        
-        # Используем точную высоту из TLE, если доступна
-        initial_altitude = self.orbital_params['altitude_km'] if self.orbital_params else ISS_ALTITUDE
-        
-        # Скорость снижения: ~50-100 м в сутки = ~2-4 м/час
-        decay_rate = 0.003  # км/час (3 м/час)
-        
-        altitude = []
-        current_altitude = initial_altitude
-        
-        for i, t in enumerate(time_hours):
-            # Атмосферное торможение
-            current_altitude -= decay_rate
+        try:
+            time_hours = np.linspace(0, duration_hours, n_points)
             
-            # Добавление шума (микроколебания)
-            noise = np.random.normal(0, 0.01)
-            current_altitude += noise
+            # Используем точную высоту из TLE, если доступна
+            initial_altitude = self.orbital_params['altitude_km'] if self.orbital_params else ISS_ALTITUDE
             
-            # Симуляция коррекции орбиты
-            # Обычно происходит раз в 1-2 месяца, но для демонстрации сделаем чаще
-            if duration_hours > 18 and 18 <= t <= 19:
-                # Коррекция: повышение на 1-2 км
-                boost = 0.005 * (t - 18) * 200  # Постепенное повышение
-                current_altitude += boost
+            # Скорость снижения: ~50-100 м в сутки = ~2-4 м/час
+            decay_rate = 0.003  # км/час (3 м/час)
             
-            altitude.append(current_altitude)
-        
-        altitude = np.array(altitude)
-        
-        logger.info(f"Профиль высоты создан. Диапазон: {altitude.min():.2f}-{altitude.max():.2f} км")
-        return time_hours, altitude
+            altitude = []
+            current_altitude = initial_altitude
+            
+            for i, t in enumerate(time_hours):
+                # Атмосферное торможение
+                current_altitude -= decay_rate
+                
+                # Добавление шума (микроколебания)
+                noise = np.random.normal(0, 0.01)
+                current_altitude += noise
+                
+                # Симуляция коррекции орбиты
+                # Обычно происходит раз в 1-2 месяца, но для демонстрации сделаем чаще
+                if duration_hours > 18 and 18 <= t <= 19:
+                    # Коррекция: повышение на 1-2 км
+                    boost = 0.005 * (t - 18) * 200  # Постепенное повышение
+                    current_altitude += boost
+                
+                altitude.append(current_altitude)
+            
+            altitude = np.array(altitude)
+            
+            logger.info(f"Профиль высоты создан. Диапазон: {altitude.min():.2f}-{altitude.max():.2f} км")
+            return time_hours, altitude
+        except Exception as e:
+            logger.error(f"Ошибка при симуляции профиля высоты: {e}")
+            # Возвращаем пустые массивы в случае ошибки
+            return np.array([]), np.array([])
     
     def plot_environmental_conditions(self, duration_hours=24, save=True, show=True):
         """
@@ -611,6 +637,121 @@ class ISSEnvironmentAnalyzer:
         
         filename = TimeUtils.get_timestamp_filename('telemetry_report', 'json')
         self.fm.save_json(report_data, filename, subdirectory='reports')
+
+    def analyze_radiation_peaks(self, days=30):
+        """
+        Анализ пиков радиационного фона и их характеристик
+        
+        Args:
+            days: Период анализа в днях
+            
+        Returns:
+            dict: Статистика пиков радиации
+        """
+        logger.info(f"Анализ пиков радиационного фона за {days} дней...")
+        
+        try:
+            # Генерация данных о радиации
+            hours = days * 24
+            time_h, radiation = self.simulate_radiation_levels(hours * 4, hours)
+            
+            if len(radiation) == 0:
+                logger.error("Не удалось сгенерировать данные о радиации")
+                return None
+            
+            # Определение порога для пиков (в 2 раза выше среднего)
+            mean_radiation = float(np.mean(radiation))
+            peak_threshold = mean_radiation * 2.0
+            
+            # Поиск пиков
+            peaks = []
+            peak_indices = []
+            
+            # Простой алгоритм поиска пиков
+            for i in range(1, len(radiation) - 1):
+                if (radiation[i] > radiation[i-1] and 
+                    radiation[i] > radiation[i+1] and 
+                    radiation[i] > peak_threshold):
+                    peaks.append(float(radiation[i]))
+                    peak_indices.append(i)
+            
+            peaks = np.array(peaks)
+            peak_indices = np.array(peak_indices)
+            
+            # Расчет статистики пиков
+            if len(peaks) > 0:
+                peak_stats = {
+                    'total_peaks': len(peaks),
+                    'max_peak': float(np.max(peaks)),
+                    'avg_peak': float(np.mean(peaks)),
+                    'std_peak': float(np.std(peaks)),
+                    'peak_frequency_per_day': len(peaks) / days,
+                    'peak_duration_avg_hours': 1.0,  # Упрощенное значение
+                    'peak_intensity_ratio': float(np.mean(peaks) / mean_radiation)
+                }
+            else:
+                peak_stats = {
+                    'total_peaks': 0,
+                    'max_peak': 0.0,
+                    'avg_peak': 0.0,
+                    'std_peak': 0.0,
+                    'peak_frequency_per_day': 0.0,
+                    'peak_duration_avg_hours': 0.0,
+                    'peak_intensity_ratio': 0.0
+                }
+            
+            # Создание графика пиков
+            plt.figure(figsize=(14, 7))
+            
+            # Основной график радиации
+            plt.plot(time_h, radiation, 'purple', linewidth=1.5, alpha=0.7, label='Радиационный фон')
+            
+            # Отметка порога
+            plt.axhline(y=float(peak_threshold), color='orange', linestyle='--', 
+                       linewidth=2, alpha=0.7, label=f'Порог пиков ({peak_threshold:.1f} мкЗв/ч)')
+            
+            # Отметка среднего уровня
+            plt.axhline(y=mean_radiation, color='green', linestyle='-', 
+                       linewidth=2, alpha=0.7, label=f'Средний уровень ({mean_radiation:.1f} мкЗв/ч)')
+            
+            # Отметка пиков
+            if len(peak_indices) > 0:
+                peak_times = time_h[peak_indices]
+                peak_values = radiation[peak_indices]
+                plt.scatter(peak_times, peak_values, c='red', s=30, alpha=0.7, 
+                           zorder=5, label=f'Пики ({len(peaks)} шт.)')
+            
+            plt.xlabel('Время (часы)', fontsize=12, fontweight='bold')
+            plt.ylabel('Доза радиации (мкЗв/час)', fontsize=12, fontweight='bold')
+            plt.title(f'Анализ пиков радиационного фона МКС за {days} дней', 
+                     fontsize=14, fontweight='bold', pad=15)
+            plt.grid(True, alpha=0.3, linestyle='--')
+            plt.legend(loc='upper right', fontsize=11, framealpha=0.9)
+            
+            # Сохранение графика
+            filepath = self.fm.get_plot_path('iss_radiation_peaks.png')
+            plt.savefig(filepath, dpi=300, bbox_inches='tight')
+            plt.close()
+            
+            logger.info(f"График пиков радиации сохранен: {filepath}")
+            
+            # Дополнительная информация о пиках
+            print(f"\n{'='*70}")
+            print(f"АНАЛИЗ ПИКОВ РАДИАЦИОННОГО ФОНА ({days} дней)")
+            print(f"{'='*70}")
+            print(f"Общее количество пиков: {peak_stats['total_peaks']}")
+            print(f"Максимальный пик: {peak_stats['max_peak']:.1f} мкЗв/ч")
+            print(f"Средняя интенсивность пиков: {peak_stats['avg_peak']:.1f} мкЗв/ч")
+            print(f"Частота пиков: {peak_stats['peak_frequency_per_day']:.1f} пиков/день")
+            print(f"Средняя продолжительность пиков: {peak_stats['peak_duration_avg_hours']:.1f} часов")
+            print(f"Отношение интенсивности пиков к среднему уровню: {peak_stats['peak_intensity_ratio']:.1f}x")
+            print(f"{'='*70}")
+            
+            return peak_stats
+            
+        except Exception as e:
+            logger.error(f"Ошибка при анализе пиков радиационного фона: {e}")
+            return None
 
 
 def main():
