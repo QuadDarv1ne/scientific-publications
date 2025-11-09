@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ISS Telemetry Analyzer - Веб интерфейс</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .header {
+            background: linear-gradient(135deg, #0062cc, #007bff);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+        .card {
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            border: 1px solid rgba(0, 0, 0, 0.125);
+            margin-bottom: 1.5rem;
+        }
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            font-weight: bold;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        .chart-container {
+            min-height: 300px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        .prediction-table {
+            font-size: 0.9rem;
+        }
+        .prediction-table th {
+            background-color: #e9ecef;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1><i class="bi bi-satellite"></i> ISS Telemetry Analyzer</h1>
+                    <p class="lead">Анализ телеметрических данных Международной космической станции</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Основные параметры -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-info-circle"></i> Основные параметры МКС
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="stat-number" id="altitude">408.0</div>
+                                <div class="stat-label">Высота орбиты (км)</div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="stat-number" id="speed">27,600</div>
+                                <div class="stat-label">Скорость (км/ч)</div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="stat-number" id="period">92.9</div>
+                                <div class="stat-label">Период (мин)</div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="stat-number" id="orbits">15.5</div>
+                                <div class="stat-label">Витков/сутки</div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <button class="btn btn-primary" id="refreshParams">
+                                <i class="bi bi-arrow-repeat"></i> Обновить данные
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Текущее положение -->
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-geo-alt"></i> Текущее положение МКС
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6">
+                                <h5>Широта:</h5>
+                                <p class="stat-number" id="latitude">51.6000</p>
+                            </div>
+                            <div class="col-6">
+                                <h5>Долгота:</h5>
+                                <p class="stat-number" id="longitude">-123.4000</p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h5>Время:</h5>
+                            <p id="timestamp">2025-11-09 21:00:00 UTC</p>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" id="refreshPosition">
+                            <i class="bi bi-arrow-repeat"></i> Обновить положение
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Радиационная доза -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-radioactive"></i> Радиационная нагрузка
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-6 text-center">
+                                <div class="stat-number" id="radiationDose">1.20</div>
+                                <div class="stat-label">мЗв за 30 дней</div>
+                            </div>
+                            <div class="col-6 text-center">
+                                <div class="stat-number" id="radiationRate">30</div>
+                                <div class="stat-label">мкЗв/час</div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h5>Сравнение с нормами:</h5>
+                            <ul class="list-unstyled">
+                                <li>Население: <span class="text-danger">1.2x</span> годовой лимит</li>
+                                <li>Работники: <span class="text-success">0.06x</span> годовой лимит</li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" id="refreshRadiation">
+                            <i class="bi bi-arrow-repeat"></i> Обновить данные
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Графики -->
+        <div class="row">
+            <!-- Трек МКС -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-map"></i> Трек МКС
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <div id="groundTrackLoading" class="loading">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                            </div>
+                            <img id="groundTrackImg" src="" alt="Трек МКС" class="img-fluid" style="display: none;">
+                        </div>
+                        <button class="btn btn-secondary btn-sm mt-2" id="refreshGroundTrack">
+                            <i class="bi bi-arrow-repeat"></i> Обновить трек
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Условия окружающей среды -->
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-thermometer-half"></i> Условия окружающей среды
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <div id="environmentLoading" class="loading">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                            </div>
+                            <img id="environmentImg" src="" alt="Условия окружающей среды" class="img-fluid" style="display: none;">
+                        </div>
+                        <button class="btn btn-secondary btn-sm mt-2" id="refreshEnvironment">
+                            <i class="bi bi-arrow-repeat"></i> Обновить условия
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Анализ радиации -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-graph-up"></i> Анализ радиационной дозы
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <div id="radiationLoading" class="loading">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Загрузка...</span>
+                                </div>
+                            </div>
+                            <img id="radiationImg" src="" alt="Анализ радиационной дозы" class="img-fluid" style="display: none;">
+                        </div>
+                        <button class="btn btn-secondary btn-sm mt-2" id="refreshRadiationChart">
+                            <i class="bi bi-arrow-repeat"></i> Обновить анализ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Прогноз видимости -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-binoculars"></i> Прогноз видимости МКС
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Выберите город:</h5>
+                                <div class="mb-3">
+                                    <select class="form-select" id="citySelect">
+                                        <option value="custom">Указать координаты</option>
+                                        <option value="moscow" selected>Москва (55.7558°, 37.6173°)</option>
+                                        <option value="spb">Санкт-Петербург (59.9343°, 30.3351°)</option>
+                                        <option value="novosibirsk">Новосибирск (55.0084°, 82.9357°)</option>
+                                        <option value="ekaterinburg">Екатеринбург (56.8389°, 60.6057°)</option>
+                                    </select>
+                                </div>
+                                <div id="customCoords" style="display: none;">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label for="latitudeInput" class="form-label">Широта:</label>
+                                            <input type="number" class="form-control" id="latitudeInput" step="0.0001" value="55.7558">
+                                        </div>
+                                        <div class="col-6">
+                                            <label for="longitudeInput" class="form-label">Долгота:</label>
+                                            <input type="number" class="form-control" id="longitudeInput" step="0.0001" value="37.6173">
+                                        </div>
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" id="predictVisibility">
+                                    <i class="bi bi-search"></i> Рассчитать прогноз
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Результаты прогноза:</h5>
+                                <div class="table-responsive">
+                                    <table class="table table-striped prediction-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Время</th>
+                                                <th>Длительность</th>
+                                                <th>Высота</th>
+                                                <th>Яркость</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="predictionResults">
+                                            <tr>
+                                                <td colspan="4" class="text-center">Нет данных</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Частота пролетов -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="bi bi-bar-chart"></i> Частота пролетов МКС
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <h5>Параметры анализа:</h5>
+                                <div class="mb-3">
+                                    <label for="analysisDays" class="form-label">Период анализа (дней):</label>
+                                    <input type="number" class="form-control" id="analysisDays" min="1" max="30" value="7">
+                                </div>
+                                <button class="btn btn-primary" id="analyzeFrequency">
+                                    <i class="bi bi-calculator"></i> Выполнить анализ
+                                </button>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="chart-container">
+                                    <div id="frequencyLoading" class="loading">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Загрузка...</span>
+                                        </div>
+                                    </div>
+                                    <img id="frequencyImg" src="" alt="Частота пролетов" class="img-fluid" style="display: none;">
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-3 col-6 text-center">
+                                        <div class="stat-number" id="totalPasses">32</div>
+                                        <div class="stat-label">Всего пролетов</div>
+                                    </div>
+                                    <div class="col-md-3 col-6 text-center">
+                                        <div class="stat-number" id="avgPasses">4.6</div>
+                                        <div class="stat-label">Среднее/день</div>
+                                    </div>
+                                    <div class="col-md-3 col-6 text-center">
+                                        <div class="stat-number" id="maxPasses">6</div>
+                                        <div class="stat-label">Максимум/день</div>
+                                    </div>
+                                    <div class="col-md-3 col-6 text-center">
+                                        <div class="stat-number" id="minPasses">3</div>
+                                        <div class="stat-label">Минимум/день</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-light text-center py-3 mt-4">
+        <div class="container">
+            <p class="mb-0">ISS Telemetry Analyzer &copy; 2025</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        // Функция для обновления основных параметров
+        function updateOrbitalParameters() {
+            $('#refreshParams .spinner-border').show();
+            
+            $.get('/api/orbital_parameters')
+                .done(function(response) {
+                    if (response.success) {
+                        $('#altitude').text(response.data.altitude_km.toFixed(1));
+                        $('#speed').text(Math.round(response.data.avg_speed_kmh).toLocaleString());
+                        $('#period').text(response.data.orbital_period_min.toFixed(1));
+                        $('#orbits').text(response.data.vitkov_per_day.toFixed(1));
+                    }
+                })
+                .fail(function() {
+                    alert('Ошибка при получении орбитальных параметров');
+                })
+                .always(function() {
+                    $('#refreshParams .spinner-border').hide();
+                });
+        }
+
+        // Функция для обновления текущего положения
+        function updateCurrentPosition() {
+            $('#refreshPosition .spinner-border').show();
+            
+            $.get('/api/current_position')
+                .done(function(response) {
+                    if (response.success) {
+                        $('#latitude').text(response.data.latitude.toFixed(4));
+                        $('#longitude').text(response.data.longitude.toFixed(4));
+                        $('#timestamp').text(response.data.timestamp);
+                    }
+                })
+                .fail(function() {
+                    alert('Ошибка при получении текущего положения');
+                })
+                .always(function() {
+                    $('#refreshPosition .spinner-border').hide();
+                });
+        }
+
+        // Функция для обновления трека МКС
+        function updateGroundTrack() {
+            $('#groundTrackLoading').show();
+            $('#groundTrackImg').hide();
+            
+            $.get('/api/ground_track')
+                .done(function(response) {
+                    if (response.success) {
+                        $('#groundTrackImg').attr('src', 'data:image/png;base64,' + response.image);
+                        $('#groundTrackImg').show();
+                    }
+                })
+                .fail(function() {
+                    alert('Ошибка при получении трека МКС');
+                })
+                .always(function() {
+                    $('#groundTrackLoading').hide();
+                });
+        }
+
+        // Функция для обновления условий окружающей среды
+        function updateEnvironmentalConditions() {
+            $('#environmentLoading').show();
+            $('#environmentImg').hide();
+            
+            $.get('/api/environmental_conditions')
+                .done(function(response) {
+                    if (response.success) {
+                        $('#environmentImg').attr('src', 'data:image/png;base64,' + response.image);
+                        $('#environmentImg').show();
+                    }
+                })
+                .fail(function() {
+                    alert('Ошибка при получении условий окружающей среды');
+                })
+                .always(function() {
+                    $('#environmentLoading').hide();
+                });
+        }
+
+        // Функция для обновления анализа радиации
+        function updateRadiationAnalysis() {
+            $('#radiationLoading').show();
+            $('#radiationImg').hide();
+            $('#refreshRadiation .spinner-border').show();
+            
+            $.get('/api/radiation_analysis')
+                .done(function(response) {
+                    if (response.success) {
+                        $('#radiationImg').attr('src', 'data:image/png;base64,' + response.image);
+                        $('#radiationImg').show();
+                        $('#radiationDose').text(response.total_dose_mSv.toFixed(2));
+                    }
+                })
+                .fail(function() {
+                    alert('Ошибка при получении анализа радиации');
+                })
+                .always(function() {
+                    $('#radiationLoading').hide();
+                    $('#refreshRadiation .spinner-border').hide();
+                });
+        }
+
+        // Функция для прогноза видимости
+        function predictVisibility() {
+            let latitude, longitude;
+            
+            if ($('#citySelect').val() === 'custom') {
+                latitude = parseFloat($('#latitudeInput').val());
+                longitude = parseFloat($('#longitudeInput').val());
+            } else {
+                const cities = {
+                    'moscow': [55.7558, 37.6173],
+                    'spb': [59.9343, 30.3351],
+                    'novosibirsk': [55.0084, 82.9357],
+                    'ekaterinburg': [56.8389, 60.6057]
+                };
+                [latitude, longitude] = cities[$('#citySelect').val()];
+            }
+            
+            $.ajax({
+                url: '/api/visibility_prediction',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    latitude: latitude,
+                    longitude: longitude,
+                    n_passes: 5
+                })
+            })
+            .done(function(response) {
+                if (response.success) {
+                    let html = '';
+                    response.passes.forEach(function(pass) {
+                        html += `
+                            <tr>
+                                <td>${pass.time}</td>
+                                <td>${pass.duration}</td>
+                                <td>${pass.elevation}</td>
+                                <td>${pass.brightness}</td>
+                            </tr>
+                        `;
+                    });
+                    $('#predictionResults').html(html);
+                }
+            })
+            .fail(function() {
+                alert('Ошибка при расчете прогноза видимости');
+            });
+        }
+
+        // Функция для анализа частоты пролетов
+        function analyzeFrequency() {
+            $('#frequencyLoading').show();
+            $('#frequencyImg').hide();
+            
+            let latitude, longitude;
+            
+            if ($('#citySelect').val() === 'custom') {
+                latitude = parseFloat($('#latitudeInput').val());
+                longitude = parseFloat($('#longitudeInput').val());
+            } else {
+                const cities = {
+                    'moscow': [55.7558, 37.6173],
+                    'spb': [59.9343, 30.3351],
+                    'novosibirsk': [55.0084, 82.9357],
+                    'ekaterinburg': [56.8389, 60.6057]
+                };
+                [latitude, longitude] = cities[$('#citySelect').val()];
+            }
+            
+            const days = parseInt($('#analysisDays').val());
+            
+            $.ajax({
+                url: '/api/pass_frequency',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    latitude: latitude,
+                    longitude: longitude,
+                    days: days
+                })
+            })
+            .done(function(response) {
+                if (response.success) {
+                    $('#frequencyImg').attr('src', 'data:image/png;base64,' + response.image);
+                    $('#frequencyImg').show();
+                    
+                    // Обновление статистики
+                    $('#totalPasses').text(response.statistics.total_passes);
+                    $('#avgPasses').text(response.statistics.avg_passes_per_day.toFixed(1));
+                    $('#maxPasses').text(response.statistics.max_passes_per_day);
+                    $('#minPasses').text(response.statistics.min_passes_per_day);
+                }
+            })
+            .fail(function() {
+                alert('Ошибка при анализе частоты пролетов');
+            })
+            .always(function() {
+                $('#frequencyLoading').hide();
+            });
+        }
+
+        // Обработчики событий
+        $(document).ready(function() {
+            // Инициализация данных
+            updateOrbitalParameters();
+            updateCurrentPosition();
+            updateGroundTrack();
+            updateEnvironmentalConditions();
+            updateRadiationAnalysis();
+            
+            // Обработчики кнопок
+            $('#refreshParams').click(updateOrbitalParameters);
+            $('#refreshPosition').click(updateCurrentPosition);
+            $('#refreshGroundTrack').click(updateGroundTrack);
+            $('#refreshEnvironment').click(updateEnvironmentalConditions);
+            $('#refreshRadiation').click(updateRadiationAnalysis);
+            $('#refreshRadiationChart').click(updateRadiationAnalysis);
+            $('#predictVisibility').click(predictVisibility);
+            $('#analyzeFrequency').click(analyzeFrequency);
+            
+            // Обработчик выбора города
+            $('#citySelect').change(function() {
+                if ($(this).val() === 'custom') {
+                    $('#customCoords').show();
+                } else {
+                    $('#customCoords').hide();
+                }
+            });
+            
+            // Инициализация прогноза видимости
+            predictVisibility();
+        });
+    </script>
+</body>
+</html>

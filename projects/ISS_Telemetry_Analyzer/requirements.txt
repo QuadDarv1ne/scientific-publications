@@ -10,6 +10,9 @@ pandas
 # Orbital calculations
 skyfield
 
+# Web framework
+flask
+
 # Optional: for enhanced functionality
 scipy
 
