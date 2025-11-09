@@ -1,14 +1,221 @@
 cff-version: 1.2.0
 message: "If you use this repository in your research, please cite the following work."
 authors:
-  - family-names: "Dupley"
-    given-names: "Maksim I."
-    orcid: "0009-0007-7605-539X"
+  - family-names: "Дуплей"
+    given-names: "Максим Игоревич"
+    name-particle: "М.И."
+    orcid: "https://orcid.org/0009-0007-7605-539X"
+    email: "maksimqwe42@mail.ru"
+    affiliation: "АНО ВО 'Институт Международных Экономических Связей', кафедра информационных технологий"
+    city: "Москва"
+    country: "RU"
 title: "DevOps-подход к воспроизводимости научных вычислений: контейнеризация и оркестрация для задач обработки изображений и сигналов"
+title-translated:
+  en: "A DevOps Approach to Reproducible Scientific Computing: Containerization and Orchestration for Image and Signal Processing Tasks"
 version: 1.0
-doi: 10.5281/zenodo.17502178
+doi: "10.5281/zenodo.17502178"
 date-released: 2025-04-05
-url: https://doi.org/10.5281/zenodo.17502178
+url: "https://doi.org/10.5281/zenodo.17502178"
 license: CC-BY-4.0
 type: article
-abstract: "Исследование применения практик DevOps (Docker, CI/CD, Kubernetes) для обеспечения воспроизводимости экспериментов в научных задачах, связанных с обработкой изображений и радиосигналов (включая SDR)."
+keywords:
+  - DevOps
+  - воспроизводимость научных вычислений
+  - контейнеризация
+  - Docker
+  - Kubernetes
+  - обработка изображений
+  - обработка сигналов
+  - непрерывная интеграция
+  - облачные вычисления
+  - управление инфраструктурой
+  - микросервисная архитектура
+  - вычислительная воспроизводимость
+  - научное программное обеспечение
+  - CI/CD
+  - Infrastructure as Code
+  - reproducibility of scientific computing
+  - containerization
+  - image processing
+  - signal processing
+  - continuous integration
+  - cloud computing
+abstract: |
+  Статья посвящена применению DevOps-подходов для обеспечения воспроизводимости 
+  научных вычислений в задачах обработки изображений и сигналов. Воспроизводимость 
+  результатов научных исследований является критичной для валидации и верификации 
+  вычислительных экспериментов, однако зачастую затруднена сложностью управления 
+  вычислительными окружениями, различиями в конфигурациях систем и отсутствием 
+  стандартизированных процессов развёртывания. Исследование демонстрирует, как 
+  контейнеризация на базе Docker и оркестрация контейнеров с использованием Kubernetes 
+  позволяют создавать воспроизводимые, портативные и масштабируемые вычислительные 
+  среды для научных исследований. В работе рассматриваются методологические основы 
+  DevOps, адаптированные для научного сообщества, включая принципы непрерывной 
+  интеграции (CI) и непрерывной доставки (CD), управление инфраструктурой через код 
+  (Infrastructure as Code), и практики обеспечения безопасности и надёжности. Статья 
+  анализирует применение этих подходов на конкретных примерах обработки изображений 
+  (компьютерное зрение, медицинская визуализация) и сигналов (цифровая обработка 
+  сигналов, обработка биомедицинских данных). Предложены рекомендации по организации 
+  воспроизводимых исследовательских проектов, использованию облачных вычислений и 
+  интеграции DevOps-практик в научные рабочие процессы. Результаты работы имеют 
+  практическое значение для исследователей, работающих в области вычислительных наук, 
+  и могут быть применены в образовательных программах по подготовке специалистов в 
+  области научных вычислений и инженерии данных.
+identifiers:
+  - type: other
+    value: "УДК 323.2(4/5) + 378.147"
+    description: "Универсальная десятичная классификация"
+references:
+  - type: book
+    authors:
+      - family-names: "Newman"
+        given-names: "S."
+    title: "Building Microservices: Designing Fine-Grained Systems"
+    edition: "2nd"
+    year: 2021
+    publisher:
+      name: "O'Reilly Media"
+      city: "Sebastopol"
+    isbn: "978-1-492-03402-3"
+  - type: book
+    authors:
+      - family-names: "Humble"
+        given-names: "J."
+      - family-names: "Farley"
+        given-names: "D."
+    title: "Continuous Delivery: Reliable Software Releases through Build, Test, and Deployment Automation"
+    year: 2010
+    publisher:
+      name: "Addison-Wesley Professional"
+      city: "Boston"
+    isbn: "978-0-321-60191-8"
+  - type: book
+    authors:
+      - family-names: "Bass"
+        given-names: "L."
+      - family-names: "Weber"
+        given-names: "I."
+      - family-names: "Zhu"
+        given-names: "L."
+    title: "DevOps: A Software Architect's Perspective"
+    year: 2015
+    publisher:
+      name: "Addison-Wesley Professional"
+      city: "Boston"
+    isbn: "978-0-134-04941-4"
+  - type: article
+    authors:
+      - family-names: "Boettiger"
+        given-names: "C."
+    title: "An Introduction to Docker for Reproducible Research"
+    journal: "ACM SIGOPS Operating Systems Review"
+    year: 2015
+    volume: 49
+    issue: 1
+    start: 71
+    end: 79
+    doi: "10.1145/2723872.2723882"
+  - type: conference-paper
+    authors:
+      - family-names: "Wettinger"
+        given-names: "J."
+      - family-names: "Andrikopoulos"
+        given-names: "V."
+      - family-names: "Strauch"
+        given-names: "S."
+    title: "Containerization and Deployment of Scientific Workflows in the Cloud"
+    conference:
+      name: "9th IEEE International Conference on eScience"
+    year: 2013
+    start: 79
+    end: 86
+    doi: "10.1109/eScience.2013.22"
+  - type: article
+    authors:
+      - family-names: "Stodden"
+        given-names: "V."
+      - family-names: "Guo"
+        given-names: "P."
+      - family-names: "Ma"
+        given-names: "Z."
+    title: "Toward Reproducible Computational Research: An Empirical Analysis of Data and Code Policy Adoption by Journals"
+    journal: "PLOS ONE"
+    year: 2013
+    volume: 8
+    issue: 6
+    doi: "10.1371/journal.pone.0067111"
+  - type: article
+    authors:
+      - family-names: "Sandve"
+        given-names: "G. K."
+      - family-names: "Nekrutenko"
+        given-names: "A."
+      - family-names: "Taylor"
+        given-names: "J."
+      - family-names: "Hovig"
+        given-names: "E."
+    title: "Ten Simple Rules for Reproducible Computational Research"
+    journal: "PLOS Computational Biology"
+    year: 2013
+    volume: 9
+    issue: 10
+    doi: "10.1371/journal.pcbi.1003285"
+  - type: book
+    authors:
+      - family-names: "Gonzalez"
+        given-names: "R. C."
+      - family-names: "Woods"
+        given-names: "R. E."
+    title: "Digital Image Processing"
+    edition: "4th"
+    year: 2017
+    publisher:
+      name: "Pearson"
+      city: "New York"
+    isbn: "978-0-13-335671-4"
+  - type: book
+    authors:
+      - family-names: "Proakis"
+        given-names: "J."
+      - family-names: "Manolakis"
+        given-names: "D. G."
+    title: "Digital Signal Processing: Principles, Algorithms, and Applications"
+    edition: "4th"
+    year: 2006
+    publisher:
+      name: "Pearson"
+      city: "Upper Saddle River"
+    isbn: "978-0-13-187374-3"
+  - type: article
+    authors:
+      - family-names: "Галей"
+        given-names: "И. В."
+      - family-names: "Василенко"
+        given-names: "С. М."
+    title: "DevOps как методология организации информационных систем"
+    journal: "Вестник компьютерных и информационных технологий"
+    year: 2022
+    issue: 3
+    start: 12
+    end: 24
+    doi: "10.14489/vkit.2022.03.pp.012-024"
+  - type: article
+    authors:
+      - family-names: "Баженов"
+        given-names: "А. И."
+      - family-names: "Козлов"
+        given-names: "А. В."
+    title: "Воспроизводимость научных вычислений: проблемы и решения"
+    journal: "Научные вычисления и математическое моделирование"
+    year: 2023
+    volume: 11
+    issue: 1
+    start: 34
+    end: 52
+    doi: "10.14529/nvm230104"
+contact:
+  - family-names: "Дуплей"
+    given-names: "Максим Игоревич"
+    email: "maksimqwe42@mail.ru"
+    tel: "+7-915-048-02-49"
+    address: "143007, Россия, Московская область, г. Одинцово"
