@@ -1,0 +1,20 @@
+{
+    "report_date": "2025-11-09T21:18:54.035635",
+    "orbital_parameters": {
+        "altitude_km": 408,
+        "inclination_deg": 51.64,
+        "period_min": 92.9,
+        "velocity_kms": 7.668070037308245
+    },
+    "temperature": {
+        "internal_min": 18,
+        "internal_max": 27,
+        "external_sun": 121,
+        "external_shadow": -157
+    },
+    "radiation": {
+        "base_level_uSv_h": 30,
+        "daily_dose_mSv": 0.72,
+        "annual_dose_mSv": 262.8
+    }
+}

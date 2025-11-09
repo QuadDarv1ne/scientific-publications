@@ -49,7 +49,7 @@ def run_orbital_analysis():
         
         # Сбор траектории
         print("\n📊 Сбор траектории МКС (30 секунд)...")
-        tracker.collect_positions(duration_minutes=0.5, interval_seconds=5)
+        tracker.collect_positions(duration_minutes=1, interval_seconds=5)
         
         # Расчет параметров
         print("\n🧮 Расчет орбитальных параметров...")
@@ -192,7 +192,11 @@ def main():
             print(f"❌ Непредвиденная ошибка: {e}")
         
         # Пауза перед следующим меню
-        input("\nНажмите Enter для продолжения...")
+        try:
+            input("\nНажмите Enter для продолжения...")
+        except EOFError:
+            # Handle case when input is not available (e.g., in automated testing)
+            pass
 
 
 if __name__ == "__main__":
