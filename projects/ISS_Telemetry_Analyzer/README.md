@@ -29,7 +29,8 @@
 
 **ISS Telemetry Analyzer** — это Python-приложение для научного анализа параметров орбиты, условий окружающей среды и прогнозирования видимости Международной космической станции.
 
-Проект разработан для:
+**Проект разработан для:**
+
 - 🎓 Студентов и исследователей в области космонавтики
 - 🔬 Научных работ по орбитальной механике
 - 📊 Анализа данных космических миссий
@@ -51,7 +52,7 @@
 
 - 📍 Отслеживание положения МКС в реальном времени
 - 🌐 Сбор траектории движения за заданный период
-- 📊 Расчет орбитальных параметров:
+- 📊 **Расчет орбитальных параметров:**
   - Высота орбиты
   - Скорость движения
   - Период обращения
@@ -114,8 +115,8 @@ pandas>=2.0.0
 ### 1. Клонирование репозитория
 
 ```bash
-git clone https://github.com/yourusername/iss-telemetry-analyzer.git
-cd iss-telemetry-analyzer
+git clone https://github.com/QuadDarv1ne/scientific-publications/projects/ISS_Telemetry_Analyzer.git
+cd scientific-publications/projects/ISS_Telemetry_Analyzer
 ```
 
 ### 2. Установка зависимостей
@@ -124,16 +125,34 @@ cd iss-telemetry-analyzer
 pip install -r requirements.txt
 ```
 
-### 3. Запуск анализа орбиты
+### 3. Интерактивный режим
 
 ```bash
-python iss_orbital_analysis.py
+python main.py
 ```
 
-### 4. Запуск анализа окружающей среды
+### 4. Запуск анализа орбиты
 
 ```bash
-python iss_environment_analysis.py
+python src/iss_orbital_analysis.py
+```
+
+### 5. Запуск анализа окружающей среды
+
+```bash
+python src/iss_environment_analysis.py
+```
+
+### 6. Демонстрация возможностей
+
+```bash
+python demo.py
+```
+
+### 7. Тестирование
+
+```bash
+python -m pytest tests/ -v
 ```
 
 ---
@@ -143,7 +162,8 @@ python iss_environment_analysis.py
 ```
 iss-telemetry-analyzer/
 │
-├── main.py
+├── main.py                        # Главный файл запуска
+├── demo.py                        # Демонстрационный скрипт
 ├── README.md                      # Документация проекта
 ├── requirements.txt               # Зависимости Python
 ├── LICENSE                        # Лицензия MIT
@@ -466,7 +486,7 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 ## 👨‍🚀 Авторы
 
-- **Ваше Имя** - Разработчик проекта - [@yourusername](https://github.com/yourusername)
+- **Ваше Имя** - Разработчик проекта - [@QuadDarv1ne](https://github.com/QuadDarv1ne)
 
 ### Благодарности
 
@@ -479,10 +499,8 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 ## 📞 Контакты
 
-- 📧 Email: your.email@example.com
-- 💬 Telegram: @yourusername
-- 🐦 Twitter: @yourusername
-- 🌐 Website: https://yourwebsite.com
+- 📧 Email: maksimqwe42@mail.ru
+- 💬 Telegram: @quadd4rv1n7
 
 ---
 
@@ -493,16 +511,16 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 - ⭐ Поставьте звезду на GitHub
 - 🔄 Поделитесь с коллегами
 - 📝 Сошлитесь на проект в своих публикациях
-- ☕ [Купите мне кофе](https://buymeacoffee.com/yourusername)
+- ☕ [Купите мне кофе](https://buymeacoffee.com/quadd4rv1n7)
 
 ---
 
 ## 📈 Статистика проекта
 
-![GitHub stars](https://img.shields.io/github/stars/yourusername/iss-telemetry-analyzer)
-![GitHub forks](https://img.shields.io/github/forks/yourusername/iss-telemetry-analyzer)
-![GitHub issues](https://img.shields.io/github/issues/yourusername/iss-telemetry-analyzer)
-![GitHub last commit](https://img.shields.io/github/last-commit/yourusername/iss-telemetry-analyzer)
+![GitHub stars](https://img.shields.io/github/stars/QuadDarv1ne/scientific-publications/projects/ISS_Telemetry_Analyzer)
+![GitHub forks](https://img.shields.io/github/forks/QuadDarv1ne/scientific-publications/projects/ISS_Telemetry_Analyzer)
+![GitHub issues](https://img.shields.io/github/issues/QuadDarv1ne/scientific-publications/projects/ISS_Telemetry_Analyzer)
+![GitHub last commit](https://img.shields.io/github/last-commit/QuadDarv1ne/scientific-publications/projects/ISS_Telemetry_Analyzer)
 
 ---
 
