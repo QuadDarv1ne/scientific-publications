@@ -8,7 +8,7 @@ Web interface for ISS Telemetry Analyzer
 import sys
 import os
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, send_from_directory
 import json
 import numpy as np
 import matplotlib
@@ -29,6 +29,11 @@ app = Flask(__name__, template_folder='templates', static_folder='static')
 # Глобальные переменные для хранения данных
 tracker = ISSTracker()
 analyzer = ISSEnvironmentAnalyzer()
+
+# Разрешить обслуживание статических файлов
+@app.route('/static/<path:filename>')
+def static_files(filename):
+    return send_from_directory(app.static_folder, filename)
 
 def fig_to_base64(fig):
     """Конвертация matplotlib figure в base64 строку"""
