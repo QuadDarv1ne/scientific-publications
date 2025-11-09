@@ -222,6 +222,11 @@ class ISSTracker:
         # Статистика скорости
         speed_stats = StatisticsCalculator.calculate_statistics(speeds)
         
+        # Проверка что статистика не None
+        if speed_stats is None:
+            logger.error("Не удалось рассчитать статистику скорости")
+            return None
+        
         # Средняя высота
         avg_altitude = np.mean(altitudes) if altitudes else 408
         
@@ -269,7 +274,7 @@ class ISSTracker:
         
         # Мировая карта (упрощенная)
         world_map = np.zeros((180, 360))
-        plt.imshow(world_map, cmap='Blues', extent=[-180, 180, -90, 90], alpha=0.3)
+        plt.imshow(world_map, cmap='Blues', extent=(-180, 180, -90, 90), alpha=0.3)
         
         # Трек МКС
         plt.plot(longitudes, latitudes, 'r-', linewidth=2, alpha=0.8, label='Трек МКС')

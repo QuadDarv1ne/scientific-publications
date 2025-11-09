@@ -34,8 +34,68 @@ RADIATION_BASE = 30  # мкЗв/час - базовый уровень ради�
 ISS_ALTITUDE = 408  # км - средняя высота МКС
 TLE_URL = "https://celestrak.org/NORAD/elements/gp.php?CATNR=25544&FORMAT=TLE"
 
+
+
 # Настройка логирования
 logger = Logger.setup_logger('iss_environment_analysis')
+
+
+def parse_tle_data(tle_line1, tle_line2):
+    """
+    Парсинг TLE данных для извлечения орбитальных параметров
+    
+    Args:
+        tle_line1: Первая строка TLE
+        tle_line2: Вторая строка TLE
+        
+    Returns:
+        dict: Орбитальные параметры
+    """
+    try:
+        # Извлечение наклонения орбиты (строка 2, позиции 9-16)
+        inclination = float(tle_line2[8:16].strip())
+        
+        # Извлечение эксцентриситет (строка 2, позиции 27-33, нужно добавить "0.")
+        eccentricity_str = tle_line2[26:33].strip()
+        eccentricity = float("0." + eccentricity_str)
+        
+        # Извлечение среднего движения (строка 2, позиции 53-63)
+        mean_motion = float(tle_line2[52:63].strip())
+        
+        # Расчет периода обращения (минуты)
+        orbital_period = 1440 / mean_motion  # 1440 минут в сутках
+        
+        # Приблизительный расчет высоты орбиты
+        # Используем формулу для больших полуосей
+        earth_radius = 6371  # км
+        mu = 398600.4418  # km³/s²
+        
+        # Преобразование среднего движения в радианы/секунду
+        n_rad_per_sec = mean_motion * 2 * np.pi / 86400
+        
+        # Большая полуось в км
+        semi_major_axis = (mu / (n_rad_per_sec ** 2)) ** (1/3)
+        
+        # Приблизительная высота орбиты
+        altitude = semi_major_axis - earth_radius
+        
+        return {
+            'inclination': inclination,
+            'eccentricity': eccentricity,
+            'mean_motion': mean_motion,
+            'orbital_period_min': orbital_period,
+            'altitude_km': max(altitude, 300)  # Ограничиваем снизу
+        }
+    except Exception as e:
+        logger.error(f"Ошибка парсинга TLE данных: {e}")
+        # Возвращаем значения по умолчанию
+        return {
+            'inclination': 51.64,
+            'eccentricity': 0.0004093,
+            'mean_motion': 15.49452868,
+            'orbital_period_min': 92.9,
+            'altitude_km': 408
+        }
 
 
 class ISSEnvironmentAnalyzer:
@@ -53,6 +113,7 @@ class ISSEnvironmentAnalyzer:
         """
         self.fm = file_manager if file_manager else FileManager()
         self.tle_data = None
+        self.orbital_params = None
         
         logger.info("ISSEnvironmentAnalyzer инициализирован")
     
@@ -80,6 +141,13 @@ class ISSEnvironmentAnalyzer:
                 }
                 
                 self.tle_data = tle_data
+                
+                # Парсинг орбитальных параметров
+                self.orbital_params = parse_tle_data(tle_data['line1'], tle_data['line2'])
+                
+                # Обновление константы высоты орбиты
+                global ISS_ALTITUDE
+                ISS_ALTITUDE = self.orbital_params['altitude_km']
                 
                 # Сохранение TLE данных
                 filename = TimeUtils.get_timestamp_filename('tle_data', 'json')
@@ -115,6 +183,10 @@ class ISSEnvironmentAnalyzer:
         
         time_hours = np.linspace(0, duration_hours, n_points)
         
+        # Используем точный период обращения из TLE, если доступен
+        orbital_period = self.orbital_params['orbital_period_min'] if self.orbital_params else ORBITAL_PERIOD
+        orbital_period_hours = orbital_period / 60
+        
         # Внутренняя температура (стабилизирована системами)
         # Небольшие колебания из-за активности экипажа и оборудования
         internal_temp = 22 + 2 * np.sin(2 * np.pi * time_hours / 12)
@@ -123,7 +195,6 @@ class ISSEnvironmentAnalyzer:
         
         # Внешняя температура (солнечная/теневая сторона)
         # МКС делает ~16 витков в сутки, ~1.5 часа на виток
-        orbital_period_hours = ORBITAL_PERIOD / 60
         external_temp = []
         
         for t in time_hours:
@@ -167,8 +238,9 @@ class ISSEnvironmentAnalyzer:
         time_hours = np.linspace(0, duration_hours, n_points)
         radiation = []
         
-        # Период орбиты
-        orbital_period_hours = ORBITAL_PERIOD / 60
+        # Используем точный период обращения из TLE, если доступен
+        orbital_period = self.orbital_params['orbital_period_min'] if self.orbital_params else ORBITAL_PERIOD
+        orbital_period_hours = orbital_period / 60
         
         for t in time_hours:
             # Базовый уровень ГКЛ с флуктуациями
@@ -220,8 +292,8 @@ class ISSEnvironmentAnalyzer:
         
         time_hours = np.linspace(0, duration_hours, n_points)
         
-        # Начальная высота
-        initial_altitude = ISS_ALTITUDE
+        # Используем точную высоту из TLE, если доступна
+        initial_altitude = self.orbital_params['altitude_km'] if self.orbital_params else ISS_ALTITUDE
         
         # Скорость снижения: ~50-100 м в сутки = ~2-4 м/час
         decay_rate = 0.003  # км/час (3 м/час)
@@ -399,7 +471,7 @@ class ISSEnvironmentAnalyzer:
         print(f"  • Годовой лимит (работники): {annual_limit_workers} мЗв/год")
         print(f"  • Карьерный лимит (астронавты): {astronaut_career_limit} мЗв")
         print(f"\n⚠️  Превышение годового лимита населения: {(total_dose_mSv * 365/days) / annual_limit_public:.1f}x")
-        print(f"{'='*70}\n")
+        print(f"\n{'='*70}\n")
         
         # Визуализация
         plt.figure(figsize=(14, 7))
@@ -456,14 +528,24 @@ class ISSEnvironmentAnalyzer:
         
         print_header("КОМПЛЕКСНЫЙ ТЕЛЕМЕТРИЧЕСКИЙ ОТЧЕТ МКС")
         
+        # Используем точные параметры из TLE, если доступны
+        if self.orbital_params:
+            orbital_period = self.orbital_params['orbital_period_min']
+            altitude = self.orbital_params['altitude_km']
+            inclination = self.orbital_params['inclination']
+        else:
+            orbital_period = ORBITAL_PERIOD
+            altitude = ISS_ALTITUDE
+            inclination = 51.64
+        
         # Орбитальные параметры
         print("\n📡 ОРБИТАЛЬНЫЕ ПАРАМЕТРЫ:")
-        print(f"   • Средняя высота: {ISS_ALTITUDE} км")
-        print(f"   • Наклонение орбиты: 51.64°")
-        print(f"   • Период обращения: ~{ORBITAL_PERIOD:.1f} минут")
-        print(f"   • Витков в сутки: ~{24 * 60 / ORBITAL_PERIOD:.1f}")
+        print(f"   • Средняя высота: {altitude:.1f} км")
+        print(f"   • Наклонение орбиты: {inclination:.2f}°")
+        print(f"   • Период обращения: ~{orbital_period:.1f} минут")
+        print(f"   • Витков в сутки: ~{24 * 60 / orbital_period:.1f}")
         
-        velocity = OrbitalCalculations.calculate_orbital_velocity(ISS_ALTITUDE)
+        velocity = OrbitalCalculations.calculate_orbital_velocity(altitude)
         print(f"   • Орбитальная скорость: ~{velocity:.2f} км/с ({velocity*3600:.0f} км/ч)")
         
         # Температурные условия
@@ -472,7 +554,7 @@ class ISSEnvironmentAnalyzer:
         print(f"   • Целевая температура: 22°C")
         print(f"   • Внешняя оболочка (солнце): до +{EXTERNAL_TEMP_SUN}°C")
         print(f"   • Внешняя оболочка (тень): до {EXTERNAL_TEMP_SHADOW}°C")
-        print(f"   • Циклов нагрев/охлаждение: ~{24 * 60 / ORBITAL_PERIOD:.0f} в сутки")
+        print(f"   • Циклов нагрев/охлаждение: ~{24 * 60 / orbital_period:.0f} в сутки")
         print(f"   • Перепад температур: {EXTERNAL_TEMP_SUN - EXTERNAL_TEMP_SHADOW}°C")
         
         # Радиационная обстановка
@@ -486,7 +568,7 @@ class ISSEnvironmentAnalyzer:
         
         # Атмосферное торможение
         print("\n🛰️  АТМОСФЕРНОЕ ТОРМОЖЕНИЕ:")
-        drag_coef = OrbitalCalculations.atmospheric_drag_coefficient(ISS_ALTITUDE)
+        drag_coef = OrbitalCalculations.atmospheric_drag_coefficient(altitude)
         print(f"   • Снижение орбиты: ~50-100 м/сутки")
         print(f"   • Коэффициент торможения: {drag_coef:.1f} (относительный)")
         print(f"   • Коррекции орбиты: ~2-4 раза в год")
@@ -509,9 +591,9 @@ class ISSEnvironmentAnalyzer:
         report_data = {
             'report_date': datetime.now().isoformat(),
             'orbital_parameters': {
-                'altitude_km': ISS_ALTITUDE,
-                'inclination_deg': 51.64,
-                'period_min': ORBITAL_PERIOD,
+                'altitude_km': altitude,
+                'inclination_deg': inclination,
+                'period_min': orbital_period,
                 'velocity_kms': velocity
             },
             'temperature': {
