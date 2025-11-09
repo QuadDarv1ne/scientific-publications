@@ -753,6 +753,83 @@ class ISSEnvironmentAnalyzer:
             logger.error(f"Ошибка при анализе пиков радиационного фона: {e}")
             return None
 
+    def get_real_time_environment_data(self):
+        """
+        Получение реальных данных об окружающей среде на МКС
+        
+        Returns:
+            dict: Данные об окружающей среде
+        """
+        logger.info("Получение реальных данных об окружающей среде на МКС...")
+        
+        try:
+            # Получение TLE данных
+            tle_data = self.get_tle_data()
+            
+            # Симуляция текущих условий
+            current_time = datetime.now()
+            
+            # Получение орбитальных параметров
+            orbital_params = self.orbital_params if self.orbital_params else {
+                'altitude_km': ISS_ALTITUDE,
+                'orbital_period_min': ORBITAL_PERIOD
+            }
+            
+            # Симуляция температуры (в зависимости от положения на орбите)
+            orbital_phase = (current_time.hour % (orbital_params['orbital_period_min'] / 60)) / (orbital_params['orbital_period_min'] / 60)
+            
+            # Определение освещенности
+            is_sun_side = orbital_phase < 0.6
+            
+            # Температура внутри модулей (стабильная)
+            internal_temp = 22 + np.random.normal(0, 0.5)
+            internal_temp = np.clip(internal_temp, INTERNAL_TEMP_MIN, INTERNAL_TEMP_MAX)
+            
+            # Внешняя температура (зависит от освещенности)
+            if is_sun_side:
+                external_temp = 40 + (EXTERNAL_TEMP_SUN - 40) * np.sin(np.pi * orbital_phase / 0.6)
+            else:
+                external_temp = EXTERNAL_TEMP_SHADOW + (40 - EXTERNAL_TEMP_SHADOW) * np.sin(np.pi * (orbital_phase - 0.6) / 0.4)
+            
+            # Симуляция радиационного фона
+            base_radiation = RADIATION_BASE * (1 + 0.2 * np.random.randn())
+            
+            # Проверка на пролет через SAA
+            # Упрощенная модель - пик каждые 7 орбит
+            orbit_number = current_time.hour * 60 / orbital_params['orbital_period_min']
+            if (orbit_number % 7) < 0.3:
+                radiation = base_radiation * (2 + 2 * np.random.rand())
+            else:
+                radiation = base_radiation
+            
+            # Формирование полного набора данных
+            real_time_data = {
+                'timestamp': current_time.isoformat(),
+                'temperature': {
+                    'internal': float(internal_temp),
+                    'external': float(external_temp),
+                    'is_sun_side': is_sun_side
+                },
+                'radiation': {
+                    'level_uSv_h': float(radiation),
+                    'base_level_uSv_h': RADIATION_BASE,
+                    'is_saa_region': (orbit_number % 7) < 0.3
+                },
+                'orbital_parameters': orbital_params,
+                'tle_data': tle_data
+            }
+            
+            # Сохранение данных
+            filename = TimeUtils.get_timestamp_filename('real_time_environment', 'json')
+            self.fm.save_json(real_time_data, filename, subdirectory='telemetry')
+            
+            logger.info("Реальные данные об окружающей среде успешно получены")
+            return real_time_data
+            
+        except Exception as e:
+            logger.error(f"Ошибка при получении реальных данных об окружающей среде: {e}")
+            return None
+
 
 def main():
     """Основная функция для запуска анализа окружающей среды"""

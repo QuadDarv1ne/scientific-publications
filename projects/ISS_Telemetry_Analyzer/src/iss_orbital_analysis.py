@@ -578,6 +578,54 @@ class ISSTracker:
             return None
 
 
+    def get_real_time_data(self):
+        """
+        Получение реальных данных о положении МКС в реальном времени
+        
+        Returns:
+            dict: Текущие данные о положении МКС
+        """
+        logger.info("Получение реальных данных о положении МКС...")
+        
+        try:
+            # Получение текущего положения
+            position = self.get_current_position()
+            if not position:
+                logger.error("Не удалось получить текущее положение МКС")
+                return None
+            
+            # Получение TLE данных для точных параметров
+            tle_data = self.get_tle_data()
+            if not tle_data:
+                logger.warning("Не удалось получить TLE данные")
+            
+            # Расчет орбитальных параметров
+            orbital_params = self.orbital_params if self.orbital_params else {
+                'altitude_km': 408.0,
+                'orbital_period_min': 92.9,
+                'inclination': 51.64
+            }
+            
+            # Формирование полного набора данных
+            real_time_data = {
+                'position': position,
+                'orbital_parameters': orbital_params,
+                'tle_data': tle_data,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+            # Сохранение данных
+            filename = TimeUtils.get_timestamp_filename('real_time_data', 'json')
+            self.fm.save_json(real_time_data, filename, subdirectory='telemetry')
+            
+            logger.info("Реальные данные успешно получены")
+            return real_time_data
+            
+        except Exception as e:
+            logger.error(f"Ошибка при получении реальных данных: {e}")
+            return None
+
+
 def predict_passes(latitude, longitude, n_passes=5):
     """
     Прогноз видимости МКС для заданной точки

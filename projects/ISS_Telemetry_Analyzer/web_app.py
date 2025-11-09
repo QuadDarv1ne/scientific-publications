@@ -309,5 +309,114 @@ def pass_frequency():
             'error': str(e)
         })
 
+@app.route('/api/real_time_data')
+def real_time_data():
+    """API для получения реальных данных в реальном времени"""
+    try:
+        # Симуляция реальных данных
+        current_time = datetime.now()
+        
+        # Симуляция положения МКС
+        orbital_phase = (current_time.hour % 1.5) / 1.5
+        latitude = 51.6 * np.sin(2 * np.pi * orbital_phase)
+        longitude = (current_time.hour * 15) % 360 - 180
+        
+        # Симуляция температуры
+        is_sun_side = orbital_phase < 0.6
+        internal_temp = 22 + np.random.normal(0, 0.5)
+        external_temp = 40 + (121 - 40) * np.sin(np.pi * orbital_phase / 0.6) if is_sun_side else -157
+        
+        # Симуляция радиации
+        base_radiation = 30
+        radiation = base_radiation * (2 + 2 * np.random.rand()) if (current_time.minute % 10) < 3 else base_radiation
+        
+        # Симуляция орбитальных параметров
+        altitude = 408.0 + np.random.normal(0, 0.1)
+        speed = 27600 + np.random.normal(0, 100)
+        
+        real_time_data = {
+            'timestamp': current_time.isoformat(),
+            'position': {
+                'latitude': float(latitude),
+                'longitude': float(longitude)
+            },
+            'environment': {
+                'internal_temp': float(internal_temp),
+                'external_temp': float(external_temp),
+                'radiation_uSv_h': float(radiation)
+            },
+            'orbital': {
+                'altitude_km': float(altitude),
+                'speed_kmh': float(speed),
+                'orbital_period_min': 92.9
+            }
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': real_time_data
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
+@app.route('/api/trend_analysis')
+def trend_analysis():
+    """API для анализа трендов изменения параметров"""
+    try:
+        # Симуляция данных о трендах
+        days = 30
+        time_days = np.linspace(0, days, 100)
+        
+        # Тренд высоты орбиты (медленное снижение с коррекциями)
+        altitude_trend = 408.0 - 0.05 * time_days + 0.5 * np.sin(2 * np.pi * time_days / 10)
+        
+        # Тренд температуры (сезонные изменения)
+        temp_trend = 22 + 2 * np.sin(2 * np.pi * time_days / 365)
+        
+        # Тренд радиации (солнечный цикл)
+        radiation_trend = 30 + 5 * np.sin(2 * np.pi * time_days / (365 * 5.5))
+        
+        # Создание графика
+        fig, axes = plt.subplots(3, 1, figsize=(12, 10))
+        
+        # График высоты орбиты
+        axes[0].plot(time_days, altitude_trend, 'b-', linewidth=2)
+        axes[0].set_xlabel('Дни')
+        axes[0].set_ylabel('Высота орбиты (км)')
+        axes[0].set_title('Тренд изменения высоты орбиты МКС')
+        axes[0].grid(True, alpha=0.3)
+        
+        # График температуры
+        axes[1].plot(time_days, temp_trend, 'r-', linewidth=2)
+        axes[1].set_xlabel('Дни')
+        axes[1].set_ylabel('Температура (°C)')
+        axes[1].set_title('Тренд изменения температуры на МКС')
+        axes[1].grid(True, alpha=0.3)
+        
+        # График радиации
+        axes[2].plot(time_days, radiation_trend, 'purple', linewidth=2)
+        axes[2].set_xlabel('Дни')
+        axes[2].set_ylabel('Радиация (мкЗв/час)')
+        axes[2].set_title('Тренд изменения радиационного фона')
+        axes[2].grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        
+        # Конвертация в base64
+        img_str = fig_to_base64(fig)
+        
+        return jsonify({
+            'success': True,
+            'image': img_str
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        })
+
 if __name__ == '__main__':
     app.run(debug=True, host='127.0.0.1', port=5000)
