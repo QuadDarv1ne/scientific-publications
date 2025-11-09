@@ -295,13 +295,16 @@ class ISSEnvironmentAnalyzer:
         
         # Отметка пиков SAA
         saa_times = []
+        saa_radiation_values = []
         for i, level in enumerate(radiation):
             if level > RADIATION_BASE * 2:
                 saa_times.append(time_r[i])
+                # Make sure we don't go out of bounds
+                idx = min(int(i), len(radiation) - 1)
+                saa_radiation_values.append(radiation[idx])
         
-        if saa_times:
-            ax2.scatter(saa_times, [radiation[int(t * len(radiation) / duration_hours)] 
-                       for t in saa_times], 
+        if saa_times and saa_radiation_values:
+            ax2.scatter(saa_times, saa_radiation_values, 
                        c='red', s=50, alpha=0.6, zorder=5, label='Пики SAA/вспышки')
         
         ax2.set_xlabel('Время (часы)', fontsize=12, fontweight='bold')
