@@ -72,6 +72,28 @@ footer {
     border-radius: 10px 10px 0 0;
 }
 
+/* Author Information Panel */
+.position-fixed {
+    z-index: 1000;
+}
+
+.card .card-header.bg-primary {
+    background: linear-gradient(135deg, #0062cc, #007bff) !important;
+}
+
+.card a {
+    color: #007bff;
+    text-decoration: none;
+}
+
+.card a:hover {
+    text-decoration: underline;
+}
+
+.card .card-body {
+    font-size: 0.85rem;
+}
+
 /* Адаптивность */
 @media (max-width: 768px) {
     .stat-number {
@@ -84,6 +106,18 @@ footer {
     
     .chart-container {
         min-height: 200px;
+    }
+    
+    /* Adjust author panel for mobile */
+    .position-fixed {
+        position: relative !important;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .position-fixed .card {
+        width: 100% !important;
+        max-width: 100%;
     }
 }
 

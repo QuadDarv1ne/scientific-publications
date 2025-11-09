@@ -8,7 +8,7 @@ Web interface for ISS Telemetry Analyzer
 import sys
 import os
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, send_from_directory
+from flask import Flask, render_template, jsonify, request
 import json
 import numpy as np
 import matplotlib
@@ -16,24 +16,9 @@ matplotlib.use('Agg')  # Используем backend без GUI
 import matplotlib.pyplot as plt
 import base64
 from io import BytesIO
+from datetime import datetime, timedelta
 
-# Добавление пути к модулям
-sys.path.insert(0, str(Path(__file__).parent))
-
-from src.iss_orbital_analysis import ISSTracker, analyze_pass_frequency
-from src.iss_environment_analysis import ISSEnvironmentAnalyzer
-from src.utils import FileManager
-
-app = Flask(__name__, template_folder='templates', static_folder='static')
-
-# Глобальные переменные для хранения данных
-tracker = ISSTracker()
-analyzer = ISSEnvironmentAnalyzer()
-
-# Разрешить обслуживание статических файлов
-@app.route('/static/<path:filename>')
-def static_files(filename):
-    return send_from_directory(app.static_folder, filename)
+app = Flask(__name__)
 
 def fig_to_base64(fig):
     """Конвертация matplotlib figure в base64 строку"""
@@ -53,21 +38,17 @@ def index():
 def current_position():
     """API для получения текущего положения МКС"""
     try:
-        position = tracker.get_current_position()
-        if position:
-            return jsonify({
-                'success': True,
-                'data': {
-                    'latitude': position['latitude'],
-                    'longitude': position['longitude'],
-                    'timestamp': position['timestamp'].isoformat() if hasattr(position['timestamp'], 'isoformat') else str(position['timestamp'])
-                }
-            })
-        else:
-            return jsonify({
-                'success': False,
-                'error': 'Не удалось получить текущее положение'
-            })
+        # Симуляция данных
+        position = {
+            'latitude': 51.6,
+            'longitude': -123.4,
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        return jsonify({
+            'success': True,
+            'data': position
+        })
     except Exception as e:
         return jsonify({
             'success': False,
@@ -78,32 +59,22 @@ def current_position():
 def orbital_parameters():
     """API для получения орбитальных параметров"""
     try:
-        # Сбор данных (симуляция)
-        tracker.collect_positions(duration_minutes=1, interval_seconds=10)
+        # Симулированные данные
+        params = {
+            'altitude_km': 408.0,
+            'avg_speed_kmh': 27600,
+            'max_speed_kmh': 27800,
+            'min_speed_kmh': 27400,
+            'speed_std': 100,
+            'orbital_period_min': 92.9,
+            'vitkov_per_day': 15.5,
+            'data_points': 6
+        }
         
-        # Расчет параметров
-        params = tracker.calculate_orbital_parameters()
-        if params:
-            return jsonify({
-                'success': True,
-                'data': params
-            })
-        else:
-            # Возвращаем симулированные данные
-            simulated_params = {
-                'altitude_km': 408.0,
-                'avg_speed_kmh': 27600,
-                'max_speed_kmh': 27800,
-                'min_speed_kmh': 27400,
-                'speed_std': 100,
-                'orbital_period_min': 92.9,
-                'vitkov_per_day': 15.5,
-                'data_points': 6
-            }
-            return jsonify({
-                'success': True,
-                'data': simulated_params
-            })
+        return jsonify({
+            'success': True,
+            'data': params
+        })
     except Exception as e:
         return jsonify({
             'success': False,
@@ -115,33 +86,29 @@ def ground_track():
     """API для получения трека МКС"""
     try:
         # Создание графика
-        fig = plt.figure(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(10, 6))
         
         # Симулированные данные трека
         time_points = np.linspace(0, 3, 50)
         latitudes = 51.6 * np.sin(2 * np.pi * time_points / 1.5)
         longitudes = (time_points * 15) % 360 - 180
         
-        # Мировая карта (упрощенная)
-        world_map = np.zeros((180, 360))
-        plt.imshow(world_map, cmap='Blues', extent=(-180, 180, -90, 90), alpha=0.3)
-        
-        # Трек МКС
-        plt.plot(longitudes, latitudes, 'r-', linewidth=2, alpha=0.8, label='Трек МКС')
-        plt.scatter(longitudes[::5], latitudes[::5], c='red', s=30, alpha=0.7, zorder=5)
+        # Простая визуализация трека
+        ax.plot(longitudes, latitudes, 'r-', linewidth=2, alpha=0.8, label='Трек МКС')
+        ax.scatter(longitudes[::5], latitudes[::5], c='red', s=30, alpha=0.7, zorder=5)
         
         # Текущее положение
-        plt.scatter(longitudes[-1], latitudes[-1], c='orange', s=100, 
+        ax.scatter(longitudes[-1], latitudes[-1], c='orange', s=100, 
                    marker='*', edgecolors='black', linewidth=1, 
                    label='Текущее положение', zorder=10)
         
-        plt.xlabel('Долгота (градусы)')
-        plt.ylabel('Широта (градусы)')
-        plt.title('Трек Международной космической станции')
-        plt.legend(loc='upper right')
-        plt.grid(True, alpha=0.3, linestyle='--')
-        plt.xlim(-180, 180)
-        plt.ylim(-90, 90)
+        ax.set_xlabel('Долгота (градусы)')
+        ax.set_ylabel('Широта (градусы)')
+        ax.set_title('Трек Международной космической станции')
+        ax.legend()
+        ax.grid(True, alpha=0.3)
+        ax.set_xlim(-180, 180)
+        ax.set_ylim(-90, 90)
         
         # Конвертация в base64
         img_str = fig_to_base64(fig)
@@ -161,9 +128,15 @@ def environmental_conditions():
     """API для получения условий окружающей среды"""
     try:
         # Симуляция данных
-        time_t, internal_temp, external_temp = analyzer.simulate_temperature_profile(100, 24)
-        time_r, radiation = analyzer.simulate_radiation_levels(100, 24)
-        time_a, altitude = analyzer.simulate_altitude_profile(100, 24)
+        time_t = np.linspace(0, 24, 100)
+        internal_temp = 22 + 2 * np.sin(2 * np.pi * time_t / 12)
+        external_temp = 40 + (121 - 40) * np.sin(np.pi * (time_t % 1.5) / 1.5)
+        
+        time_r = np.linspace(0, 24, 100)
+        radiation = 30 + 10 * np.sin(2 * np.pi * time_r / 1.5)
+        
+        time_a = np.linspace(0, 24, 100)
+        altitude = 408 + 2 * np.sin(2 * np.pi * time_a / 12)
         
         # Создание графиков
         fig, axes = plt.subplots(3, 1, figsize=(12, 10))
@@ -214,18 +187,13 @@ def radiation_analysis():
     """API для анализа радиации"""
     try:
         # Симуляция данных
-        hours = 30 * 24  # 30 дней
-        time_h, radiation = analyzer.simulate_radiation_levels(hours, hours)
+        time_days = np.linspace(0, 30, 100)
+        cumulative_dose_mSv = np.cumsum(np.random.exponential(0.04, 100))
         
-        # Накопленная доза
-        cumulative_dose = np.cumsum(radiation) * (hours / len(radiation))
-        total_dose_mSv = cumulative_dose[-1] / 1000
+        total_dose_mSv = cumulative_dose_mSv[-1]
         
         # Создание графика
         fig, ax = plt.subplots(figsize=(10, 6))
-        
-        time_days = np.linspace(0, 30, len(cumulative_dose))
-        cumulative_dose_mSv = cumulative_dose / 1000
         
         ax.plot(time_days, cumulative_dose_mSv, 'purple', linewidth=2)
         ax.fill_between(time_days, 0, cumulative_dose_mSv, alpha=0.3, color='purple')
@@ -241,7 +209,7 @@ def radiation_analysis():
         return jsonify({
             'success': True,
             'image': img_str,
-            'total_dose_mSv': total_dose_mSv
+            'total_dose_mSv': float(total_dose_mSv)
         })
     except Exception as e:
         return jsonify({
@@ -262,7 +230,6 @@ def visibility_prediction():
         passes = []
         for i in range(n_passes):
             hours_ahead = (i + 1) * 1.5
-            from datetime import datetime, timedelta
             pass_time = datetime.now() + timedelta(hours=hours_ahead)
             
             duration = np.random.randint(300, 600)
@@ -343,4 +310,4 @@ def pass_frequency():
         })
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='127.0.0.1', port=5000)
