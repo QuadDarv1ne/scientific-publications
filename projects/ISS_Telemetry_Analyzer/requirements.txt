@@ -1,0 +1,26 @@
+# ISS Telemetry Analyzer - Requirements
+# Python 3.8+
+
+# Core dependencies
+requests
+numpy
+matplotlib
+pandas
+
+# Orbital calculations
+skyfield
+
+# Optional: for enhanced functionality
+scipy
+
+# Development and testing
+pytest
+pytest-cov
+
+# Code quality
+pylint
+black
+
+# Documentation
+sphinx
+sphinx-rtd-theme
