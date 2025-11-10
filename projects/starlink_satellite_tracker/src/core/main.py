@@ -161,6 +161,7 @@ class StarlinkTracker:
             self.logger.info("Earth data loaded successfully")
         except Exception as e:
             self.logger.warning(f"Could not load earth.bsp: {e}")
+            self.logger.info("Continuing with reduced functionality - satellite tracking will still work")
             self.earth = None
         
         # Create data directory if it doesn't exist

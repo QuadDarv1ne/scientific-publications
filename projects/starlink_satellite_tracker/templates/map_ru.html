@@ -1,0 +1,185 @@
+{% extends "base_ru.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Карта спутников в реальном времени</h1>
+        <p class="lead">Интерактивная карта, показывающая текущие позиции спутников Starlink</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Позиции спутников</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="satellite-filter" class="form-label">Фильтр спутников:</label>
+                    <input type="text" class="form-control" id="satellite-filter" placeholder="Введите имя или ID спутника">
+                </div>
+                <div id="satellite-map" style="height: 600px; width: 100%;">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <div>
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                            <p class="mt-2">Загрузка позиций спутников...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Управление картой</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Функции карты</h6>
+                        <ul>
+                            <li><strong>Панорамирование:</strong> Нажмите и перетащите для перемещения карты</li>
+                            <li><strong>Масштабирование:</strong> Прокрутите для увеличения/уменьшения</li>
+                            <li><strong>Маркеры спутников:</strong> Нажмите на маркеры для получения информации о спутнике</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Легенда</h6>
+                        <ul>
+                            <li><span style="color: #007bff;">●</span> Активные спутники Starlink</li>
+                            <li><span style="color: #28a745;">●</span> Спутники на высокой орбите</li>
+                            <li><span style="color: #ffc107;">●</span> Спутники на средней орбите</li>
+                            <li><span style="color: #dc3545;">●</span> Спутники на низкой орбите</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Функция загрузки позиций спутников и отображения на карте
+function loadSatellitePositions(filter = '') {
+    const mapDiv = document.getElementById('satellite-map');
+    
+    // Показываем индикатор загрузки
+    mapDiv.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+            <div>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-2">Загрузка позиций спутников...</p>
+            </div>
+        </div>
+    `;
+    
+    // Получаем данные о спутниках
+    fetch('/api/satellites')
+        .then(response => response.json())
+        .then(data => {
+            if (data.satellites && data.satellites.length > 0) {
+                // Фильтруем спутники при необходимости
+                let satellites = data.satellites;
+                if (filter) {
+                    satellites = satellites.filter(sat => 
+                        sat.name.toLowerCase().includes(filter.toLowerCase()) || 
+                        sat.id.toString().includes(filter)
+                    );
+                }
+                
+                // Отображаем карту с позициями спутников
+                displaySatelliteMap(satellites);
+            } else {
+                mapDiv.innerHTML = `
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                            <p class="mt-2">Нет данных о спутниках</p>
+                        </div>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке позиций спутников:', error);
+            mapDiv.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                        <p class="mt-2">Ошибка при загрузке позиций спутников</p>
+                        <p class="small text-muted">${error.message}</p>
+                    </div>
+                </div>
+            `;
+        });
+}
+
+// Функция отображения позиций спутников на карте
+function displaySatelliteMap(satellites) {
+    const mapDiv = document.getElementById('satellite-map');
+    
+    // На данный момент создаем простую визуализацию
+    // В полной реализации это будет использовать библиотеку карт, такую как Leaflet или Google Maps
+    mapDiv.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center" style="height: 100%; flex-direction: column;">
+            <div class="text-center mb-4">
+                <i class="fas fa-globe-americas fa-3x text-primary mb-3"></i>
+                <h5>Интерактивная карта спутников</h5>
+                <p class="text-muted">В полной реализации здесь будет показана карта мира с позициями спутников</p>
+            </div>
+            
+            <div style="width: 80%; max-width: 600px;">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Пример позиций спутников</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Спутник</th>
+                                        <th>Широта</th>
+                                        <th>Долгота</th>
+                                        <th>Высота</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${satellites.slice(0, 10).map(sat => `
+                                        <tr>
+                                            <td>${sat.name}</td>
+                                            <td>${(Math.random() * 180 - 90).toFixed(2)}°</td>
+                                            <td>${(Math.random() * 360 - 180).toFixed(2)}°</td>
+                                            <td>${(500 + Math.random() * 200).toFixed(0)} км</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Загружаем начальные позиции спутников
+document.addEventListener('DOMContentLoaded', function() {
+    loadSatellitePositions();
+    
+    // Добавляем обработчик события для фильтра
+    document.getElementById('satellite-filter').addEventListener('input', function(e) {
+        loadSatellitePositions(e.target.value);
+    });
+});
+</script>
+{% endblock %}

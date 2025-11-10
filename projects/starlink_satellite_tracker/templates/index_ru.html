@@ -162,6 +162,58 @@
     </div>
 </div>
 
+<!-- Новый раздел для отображения всех спутников -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Все спутники Starlink</h5>
+                <div class="d-flex">
+                    <input type="text" class="form-control form-control-sm me-2" id="satellite-filter" placeholder="Фильтр спутников">
+                    <button class="btn btn-sm btn-outline-primary" id="refresh-satellites-btn">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Название спутника</th>
+                                <th>ID NORAD</th>
+                                <th>Статус</th>
+                                <th>Действия</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-satellites">
+                            <tr>
+                                <td colspan="4" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0">Загрузка списка спутников...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <small class="text-muted">Всего спутников: <span id="total-satellites">-</span></small>
+                    </div>
+                    <div>
+                        <nav aria-label="Навигация по страницам">
+                            <ul class="pagination pagination-sm mb-0" id="pagination">
+                                <!-- Страницы будут добавлены динамически -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 <script>
 // Получение данных о спутниках
 function fetchSatelliteData() {
@@ -302,6 +354,119 @@ function fetchPassesData() {
         });
 }
 
+// Получение всех спутников с пагинацией
+let currentPage = 1;
+const itemsPerPage = 20;
+
+function fetchAllSatellites(page = 1, filter = '') {
+    currentPage = page;
+    const tableBody = document.getElementById('all-satellites');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="4" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-2 mb-0">Загрузка списка спутников...</p>
+            </td>
+        </tr>
+    `;
+    
+    let url = '/api/satellites';
+    if (filter) {
+        url += `?search=${encodeURIComponent(filter)}`;
+    }
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const satellites = data.satellites || [];
+            document.getElementById('total-satellites').textContent = data.total_count || satellites.length;
+            
+            // Фильтрация на стороне клиента если сервер не поддерживает фильтрацию
+            let filteredSatellites = satellites;
+            if (filter) {
+                filteredSatellites = satellites.filter(sat => 
+                    sat.name.toLowerCase().includes(filter.toLowerCase()) || 
+                    (sat.id && sat.id.toString().includes(filter))
+                );
+            }
+            
+            // Пагинация
+            const startIndex = (page - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedSatellites = filteredSatellites.slice(startIndex, endIndex);
+            
+            if (paginatedSatellites.length > 0) {
+                tableBody.innerHTML = '';
+                paginatedSatellites.forEach(satellite => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>${satellite.name}</strong></td>
+                        <td>${satellite.id || 'N/A'}</td>
+                        <td><span class="badge bg-success">Активен</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="showSatelliteDetails('${satellite.name}')">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="trackSatellite('${satellite.name}')">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+                // Обновляем пагинацию
+                updatePagination(filteredSatellites.length, page);
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="4" class="text-center">Спутники не найдены</td></tr>';
+                updatePagination(0, 1);
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при получении списка спутников:', error);
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Ошибка загрузки списка спутников</td></tr>';
+            updatePagination(0, 1);
+        });
+}
+
+// Обновление пагинации
+function updatePagination(totalItems, currentPage) {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+    
+    if (totalPages <= 1) return;
+    
+    // Предыдущая страница
+    const prevItem = document.createElement('li');
+    prevItem.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+    prevItem.innerHTML = `<a class="page-link" href="#" ${currentPage !== 1 ? `onclick="fetchAllSatellites(${currentPage - 1}); return false;"` : ''}>Предыдущая</a>`;
+    pagination.appendChild(prevItem);
+    
+    // Страницы
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+            const pageItem = document.createElement('li');
+            pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            pageItem.innerHTML = `<a class="page-link" href="#" onclick="fetchAllSatellites(${i}); return false;">${i}</a>`;
+            pagination.appendChild(pageItem);
+        } else if (i === currentPage - 3 || i === currentPage + 3) {
+            const ellipsisItem = document.createElement('li');
+            ellipsisItem.className = 'page-item disabled';
+            ellipsisItem.innerHTML = '<span class="page-link">...</span>';
+            pagination.appendChild(ellipsisItem);
+        }
+    }
+    
+    // Следующая страница
+    const nextItem = document.createElement('li');
+    nextItem.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+    nextItem.innerHTML = `<a class="page-link" href="#" ${currentPage !== totalPages ? `onclick="fetchAllSatellites(${currentPage + 1}); return false;"` : ''}>Следующая</a>`;
+    pagination.appendChild(nextItem);
+}
+
 // Поиск спутников
 function searchSatellites(query) {
     if (!query) return;
@@ -347,11 +512,19 @@ function showSatelliteInfo(satelliteName) {
     alert(`Информация о спутнике ${satelliteName} будет отображаться здесь в модальном окне.`);
 }
 
+// Показать детали спутника
+function showSatelliteDetails(satelliteName) {
+    alert(`Детальная информация о спутнике ${satelliteName}:\n\nЭта функция откроет страницу с подробной информацией о спутнике.`);
+}
+
+// Отслеживать спутник
+function trackSatellite(satelliteName) {
+    alert(`Отслеживание спутника ${satelliteName}:\n\nЭта функция откроет страницу отслеживания спутника на карте.`);
+}
+
 // Показать детали пролета
 function showPassDetails(satelliteName) {
     alert(`Детали пролета спутника ${satelliteName}:\n\nЭта функция откроет страницу с подробной информацией о пролете спутника.`);
-    // В реальной реализации это может открыть модальное окно или перенаправить на страницу деталей
-    // window.location.href = `/passes?satellite=${encodeURIComponent(satelliteName)}&details=true`;
 }
 
 // Функция очистки кэша
@@ -364,6 +537,7 @@ document.getElementById('clear-cache-btn').addEventListener('click', function() 
                 // Обновить данные после очистки кэша
                 fetchSatelliteData();
                 fetchPassesData();
+                fetchAllSatellites(currentPage);
             })
             .catch(error => {
                 console.error('Ошибка при очистке кэша:', error);
@@ -383,7 +557,8 @@ document.getElementById('refresh-btn').addEventListener('click', function() {
     setTimeout(() => {
         Promise.all([
             fetchSatelliteData(),
-            fetchPassesData()
+            fetchPassesData(),
+            fetchAllSatellites(currentPage)
         ]).then(() => {
             setTimeout(() => {
                 btn.innerHTML = originalText;
@@ -397,6 +572,22 @@ document.getElementById('refresh-btn').addEventListener('click', function() {
             showToast('Ошибка при обновлении данных', 'error');
         });
     }, 300);
+});
+
+// Функция обновления списка спутников
+document.getElementById('refresh-satellites-btn').addEventListener('click', function() {
+    const btn = this;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    
+    fetchAllSatellites(currentPage, document.getElementById('satellite-filter').value);
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        showToast('Список спутников обновлен!', 'success');
+    }, 500);
 });
 
 // Функция для показа уведомлений
@@ -437,12 +628,19 @@ document.getElementById('satellite-search').addEventListener('keypress', functio
     }
 });
 
+// Обработчик фильтрации спутников
+document.getElementById('satellite-filter').addEventListener('input', function() {
+    const filter = this.value.trim();
+    fetchAllSatellites(1, filter);
+});
+
 // Загрузка начальных данных
 document.addEventListener('DOMContentLoaded', function() {
     // Добавляем небольшую задержку для улучшения производительности
     setTimeout(() => {
         fetchSatelliteData();
         fetchPassesData();
+        fetchAllSatellites(1);
     }, 100);
 });
 </script>

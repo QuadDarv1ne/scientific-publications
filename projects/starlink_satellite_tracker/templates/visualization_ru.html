@@ -1,0 +1,191 @@
+{% extends "base_ru.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Визуализация спутников</h1>
+        <p class="lead">Интерактивная 3D-визуализация орбит спутников Starlink</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Управление визуализацией орбит</h5>
+            </div>
+            <div class="card-body">
+                <form id="visualization-form" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="orbit-hours" class="form-label">Период времени (часы):</label>
+                        <select class="form-select" id="orbit-hours">
+                            <option value="1">1 час</option>
+                            <option value="2" selected>2 часа</option>
+                            <option value="4">4 часа</option>
+                            <option value="8">8 часов</option>
+                            <option value="24">24 часа</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="orbit-satellites" class="form-label">Количество спутников:</label>
+                        <select class="form-select" id="orbit-satellites">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="color-scheme" class="form-label">Цветовая схема:</label>
+                        <select class="form-select" id="color-scheme">
+                            <option value="default" selected>По умолчанию</option>
+                            <option value="rainbow">Радуга</option>
+                            <option value="velocity">По скорости</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-sync-alt"></i> Обновить визуализацию
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Визуализация орбит спутников</h5>
+            </div>
+            <div class="card-body">
+                <div id="orbit-plot" style="height: 600px;">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <div>
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Загрузка...</span>
+                            </div>
+                            <p class="mt-2">Загрузка визуализации орбит...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Информация о визуализации</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Управление</h6>
+                        <ul>
+                            <li><strong>Вращение:</strong> Нажмите и перетащите для вращения 3D-вида</li>
+                            <li><strong>Масштабирование:</strong> Прокрутите для увеличения/уменьшения</li>
+                            <li><strong>Панорамирование:</strong> Нажмите правой кнопкой мыши и перетащите для панорамирования</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Легенда</h6>
+                        <ul>
+                            <li><strong>Линии:</strong> Орбитальные пути спутников</li>
+                            <li><strong>Цвета:</strong> Разные спутники (в зависимости от выбора)</li>
+                            <li><strong>Оси:</strong> Координаты X, Y, Z в километрах</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+// Получаем и отображаем визуализацию орбит
+function loadOrbitVisualization(hours = 2, satellites = 10, colorScheme = 'default') {
+    const plotDiv = document.getElementById('orbit-plot');
+    
+    // Показываем индикатор загрузки
+    plotDiv.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+            <div>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-2">Загрузка визуализации орбит...</p>
+            </div>
+        </div>
+    `;
+    
+    fetch(`/api/visualization/orbits?hours=${hours}&satellites=${satellites}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.plot) {
+                const plotData = JSON.parse(data.plot);
+                
+                // Применяем цветовую схему
+                if (colorScheme === 'rainbow') {
+                    // Применяем радужные цвета
+                    for (let i = 0; i < plotData.data.length; i++) {
+                        plotData.data[i].line.color = `hsl(${(i * 360 / plotData.data.length)}, 70%, 50%)`;
+                    }
+                } else if (colorScheme === 'velocity') {
+                    // Применяем цвета на основе скорости (это требует дополнительных данных)
+                    // На данный момент используем другую схему по умолчанию
+                    for (let i = 0; i < plotData.data.length; i++) {
+                        const intensity = i / plotData.data.length;
+                        plotData.data[i].line.color = `rgb(${Math.floor(255 * intensity)}, ${Math.floor(100 + 155 * (1 - intensity))}, ${Math.floor(200 * (1 - intensity))})`;
+                    }
+                }
+                
+                Plotly.newPlot('orbit-plot', plotData.data, plotData.layout, {responsive: true});
+            } else {
+                plotDiv.innerHTML = `
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                            <p class="mt-2">Нет данных для визуализации</p>
+                        </div>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при загрузке визуализации орбит:', error);
+            plotDiv.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                        <p class="mt-2">Ошибка при загрузке визуализации орбит</p>
+                        <p class="small text-muted">${error.message}</p>
+                    </div>
+                </div>
+            `;
+        });
+}
+
+// Загружаем начальную визуализацию
+document.addEventListener('DOMContentLoaded', function() {
+    loadOrbitVisualization();
+});
+
+// Обрабатываем отправку формы
+document.getElementById('visualization-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const hours = document.getElementById('orbit-hours').value;
+    const satellites = document.getElementById('orbit-satellites').value;
+    const colorScheme = document.getElementById('color-scheme').value;
+    
+    loadOrbitVisualization(hours, satellites, colorScheme);
+});
+</script>
+{% endblock %}
