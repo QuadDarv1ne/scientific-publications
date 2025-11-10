@@ -34,6 +34,9 @@
             padding: 1rem 0;
             border-top: 1px solid #dee2e6;
         }
+        .language-switcher {
+            margin-left: auto;
+        }
     </style>
 </head>
 <body>
@@ -48,8 +51,23 @@
                     <a class="nav-link" href="/"><i class="fas fa-home"></i> Dashboard</a>
                     <a class="nav-link" href="/passes"><i class="fas fa-calendar-alt"></i> Passes</a>
                     <a class="nav-link" href="/coverage"><i class="fas fa-globe-americas"></i> Coverage</a>
+                    <a class="nav-link" href="/map"><i class="fas fa-map-marked-alt"></i> Map</a>
+                    <a class="nav-link" href="/visualization"><i class="fas fa-chart-line"></i> Visualization</a>
+                    <a class="nav-link" href="/statistics"><i class="fas fa-chart-bar"></i> Statistics</a>
                     <a class="nav-link" href="/settings"><i class="fas fa-cog"></i> Settings</a>
                     <a class="nav-link" href="/export"><i class="fas fa-download"></i> Export</a>
+                </div>
+                <!-- Language selector -->
+                <div class="navbar-nav ms-auto">
+                    <div class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-globe me-1"></i> Language
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
+                            <li><a class="dropdown-item" href="#" onclick="switchLanguage('en')">English</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="switchLanguage('ru')">Русский</a></li>
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
@@ -72,5 +90,38 @@
     </footer>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Function to switch language
+        function switchLanguage(lang) {
+            // Save language preference in localStorage
+            localStorage.setItem('preferredLanguage', lang);
+            
+            // Redirect to the same page with language parameter
+            const currentPath = window.location.pathname;
+            const searchParams = new URLSearchParams(window.location.search);
+            searchParams.set('lang', lang);
+            window.location.href = currentPath + '?' + searchParams.toString();
+        }
+        
+        // Set page language according to preferences
+        document.addEventListener('DOMContentLoaded', function() {
+            const preferredLanguage = localStorage.getItem('preferredLanguage') || 'en';
+            document.documentElement.lang = preferredLanguage;
+            
+            // Update dropdown text according to current language
+            const languageText = preferredLanguage === 'ru' ? 'Русский' : 'English';
+            document.querySelector('#languageDropdown').innerHTML = '<i class="fas fa-globe me-1"></i> ' + languageText;
+            
+            // Update all navigation links to include language parameter
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') && !link.getAttribute('href').startsWith('#')) {
+                    const url = new URL(link.href, window.location.origin);
+                    url.searchParams.set('lang', preferredLanguage);
+                    link.href = url.toString();
+                }
+            });
+        });
+    </script>
 </body>
 </html>

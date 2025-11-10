@@ -326,7 +326,9 @@ class StarlinkTracker:
                         loaded_count += 1
                     except Exception as e:
                         self.logger.warning(f"Failed to load satellite {name}: {e}")
+                        # Continue loading other satellites even if one fails
                         error_count += 1
+                        continue
             
             self.logger.info(f"Loaded {loaded_count} satellites, {error_count} errors")
             return self.satellites
