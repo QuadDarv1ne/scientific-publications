@@ -85,39 +85,81 @@ except ImportError:
     
     tracker_instance = MinimalTracker()
 
-# Simple in-memory cache for API responses
+# Multi-level cache for API responses
+# Uses Redis for persistent caching and in-memory for fast access
 class APICache:
     def __init__(self, default_ttl=300):  # 5 minutes default TTL
         self.cache = {}
         self.timestamps = {}
         self.default_ttl = default_ttl
         self.logger = logging.getLogger(__name__)
+        
+        # Try to initialize Redis cache
+        try:
+            import redis
+            self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+            self.redis_client.ping()  # Test connection
+            self.use_redis = True
+            self.logger.info("Redis cache initialized successfully")
+        except:
+            self.redis_client = None
+            self.use_redis = False
+            self.logger.warning("Redis not available, using in-memory cache only")
     
     def get(self, key):
-        """Retrieve cached data if not expired."""
+        """Retrieve cached data from Redis or in-memory cache."""
+        # Try to get from Redis first (if available)
+        if self.use_redis:
+            try:
+                cached_data = self.redis_client.get(key)
+                if cached_data:
+                    self.logger.debug(f"Redis cache hit for key: {key}")
+                    return json.loads(cached_data)
+            except Exception as e:
+                self.logger.warning(f"Error retrieving from Redis cache: {e}")
+        
+        # Fall back to in-memory cache
         if key in self.cache:
             timestamp = self.timestamps[key]
             if (datetime.now() - timestamp).total_seconds() < self.default_ttl:
-                self.logger.debug(f"Cache hit for key: {key}")
+                self.logger.debug(f"In-memory cache hit for key: {key}")
                 return self.cache[key]
             else:
                 # Remove expired entry
                 del self.cache[key]
                 del self.timestamps[key]
-                self.logger.debug(f"Cache expired for key: {key}")
+                self.logger.debug(f"In-memory cache expired for key: {key}")
         return None
     
     def set(self, key, value):
-        """Store data in cache."""
+        """Store data in both Redis and in-memory cache."""
+        # Store in Redis (if available)
+        if self.use_redis:
+            try:
+                self.redis_client.setex(key, int(self.default_ttl), json.dumps(value))
+                self.logger.debug(f"Cached data in Redis for key: {key}")
+            except Exception as e:
+                self.logger.warning(f"Error storing in Redis cache: {e}")
+        
+        # Store in in-memory cache
         self.cache[key] = value
         self.timestamps[key] = datetime.now()
-        self.logger.debug(f"Cached data for key: {key}")
+        self.logger.debug(f"Cached data in memory for key: {key}")
     
     def clear(self):
-        """Clear all cached data."""
+        """Clear all cached data from both Redis and in-memory cache."""
+        # Clear Redis cache (if available)
+        if self.use_redis:
+            try:
+                self.redis_client.flushdb()
+                self.logger.debug("Redis cache cleared")
+            except Exception as e:
+                self.logger.warning(f"Error clearing Redis cache: {e}")
+        
+        # Clear in-memory cache
         self.cache.clear()
         self.timestamps.clear()
-        self.logger.debug("API cache cleared")
+        self.logger.debug("In-memory cache cleared")
 
 # Initialize cache
 api_cache = APICache()

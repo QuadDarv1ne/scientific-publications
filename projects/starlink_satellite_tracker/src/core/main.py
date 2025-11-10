@@ -5,6 +5,7 @@ Real-time satellite tracking and visualization system for SpaceX Starlink conste
 """
 
 import argparse
+import json
 import logging
 import math
 import os
@@ -32,38 +33,90 @@ from utils.config_manager import get_config
 
 
 class TLECache:
-    """Cache for TLE data with expiration."""
+    """Cache for TLE data with expiration and file-based persistence."""
     
-    def __init__(self, max_age_hours: int = 24):
+    def __init__(self, max_age_hours: int = 24, cache_dir: str = "data/tle_cache/"):
         self.cache = {}
         self.timestamps = {}
         self.max_age = timedelta(hours=max_age_hours)
+        self.cache_dir = cache_dir
         self.logger = logging.getLogger(__name__)
+        
+        # Ensure cache directory exists
+        os.makedirs(cache_dir, exist_ok=True)
+    
+    def _get_cache_filename(self, url: str) -> str:
+        """Generate a safe filename for cached TLE data."""
+        # Create a hash of the URL for the filename
+        url_hash = hashlib.md5(url.encode()).hexdigest()
+        return os.path.join(self.cache_dir, f"tle_cache_{url_hash}.txt")
     
     def get(self, url: str) -> Optional[str]:
-        """Retrieve cached TLE data if not expired."""
+        """Retrieve cached TLE data from memory or file if not expired."""
+        # First check in-memory cache
         if url in self.cache:
             age = datetime.now() - self.timestamps[url]
             if age < self.max_age:
-                self.logger.debug(f"TLE cache hit for {url}, age: {age}")
+                self.logger.debug(f"TLE in-memory cache hit for {url}, age: {age}")
                 return self.cache[url]
             else:
-                self.logger.debug(f"TLE cache expired for {url}, age: {age}")
+                self.logger.debug(f"TLE in-memory cache expired for {url}, age: {age}")
                 del self.cache[url]
                 del self.timestamps[url]
+        
+        # Check file-based cache
+        cache_file = self._get_cache_filename(url)
+        if os.path.exists(cache_file):
+            try:
+                file_time = datetime.fromtimestamp(os.path.getmtime(cache_file))
+                age = datetime.now() - file_time
+                if age < self.max_age:
+                    with open(cache_file, 'r', encoding='utf-8') as f:
+                        data = f.read()
+                    # Store in memory cache for faster access next time
+                    self.cache[url] = data
+                    self.timestamps[url] = file_time
+                    self.logger.debug(f"TLE file cache hit for {url}, age: {age}")
+                    return data
+                else:
+                    self.logger.debug(f"TLE file cache expired for {url}, age: {age}")
+                    os.remove(cache_file)  # Remove expired cache file
+            except Exception as e:
+                self.logger.warning(f"Error reading TLE cache file for {url}: {e}")
+        
         return None
     
     def put(self, url: str, data: str) -> None:
-        """Store TLE data in cache."""
+        """Store TLE data in both memory and file cache."""
+        # Store in memory cache
         self.cache[url] = data
         self.timestamps[url] = datetime.now()
-        self.logger.debug(f"TLE data cached for {url}")
+        self.logger.debug(f"TLE data cached in memory for {url}")
+        
+        # Store in file cache
+        try:
+            cache_file = self._get_cache_filename(url)
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                f.write(data)
+            self.logger.debug(f"TLE data cached in file for {url}")
+        except Exception as e:
+            self.logger.warning(f"Error writing TLE cache file for {url}: {e}")
     
     def clear(self) -> None:
-        """Clear all cached TLE data."""
+        """Clear all cached TLE data from both memory and files."""
+        # Clear memory cache
         self.cache.clear()
         self.timestamps.clear()
-        self.logger.debug("TLE cache cleared")
+        self.logger.debug("TLE memory cache cleared")
+        
+        # Clear file cache
+        try:
+            for filename in os.listdir(self.cache_dir):
+                if filename.startswith("tle_cache_") and filename.endswith(".txt"):
+                    os.remove(os.path.join(self.cache_dir, filename))
+            self.logger.debug("TLE file cache cleared")
+        except Exception as e:
+            self.logger.warning(f"Error clearing TLE file cache: {e}")
 
 
 class StarlinkTracker:
@@ -97,18 +150,61 @@ class StarlinkTracker:
         self.scheduler = None
         
         # Initialize TLE cache
-        self.tle_cache = TLECache(max_age_hours=6)
+        self.tle_cache = TLECache(max_age_hours=6, cache_dir=self.config['data_sources']['tle_cache_path'])
         
         # Cache for prediction results
         self.prediction_cache = {}
         self.prediction_cache_timestamps = {}
         self.prediction_cache_max_age = timedelta(minutes=15)
+        
+        # File-based cache for prediction results
+        self.prediction_cache_dir = os.path.join(self.config['data_sources']['tle_cache_path'], 'predictions')
+        os.makedirs(self.prediction_cache_dir, exist_ok=True)
     
     def _generate_prediction_cache_key(self, latitude: float, longitude: float, 
                                      hours_ahead: int, min_elevation: float) -> str:
         """Generate a cache key for prediction results."""
         key_data = f"{latitude}_{longitude}_{hours_ahead}_{min_elevation}"
         return hashlib.md5(key_data.encode()).hexdigest()
+    
+    def _get_prediction_cache_filename(self, cache_key: str) -> str:
+        """Generate a filename for cached prediction results."""
+        return os.path.join(self.prediction_cache_dir, f"prediction_{cache_key}.json")
+    
+    def _load_prediction_from_file(self, cache_key: str) -> Optional[List[Dict[str, Any]]]:
+        """Load prediction results from file cache."""
+        cache_file = self._get_prediction_cache_filename(cache_key)
+        if os.path.exists(cache_file):
+            try:
+                file_time = datetime.fromtimestamp(os.path.getmtime(cache_file))
+                age = datetime.now() - file_time
+                if age < self.prediction_cache_max_age:
+                    with open(cache_file, 'r') as f:
+                        data = json.load(f)
+                    # Convert time strings back to datetime objects
+                    for item in data:
+                        item['time'] = datetime.fromisoformat(item['time'])
+                    return data
+                else:
+                    os.remove(cache_file)  # Remove expired cache file
+            except Exception as e:
+                self.logger.warning(f"Error reading prediction cache file: {e}")
+        return None
+    
+    def _save_prediction_to_file(self, cache_key: str, data: List[Dict[str, Any]]) -> None:
+        """Save prediction results to file cache."""
+        try:
+            cache_file = self._get_prediction_cache_filename(cache_key)
+            # Convert datetime objects to strings for JSON serialization
+            serializable_data = []
+            for item in data:
+                item_copy = item.copy()
+                item_copy['time'] = item_copy['time'].isoformat()
+                serializable_data.append(item_copy)
+            with open(cache_file, 'w') as f:
+                json.dump(serializable_data, f)
+        except Exception as e:
+            self.logger.warning(f"Error writing prediction cache file: {e}")
     
     def update_tle_data(self, force=False) -> List[EarthSatellite]:
         """Download latest TLE data from Celestrak."""
@@ -249,16 +345,25 @@ class StarlinkTracker:
             # Generate cache key
             cache_key = self._generate_prediction_cache_key(latitude, longitude, hours_ahead, min_elevation)
             
-            # Check if we have cached results
+            # Check if we have cached results in memory
             if cache_key in self.prediction_cache:
                 cache_age = datetime.now() - self.prediction_cache_timestamps[cache_key]
                 if cache_age < self.prediction_cache_max_age:
-                    self.logger.info(f"Using cached prediction results, age: {cache_age}")
+                    self.logger.info(f"Using in-memory cached prediction results, age: {cache_age}")
                     return self.prediction_cache[cache_key]
                 else:
                     # Remove expired cache entry
                     del self.prediction_cache[cache_key]
                     del self.prediction_cache_timestamps[cache_key]
+            
+            # Check file-based cache
+            file_cached_data = self._load_prediction_from_file(cache_key)
+            if file_cached_data:
+                self.logger.info(f"Using file-based cached prediction results")
+                # Store in memory cache for faster access next time
+                self.prediction_cache[cache_key] = file_cached_data
+                self.prediction_cache_timestamps[cache_key] = datetime.now() - timedelta(minutes=5)  # Assume it's 5 minutes old
+                return file_cached_data
             
             if not self.satellites:
                 raise ValueError("No satellites loaded. Call update_tle_data() first.")
@@ -325,6 +430,9 @@ class StarlinkTracker:
             # Cache the results
             self.prediction_cache[cache_key] = passes
             self.prediction_cache_timestamps[cache_key] = datetime.now()
+            
+            # Save to file cache
+            self._save_prediction_to_file(cache_key, passes)
             
             self.logger.info(f"Predicted {len(passes)} passes for {len(self.satellites)} satellites")
             return passes
