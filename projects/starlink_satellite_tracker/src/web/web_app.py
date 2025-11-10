@@ -112,10 +112,14 @@ class APICache:
             self.redis_client.ping()  # Test connection
             self.use_redis = True
             self.logger.info("Redis cache initialized successfully")
-        except:
+        except ImportError:
             self.redis_client = None
             self.use_redis = False
-            self.logger.warning("Redis not available, using in-memory cache only")
+            self.logger.warning("Redis library not installed. Install with: pip install redis")
+        except Exception as e:
+            self.redis_client = None
+            self.use_redis = False
+            self.logger.warning(f"Redis not available, using in-memory cache only. Error: {e}")
     
     def get(self, key):
         """Retrieve cached data from Redis or in-memory cache."""
