@@ -105,7 +105,78 @@ LANGUAGES = {
         'error_fetching_metrics': 'Error fetching current metrics',
         'no_data_time_range': 'No data available for the selected time range',
         'error_fetching_chart': 'Error fetching chart data',
-        'site_name': 'Starlink Performance Monitor'
+        'site_name': 'Starlink Performance Monitor',
+        'frequency': 'Frequency',
+        'performance_metrics': 'Performance Metrics',
+        'save_settings': 'Save Settings',
+        'reset_defaults': 'Reset to Defaults',
+        'general': 'General',
+        'monitoring': 'Monitoring',
+        'notifications': 'Notifications',
+        'database': 'Database',
+        'web_interface': 'Web Interface',
+        'weather_integration': 'Weather Integration',
+        'user_management': 'User Management',
+        'general_settings': 'General Settings',
+        'timezone': 'Timezone',
+        'language': 'Language',
+        'auto_update': 'Automatically check for updates',
+        'monitoring_settings': 'Monitoring Settings',
+        'monitoring_interval': 'Monitoring Interval (minutes)',
+        'speed_test_config': 'Speed Test Configuration',
+        'enable_speed_tests': 'Enable Speed Tests',
+        'use_specific_servers': 'Use Specific Speed Test Servers',
+        'server_ids': 'Server IDs (comma separated)',
+        'ping_test_config': 'Ping Test Configuration',
+        'enable_ping_tests': 'Enable Ping Tests',
+        'server_name': 'Server Name',
+        'ip_address': 'IP Address',
+        'add_server': 'Add Server',
+        'notification_settings': 'Notification Settings',
+        'telegram_notifications': 'Telegram Notifications',
+        'enable_telegram': 'Enable Telegram Notifications',
+        'bot_token': 'Bot Token',
+        'chat_id': 'Chat ID',
+        'download_threshold': 'Download Threshold (Mbps)',
+        'ping_threshold': 'Ping Threshold (ms)',
+        'email_notifications': 'Email Notifications',
+        'enable_email': 'Enable Email Notifications',
+        'smtp_server': 'SMTP Server',
+        'port': 'Port',
+        'database_settings': 'Database Settings',
+        'database_type': 'Database Type',
+        'host': 'Host',
+        'database_name': 'Database Name',
+        'web_interface_settings': 'Web Interface Settings',
+        'authentication': 'Authentication',
+        'enable_authentication': 'Enable Authentication',
+        'manage_users': 'Manage Users',
+        'enable_debug_mode': 'Enable Debug Mode',
+        'api_key': 'API Key',
+        'latitude': 'Latitude',
+        'longitude': 'Longitude',
+        'weather_parameters': 'Weather Parameters',
+        'temperature': 'Temperature',
+        'precipitation': 'Precipitation',
+        'wind_speed': 'Wind Speed',
+        'cloud_cover': 'Cloud Cover',
+        'role': 'Role',
+        'last_login': 'Last Login',
+        'actions': 'Actions',
+        'administrator': 'Administrator',
+        'edit': 'Edit',
+        'delete': 'Delete',
+        'add_user': 'Add User',
+        'add_new_user': 'Add New User',
+        'enter_username': 'Enter username',
+        'enter_password': 'Enter password',
+        'user': 'User',
+        'cancel': 'Cancel',
+        'reset_confirmation': 'Are you sure you want to reset all settings to their default values? This action cannot be undone.',
+        'confirm_reset': 'Yes, I want to reset all settings',
+        'settings_saved': 'Settings saved successfully!',
+        'settings_reset': 'Settings reset to defaults.',
+        'enable_weather_integration': 'Enable Weather Integration'
     },
     'ru': {
         'dashboard': 'Панель управления',
@@ -164,14 +235,85 @@ LANGUAGES = {
         'error_fetching_metrics': 'Ошибка получения текущих метрик',
         'no_data_time_range': 'Нет данных для выбранного временного диапазона',
         'error_fetching_chart': 'Ошибка получения данных диаграммы',
-        'site_name': 'Монитор производительности Starlink'
+        'site_name': 'Монитор производительности Starlink',
+        'frequency': 'Частота',
+        'performance_metrics': 'Метрики производительности',
+        'save_settings': 'Сохранить настройки',
+        'reset_defaults': 'Сбросить к значениям по умолчанию',
+        'general': 'Общие',
+        'monitoring': 'Мониторинг',
+        'notifications': 'Уведомления',
+        'database': 'База данных',
+        'web_interface': 'Веб-интерфейс',
+        'weather_integration': 'Интеграция погоды',
+        'user_management': 'Управление пользователями',
+        'general_settings': 'Общие настройки',
+        'timezone': 'Часовой пояс',
+        'language': 'Язык',
+        'auto_update': 'Автоматически проверять обновления',
+        'monitoring_settings': 'Настройки мониторинга',
+        'monitoring_interval': 'Интервал мониторинга (минуты)',
+        'speed_test_config': 'Конфигурация теста скорости',
+        'enable_speed_tests': 'Включить тесты скорости',
+        'use_specific_servers': 'Использовать определенные серверы тестирования скорости',
+        'server_ids': 'ID серверов (через запятую)',
+        'ping_test_config': 'Конфигурация теста пинга',
+        'enable_ping_tests': 'Включить тесты пинга',
+        'server_name': 'Имя сервера',
+        'ip_address': 'IP адрес',
+        'add_server': 'Добавить сервер',
+        'notification_settings': 'Настройки уведомлений',
+        'telegram_notifications': 'Уведомления Telegram',
+        'enable_telegram': 'Включить уведомления Telegram',
+        'bot_token': 'Токен бота',
+        'chat_id': 'ID чата',
+        'download_threshold': 'Порог скорости загрузки (Мбит/с)',
+        'ping_threshold': 'Порог пинга (мс)',
+        'email_notifications': 'Уведомления по электронной почте',
+        'enable_email': 'Включить уведомления по электронной почте',
+        'smtp_server': 'SMTP сервер',
+        'port': 'Порт',
+        'database_settings': 'Настройки базы данных',
+        'database_type': 'Тип базы данных',
+        'host': 'Хост',
+        'database_name': 'Имя базы данных',
+        'web_interface_settings': 'Настройки веб-интерфейса',
+        'authentication': 'Аутентификация',
+        'enable_authentication': 'Включить аутентификацию',
+        'manage_users': 'Управление пользователями',
+        'enable_debug_mode': 'Включить режим отладки',
+        'api_key': 'API ключ',
+        'latitude': 'Широта',
+        'longitude': 'Долгота',
+        'weather_parameters': 'Параметры погоды',
+        'temperature': 'Температура',
+        'precipitation': 'Осадки',
+        'wind_speed': 'Скорость ветра',
+        'cloud_cover': 'Облачность',
+        'role': 'Роль',
+        'last_login': 'Последний вход',
+        'actions': 'Действия',
+        'administrator': 'Администратор',
+        'edit': 'Редактировать',
+        'delete': 'Удалить',
+        'add_user': 'Добавить пользователя',
+        'add_new_user': 'Добавить нового пользователя',
+        'enter_username': 'Введите имя пользователя',
+        'enter_password': 'Введите пароль',
+        'user': 'Пользователь',
+        'cancel': 'Отмена',
+        'reset_confirmation': 'Вы уверены, что хотите сбросить все настройки к значениям по умолчанию? Это действие нельзя отменить.',
+        'confirm_reset': 'Да, я хочу сбросить все настройки',
+        'settings_saved': 'Настройки успешно сохранены!',
+        'settings_reset': 'Настройки сброшены к значениям по умолчанию.',
+        'enable_weather_integration': 'Включить интеграцию погоды'
     }
 }
 
 # Create Flask app with template folder specified
 template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=template_dir)
-socketio = SocketIO(app, cors_allowed_origins="*")
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')  # Use threading instead of eventlet
 
 # Add secret key for sessions
 app.secret_key = os.urandom(24)
@@ -474,15 +616,22 @@ def handle_metrics_request():
     except Exception as e:
         logger.error(f"Error handling metrics request: {e}")
 
-@app.before_first_request
+
+# Global variable to track if realtime updates have been started
+_realtime_updates_started = False
+
+@app.before_request
 def start_realtime_updates():
     """Start real-time updates when the first request is made."""
-    try:
-        config_path = app.config.get('CONFIG_PATH', 'config.json')
-        start_realtime_updater(config_path)
-        logger.info("Real-time updates started")
-    except Exception as e:
-        logger.error(f"Failed to start real-time updates: {e}")
+    global _realtime_updates_started
+    if not _realtime_updates_started:
+        try:
+            config_path = app.config.get('CONFIG_PATH', 'config.json')
+            start_realtime_updater(config_path)
+            logger.info("Real-time updates started")
+            _realtime_updates_started = True
+        except Exception as e:
+            logger.error(f"Failed to start real-time updates: {e}")
 
 if __name__ == "__main__":
     main()

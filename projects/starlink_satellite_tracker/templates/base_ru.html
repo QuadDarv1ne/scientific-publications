@@ -93,8 +93,11 @@
             // Сохраняем предпочтение языка в localStorage
             localStorage.setItem('preferredLanguage', lang);
             
-            // Перезагружаем страницу для применения изменений
-            location.reload();
+            // Перенаправляем на ту же страницу с параметром языка
+            const currentPath = window.location.pathname;
+            const searchParams = new URLSearchParams(window.location.search);
+            searchParams.set('lang', lang);
+            window.location.href = currentPath + '?' + searchParams.toString();
         }
         
         // Устанавливаем язык страницы в соответствии с предпочтениями
@@ -105,6 +108,16 @@
             // Обновляем текст в выпадающем списке в соответствии с текущим языком
             const languageText = preferredLanguage === 'ru' ? 'Русский' : 'English';
             document.querySelector('#languageDropdown').innerHTML = '<i class="fas fa-globe"></i> ' + languageText;
+            
+            // Обновляем все ссылки навигации, чтобы включить параметр языка
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') && !link.getAttribute('href').startsWith('#')) {
+                    const url = new URL(link.href, window.location.origin);
+                    url.searchParams.set('lang', preferredLanguage);
+                    link.href = url.toString();
+                }
+            });
         });
     </script>
 </body>

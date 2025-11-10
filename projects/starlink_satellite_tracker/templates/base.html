@@ -93,8 +93,11 @@
             // Set language preference in localStorage
             localStorage.setItem('preferredLanguage', lang);
             
-            // Reload the page to apply language changes
-            location.reload();
+            // Redirect to the same page with language parameter
+            const currentPath = window.location.pathname;
+            const searchParams = new URLSearchParams(window.location.search);
+            searchParams.set('lang', lang);
+            window.location.href = currentPath + '?' + searchParams.toString();
         }
         
         // Set the page language based on preference
@@ -105,6 +108,16 @@
             // Update dropdown text based on current language
             const languageText = preferredLanguage === 'ru' ? 'Русский' : 'English';
             document.querySelector('#languageDropdown').innerHTML = '<i class="fas fa-globe"></i> ' + languageText;
+            
+            // Update all navigation links to include language parameter
+            const navLinks = document.querySelectorAll('.nav-link');
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') && !link.getAttribute('href').startsWith('#')) {
+                    const url = new URL(link.href, window.location.origin);
+                    url.searchParams.set('lang', preferredLanguage);
+                    link.href = url.toString();
+                }
+            });
         });
     </script>
 </body>

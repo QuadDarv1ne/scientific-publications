@@ -1,0 +1,125 @@
+{% extends "base_ru.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Экспорт данных</h1>
+        <p class="lead">Экспорт данных о спутниках в различных форматах для анализа</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Экспорт данных о спутниках</h5>
+            </div>
+            <div class="card-body">
+                <form id="export-form">
+                    <div class="mb-3">
+                        <label class="form-label">Данные для экспорта</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include-tle" checked>
+                            <label class="form-check-label" for="include-tle">Включить данные TLE</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include-predictions" checked>
+                            <label class="form-check-label" for="include-predictions">Включить прогнозы</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="export-format" class="form-label">Формат экспорта</label>
+                        <select class="form-select" id="export-format">
+                            <option value="json" selected>JSON</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date-range" class="form-label">Диапазон дат</label>
+                        <select class="form-select" id="date-range">
+                            <option value="all" selected>Все доступные данные</option>
+                            <option value="today">Сегодня</option>
+                            <option value="week">Последние 7 дней</option>
+                            <option value="month">Последние 30 дней</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Экспортировать данные
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">История экспорта</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Файл</th>
+                                <th>Формат</th>
+                                <th>Дата</th>
+                                <th>Размер</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4" class="text-center">История экспорта недоступна</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-trash"></i> Очистить историю
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Доступ к API</h5>
+            </div>
+            <div class="card-body">
+                <p>Программный доступ к данным о спутниках через наш RESTful API:</p>
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">Конечные точки API</h6>
+                    <ul class="mb-0">
+                        <li><code>GET /api/satellites</code> - Получить текущие позиции спутников</li>
+                        <li><code>GET /api/passes?lat=:lat&lon=:lon&hours=:hours</code> - Получить прогнозируемые пролеты</li>
+                        <li><code>GET /api/coverage</code> - Получить данные о глобальном покрытии</li>
+                        <li><code>GET /api/export/json</code> - Экспорт данных в формате JSON</li>
+                        <li><code>GET /api/export/csv</code> - Экспорт данных в формате CSV</li>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-outline-primary">
+                    <i class="fas fa-book"></i> Просмотр полной документации API
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Обработка отправки формы экспорта
+document.getElementById('export-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const format = document.getElementById('export-format').value;
+    
+    // В реальной реализации это запустило бы фактический экспорт
+    alert(`Экспорт данных в формате ${format.toUpperCase()}. В реальной реализации это загрузило бы файл.`);
+    
+    // Пример того, как запустить фактическую загрузку:
+    // window.location.href = `/api/export/${format}`;
+});
+</script>
+{% endblock %}

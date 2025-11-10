@@ -164,10 +164,46 @@ if TRACKER_AVAILABLE:
     except Exception as e:
         app.logger.warning(f"Could not start scheduler: {e}")
 
+def get_template_name(base_name, language='en'):
+    """Get template name based on language preference."""
+    if language == 'ru':
+        return f"{base_name}_ru.html"
+    return f"{base_name}.html"
+
 @app.route('/')
 def index():
     """Main dashboard showing current satellite positions."""
-    return render_template('index.html')
+    language = request.args.get('lang', 'en')
+    template = get_template_name('index', language)
+    return render_template(template)
+
+@app.route('/passes')
+def passes():
+    """Page showing upcoming satellite passes."""
+    language = request.args.get('lang', 'en')
+    template = get_template_name('passes', language)
+    return render_template(template)
+
+@app.route('/coverage')
+def coverage():
+    """Page showing global Starlink coverage."""
+    language = request.args.get('lang', 'en')
+    template = get_template_name('coverage', language)
+    return render_template(template)
+
+@app.route('/settings')
+def settings():
+    """Page for configuring observer location and notification settings."""
+    language = request.args.get('lang', 'en')
+    template = get_template_name('settings', language)
+    return render_template(template)
+
+@app.route('/export')
+def export():
+    """Page for exporting satellite data."""
+    language = request.args.get('lang', 'en')
+    template = get_template_name('export', language)
+    return render_template(template)
 
 @app.route('/api/satellites')
 @handle_api_errors
@@ -201,11 +237,6 @@ def api_satellites():
             'updated': datetime.now().isoformat(),
             'error': 'Failed to load satellite data'
         }), 500
-
-@app.route('/passes')
-def passes():
-    """Page showing upcoming satellite passes."""
-    return render_template('passes.html')
 
 @app.route('/api/passes')
 @handle_api_errors
@@ -260,11 +291,6 @@ def api_passes():
             'count': 0,
             'error': 'Failed to predict satellite passes'
         }), 500
-
-@app.route('/coverage')
-def coverage():
-    """Page showing global Starlink coverage."""
-    return render_template('coverage.html')
 
 @app.route('/api/coverage')
 @handle_api_errors
@@ -325,16 +351,6 @@ def api_coverage():
             'global_coverage': 0,
             'error': 'Failed to generate coverage data'
         }), 500
-
-@app.route('/settings')
-def settings():
-    """Page for configuring observer location and notification settings."""
-    return render_template('settings.html')
-
-@app.route('/export')
-def export():
-    """Page for exporting satellite data."""
-    return render_template('export.html')
 
 @app.route('/api/export/<format>')
 @handle_api_errors

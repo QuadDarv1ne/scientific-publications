@@ -2,26 +2,26 @@
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Enhanced Dashboard</h1>
+    <h1 class="h2">{{ t.dashboard }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
-                <i class="fas fa-sync-alt"></i> Refresh
+                <i class="fas fa-sync-alt"></i> {{ t.refresh }}
             </button>
             <button type="button" class="btn btn-sm btn-outline-primary" id="autoRefreshBtn" data-active="true">
-                <i class="fas fa-pause"></i> Auto Refresh
+                <i class="fas fa-pause"></i> {{ t.auto_refresh }}
             </button>
         </div>
         <div class="dropdown">
             <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown" data-bs-toggle="dropdown">
-                Last 24 Hours
+                {{ t.last_24_hours }}
             </button>
             <ul class="dropdown-menu" id="timeRangeMenu">
-                <li><a class="dropdown-item" href="#" data-hours="1">Last 1 Hour</a></li>
-                <li><a class="dropdown-item" href="#" data-hours="6">Last 6 Hours</a></li>
-                <li><a class="dropdown-item" href="#" data-hours="12">Last 12 Hours</a></li>
-                <li><a class="dropdown-item active" href="#" data-hours="24">Last 24 Hours</a></li>
-                <li><a class="dropdown-item" href="#" data-hours="168">Last 7 Days</a></li>
+                <li><a class="dropdown-item" href="#" data-hours="1">{{ t.last_1_hour }}</a></li>
+                <li><a class="dropdown-item" href="#" data-hours="6">{{ t.last_6_hours }}</a></li>
+                <li><a class="dropdown-item" href="#" data-hours="12">{{ t.last_12_hours }}</a></li>
+                <li><a class="dropdown-item active" href="#" data-hours="24">{{ t.last_24_hours }}</a></li>
+                <li><a class="dropdown-item" href="#" data-hours="168">{{ t.last_7_days }}</a></li>
             </ul>
         </div>
     </div>
@@ -32,7 +32,7 @@
     <div class="col-12">
         <div class="alert alert-info d-flex align-items-center" role="alert" id="statusIndicator">
             <i class="fas fa-info-circle me-2"></i>
-            <div id="statusMessage">Connecting to real-time data stream...</div>
+            <div id="statusMessage">{{ t.connecting_data_stream }}</div>
         </div>
     </div>
 </div>
@@ -42,7 +42,7 @@
     <div class="col-md-3">
         <div class="card metric-card text-white bg-primary">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-download"></i> Download Speed</h5>
+                <h5 class="card-title"><i class="fas fa-download"></i> {{ t.download_speed }}</h5>
                 <h2 class="card-text" id="downloadSpeed">-- Mbps</h2>
                 <small>Last updated: <span id="downloadTime">--</span></small>
                 <div class="progress mt-2" style="height: 5px;">
@@ -54,7 +54,7 @@
     <div class="col-md-3">
         <div class="card metric-card text-white bg-success">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-upload"></i> Upload Speed</h5>
+                <h5 class="card-title"><i class="fas fa-upload"></i> {{ t.upload_speed }}</h5>
                 <h2 class="card-text" id="uploadSpeed">-- Mbps</h2>
                 <small>Last updated: <span id="uploadTime">--</span></small>
                 <div class="progress mt-2" style="height: 5px;">
@@ -66,7 +66,7 @@
     <div class="col-md-3">
         <div class="card metric-card text-white bg-info">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-stopwatch"></i> Ping</h5>
+                <h5 class="card-title"><i class="fas fa-stopwatch"></i> {{ t.ping }}</h5>
                 <h2 class="card-text" id="pingTime">-- ms</h2>
                 <small>Last updated: <span id="pingTimeTime">--</span></small>
                 <div class="progress mt-2" style="height: 5px;">
@@ -78,7 +78,7 @@
     <div class="col-md-3">
         <div class="card metric-card text-white bg-warning">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-exclamation-triangle"></i> Packet Loss</h5>
+                <h5 class="card-title"><i class="fas fa-exclamation-triangle"></i> {{ t.packet_loss }}</h5>
                 <h2 class="card-text" id="packetLoss">-- %</h2>
                 <small>Last updated: <span id="packetLossTime">--</span></small>
                 <div class="progress mt-2" style="height: 5px;">
@@ -94,11 +94,11 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Performance History</h5>
+                <h5 class="card-title mb-0">{{ t.performance_history_chart }}</h5>
                 <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-primary" id="chartTypeLine">Line</button>
-                    <button type="button" class="btn btn-outline-primary" id="chartTypeBar">Bar</button>
-                    <button type="button" class="btn btn-outline-primary" id="chartTypeArea">Area</button>
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeLine">{{ t.line }}</button>
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeBar">{{ t.bar }}</button>
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeArea">{{ t.area }}</button>
                 </div>
             </div>
             <div class="card-body">
@@ -112,7 +112,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Download Speed Distribution</h5>
+                <h5 class="card-title">{{ t.download_distribution }}</h5>
             </div>
             <div class="card-body">
                 <canvas id="downloadDistribution" height="250"></canvas>
@@ -122,7 +122,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Ping Performance</h5>
+                <h5 class="card-title">{{ t.ping_performance }}</h5>
             </div>
             <div class="card-body">
                 <canvas id="pingChart" height="250"></canvas>
@@ -135,7 +135,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Packet Loss Over Time</h5>
+                <h5 class="card-title">{{ t.packet_loss_over_time }}</h5>
             </div>
             <div class="card-body">
                 <canvas id="packetLossChart" height="250"></canvas>
@@ -145,7 +145,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Performance Summary</h5>
+                <h5 class="card-title">{{ t.performance_summary }}</h5>
             </div>
             <div class="card-body">
                 <canvas id="summaryChart" height="250"></canvas>
@@ -159,23 +159,23 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Weather Correlation Analysis</h5>
+                <h5 class="card-title">{{ t.weather_correlation_analysis }}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
-                                <th>Weather Parameter</th>
-                                <th>Performance Metric</th>
-                                <th>Correlation</th>
-                                <th>Strength</th>
-                                <th>Interpretation</th>
+                                <th>{{ t.weather_parameter }}</th>
+                                <th>{{ t.performance_metric }}</th>
+                                <th>{{ t.correlation }}</th>
+                                <th>{{ t.strength }}</th>
+                                <th>{{ t.interpretation }}</th>
                             </tr>
                         </thead>
                         <tbody id="weatherCorrelationTableBody">
                             <tr>
-                                <td colspan="5" class="text-center">No correlation data available</td>
+                                <td colspan="5" class="text-center">{{ t.no_correlation_data }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -190,23 +190,23 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Recent Alerts</h5>
+                <h5 class="card-title">{{ t.recent_alerts }}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
-                                <th>Time</th>
-                                <th>Type</th>
-                                <th>Message</th>
-                                <th>Value</th>
-                                <th>Threshold</th>
+                                <th>{{ t.time }}</th>
+                                <th>{{ t.type }}</th>
+                                <th>{{ t.message }}</th>
+                                <th>{{ t.value }}</th>
+                                <th>{{ t.threshold }}</th>
                             </tr>
                         </thead>
                         <tbody id="alertsTableBody">
                             <tr>
-                                <td colspan="5" class="text-center">No recent alerts</td>
+                                <td colspan="5" class="text-center">{{ t.no_recent_alerts }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -237,20 +237,20 @@
             // In a real implementation, you would connect to a WebSocket server
             // socket = io();
             // socket.on('connect', function() {
-            //     updateStatus('Connected to real-time data stream', 'success');
+            //     updateStatus('{{ t.connected_data_stream }}', 'success');
             // });
             // socket.on('disconnect', function() {
-            //     updateStatus('Disconnected from real-time data stream', 'warning');
+            //     updateStatus('{{ t.disconnected_data_stream }}', 'warning');
             // });
             // socket.on('metrics_update', function(data) {
             //     updateCurrentMetrics(data);
             // });
             
             // For now, simulate connection
-            updateStatus('Real-time data stream simulation active', 'success');
+            updateStatus('{{ t.data_stream_simulation }}', 'success');
         } catch (error) {
             console.error('WebSocket connection error:', error);
-            updateStatus('Failed to connect to real-time data stream', 'danger');
+            updateStatus('{{ t.failed_connect_data_stream }}', 'danger');
         }
     }
     
@@ -309,11 +309,11 @@
                 updateProgressBars(data);
                 
                 // Update status
-                updateStatus('Data updated successfully', 'success');
+                updateStatus('{{ t.data_updated }}', 'success');
             }
         } catch (error) {
             console.error('Error fetching current metrics:', error);
-            updateStatus('Error fetching current metrics', 'danger');
+            updateStatus('{{ t.error_fetching_metrics }}', 'danger');
         }
     }
     
@@ -386,13 +386,13 @@
                 createDownloadDistributionChart(downloadSpeeds);
                 createSummaryChart(downloadSpeeds, uploadSpeeds, pingTimes, packetLoss);
                 
-                updateStatus('Charts updated successfully', 'success');
+                updateStatus('{{ t.data_updated }}', 'success');
             } else {
-                updateStatus('No data available for the selected time range', 'warning');
+                updateStatus('{{ t.no_data_time_range }}', 'warning');
             }
         } catch (error) {
             console.error('Error fetching chart data:', error);
-            updateStatus('Error fetching chart data', 'danger');
+            updateStatus('{{ t.error_fetching_chart }}', 'danger');
         }
     }
     
@@ -405,14 +405,14 @@
             data: {
                 labels: timestamps,
                 datasets: [{
-                    label: 'Download Speed (Mbps)',
+                    label: '{{ t.download_speed }} (Mbps)',
                     data: downloadSpeeds,
                     borderColor: 'rgb(54, 162, 235)',
                     backgroundColor: chartType === 'area' ? 'rgba(54, 162, 235, 0.2)' : 'transparent',
                     tension: chartType === 'line' || chartType === 'area' ? 0.1 : 0,
                     fill: chartType === 'area'
                 }, {
-                    label: 'Upload Speed (Mbps)',
+                    label: '{{ t.upload_speed }} (Mbps)',
                     data: uploadSpeeds,
                     borderColor: 'rgb(75, 192, 192)',
                     backgroundColor: chartType === 'area' ? 'rgba(75, 192, 192, 0.2)' : 'transparent',
@@ -452,7 +452,7 @@
             data: {
                 labels: timestamps,
                 datasets: [{
-                    label: 'Ping (ms)',
+                    label: '{{ t.ping }} (ms)',
                     data: pingTimes,
                     borderColor: 'rgb(255, 99, 132)',
                     backgroundColor: chartType === 'area' ? 'rgba(255, 99, 132, 0.2)' : 'transparent',
@@ -483,7 +483,7 @@
             data: {
                 labels: timestamps,
                 datasets: [{
-                    label: 'Packet Loss (%)',
+                    label: '{{ t.packet_loss }} (%)',
                     data: packetLoss,
                     borderColor: 'rgb(255, 159, 64)',
                     backgroundColor: chartType === 'area' ? 'rgba(255, 159, 64, 0.2)' : 'transparent',
@@ -535,7 +535,7 @@
             data: {
                 labels: binLabels,
                 datasets: [{
-                    label: 'Frequency',
+                    label: '{{ t.frequency }}',
                     data: downloadBins,
                     backgroundColor: 'rgba(54, 162, 235, 0.6)',
                     borderColor: 'rgb(54, 162, 235)',
@@ -569,9 +569,9 @@
         const chartConfig = {
             type: 'radar',
             data: {
-                labels: ['Download (Mbps)', 'Upload (Mbps)', 'Ping (ms)', 'Packet Loss (%)'],
+                labels: ['{{ t.download_speed }} (Mbps)', '{{ t.upload_speed }} (Mbps)', '{{ t.ping }} (ms)', '{{ t.packet_loss }} (%)'],
                 datasets: [{
-                    label: 'Performance Metrics',
+                    label: '{{ t.performance_metrics }}',
                     data: [avgDownload, avgUpload, avgPing, avgPacketLoss],
                     fill: true,
                     backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -618,7 +618,7 @@
                 clearInterval(autoRefreshInterval);
                 autoRefreshInterval = null;
             }
-            btn.innerHTML = '<i class="fas fa-play"></i> Auto Refresh';
+            btn.innerHTML = '<i class="fas fa-play"></i> {{ t.auto_refresh }}';
             btn.setAttribute('data-active', 'false');
             btn.classList.remove('btn-outline-primary');
             btn.classList.add('btn-outline-secondary');
@@ -628,7 +628,7 @@
                 updateCurrentMetrics();
                 updateCharts();
             }, 30000); // Refresh every 30 seconds
-            btn.innerHTML = '<i class="fas fa-pause"></i> Auto Refresh';
+            btn.innerHTML = '<i class="fas fa-pause"></i> {{ t.auto_refresh }}';
             btn.setAttribute('data-active', 'true');
             btn.classList.remove('btn-outline-secondary');
             btn.classList.add('btn-outline-primary');
@@ -702,15 +702,15 @@
                 }
                 
                 if (tableBody.children.length === 0) {
-                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No correlation data available</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">{{ t.no_correlation_data }}</td></tr>';
                 }
             } else {
-                tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No correlation data available</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center">{{ t.no_correlation_data }}</td></tr>';
             }
         } catch (error) {
             console.error('Error fetching weather correlations:', error);
             const tableBody = document.getElementById('weatherCorrelationTableBody');
-            tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Error loading correlation data</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center">{{ t.error_loading_data }}</td></tr>';
         }
     }
     
