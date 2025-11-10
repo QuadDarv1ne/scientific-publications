@@ -1,0 +1,22 @@
+# Настройки визуализации
+
+default_figure_size: [10, 8]
+default_dpi: 150
+default_colormap: "sdoaia193"
+
+# Настройки для различных инструментов
+aia:
+  colormap: "sdoaia193"
+  vmin_percentile: 1
+  vmax_percentile: 99
+
+hmi:
+  colormap: "RdBu_r"
+  vmin_percentile: 5
+  vmax_percentile: 95
+
+lasco:
+  colormap: "gray"
+  vmin_percentile: 0
+  vmax_percentile: 100
+

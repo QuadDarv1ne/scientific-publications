@@ -1,0 +1,13 @@
+# Конфигурация по умолчанию для HelioPy
+
+# Кэширование
+cache_enabled: true
+cache_size_limit_gb: 10
+
+# Загрузка данных
+download_timeout: 300  # секунды
+max_workers: 4
+
+# Логирование
+verbose: false
+

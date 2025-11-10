@@ -161,4 +161,3 @@ def load_goes(date: Union[str, datetime], **kwargs):
     """Удобная функция для загрузки данных GOES."""
     loader = DataLoader()
     return loader.load_goes(date, **kwargs)
-

@@ -4,7 +4,7 @@
 
 import numpy as np
 from typing import Dict, Optional
-from astropy.time import Time
+from astropy.time import Time, TimeDelta
 from astropy import units as u
 from dataclasses import dataclass
 from heliopy.events.flare_detector import Flare

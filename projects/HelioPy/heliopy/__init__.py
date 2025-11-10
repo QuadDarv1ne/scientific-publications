@@ -16,11 +16,19 @@ from heliopy import imaging
 from heliopy import space_weather
 from heliopy import visualization
 
+# Удобные функции для быстрого доступа
+from heliopy.core.data_loader import load_sdo_aia, load_soho_lasco, load_goes
+from heliopy.space_weather.forecast_models import forecast_geoeffectiveness
+
 __all__ = [
     "core",
     "events",
     "imaging",
     "space_weather",
     "visualization",
+    "load_sdo_aia",
+    "load_soho_lasco",
+    "load_goes",
+    "forecast_geoeffectiveness",
 ]
 

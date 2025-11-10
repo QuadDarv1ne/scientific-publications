@@ -1,0 +1,18 @@
+# Конфигурация источников данных
+
+sdo:
+  base_url: "https://sdo.gsfc.nasa.gov/data/"
+  cache_dir: "sdo"
+
+soho:
+  base_url: "https://soho.nascom.nasa.gov/data/"
+  cache_dir: "soho"
+
+goes:
+  base_url: "https://www.ngdc.noaa.gov/stp/space-weather/solar-data/"
+  cache_dir: "goes"
+
+ace:
+  base_url: "https://www.swpc.noaa.gov/products/ace-real-time-solar-wind"
+  cache_dir: "ace"
+

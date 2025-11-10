@@ -6,6 +6,7 @@ from typing import List, Dict
 from heliopy.events.flare_detector import Flare
 from heliopy.events.cme_detector import CME
 from heliopy.utils.stats_utils import StatsUtils
+from astropy import units as u
 
 
 class EventAnalyzer:

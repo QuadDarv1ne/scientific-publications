@@ -7,6 +7,7 @@ from typing import List, Dict, Optional, Tuple
 from astropy.time import Time
 from dataclasses import dataclass
 from heliopy.imaging.image_processor import SolarImage
+from astropy import units as u
 
 
 @dataclass

@@ -178,6 +178,9 @@ class StarlinkTracker:
             with open(filename, 'r', encoding='utf-8') as f:
                 lines = f.readlines()
             
+            # Filter out empty lines
+            lines = [line.strip() for line in lines if line.strip()]
+            
             # Process TLE data in groups of 3 lines
             loaded_count = 0
             error_count = 0
