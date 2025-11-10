@@ -101,8 +101,13 @@ class Plotter:
         
         # Отметка вспышек
         for flare in flares:
-            ax.axvline(flare.peak_time.datetime, color='red', linestyle='--', alpha=0.7)
-            ax.text(flare.peak_time.datetime, ax.get_ylim()[1] * 0.9,
+            if hasattr(flare.peak_time, 'datetime'):
+                peak_dt = flare.peak_time.datetime
+            else:
+                peak_dt = flare.peak_time
+            ax.axvline(peak_dt, color='red', linestyle='--', alpha=0.7)
+            ylim = ax.get_ylim()
+            ax.text(peak_dt, ylim[1] * 0.9,
                    f"{flare.class_}", rotation=90, ha='right', va='top')
         
         ax.set_yscale('log')
