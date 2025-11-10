@@ -2,44 +2,84 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-12">
-        <h1>Starlink Satellite Tracker Dashboard</h1>
-        <p class="lead">Real-time tracking of SpaceX Starlink satellites</p>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-2">Starlink Satellite Tracker Dashboard</h1>
+                <p class="lead mb-0">Real-time tracking of SpaceX Starlink satellites</p>
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-outline-primary me-2" type="button" id="refresh-btn">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh Data
+                </button>
+                <button class="btn btn-primary" type="button" id="clear-cache-btn">
+                    <i class="fas fa-broom me-1"></i> Clear Cache
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0">Current Status</h5>
             </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <h6 class="text-muted">Satellites Tracked</h6>
-                        <h3 id="satellite-count" class="mb-0">-</h3>
-                    </div>
-                    <div class="icon-circle bg-primary text-white">
-                        <i class="fas fa-satellite"></i>
-                    </div>
+            <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                <div class="icon-circle bg-primary text-white mb-3">
+                    <i class="fas fa-satellite"></i>
                 </div>
-                <div class="mt-3">
+                <h2 id="satellite-count" class="display-4 mb-2">-</h2>
+                <p class="text-muted mb-3">Satellites Tracked</p>
+                <div class="mt-2 text-center">
                     <small class="text-muted">Last Updated: <span id="last-update">-</span></small>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0">Next Visible Pass</h5>
             </div>
             <div class="card-body">
-                <div id="next-pass-content">
-                    <p class="text-muted">Calculating next satellite pass...</p>
-                    <div id="next-pass">-</div>
+                <div id="next-pass-content" class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-hourglass-half fa-2x text-muted"></i>
+                    </div>
+                    <p class="text-muted mb-0">Calculating next satellite pass...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-12">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">System Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <div>
+                        <p class="mb-1"><i class="fas fa-map-marker-alt text-primary me-2"></i> Location</p>
+                        <p class="mb-0 text-muted">Moscow, Russia</p>
+                    </div>
+                    <div>
+                        <p class="mb-1"><i class="fas fa-clock text-primary me-2"></i> Timezone</p>
+                        <p class="mb-0 text-muted">GMT+3</p>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="mb-1"><i class="fas fa-signal text-primary me-2"></i> Data Source</p>
+                        <p class="mb-0 text-muted">Celestrak</p>
+                    </div>
+                    <div>
+                        <p class="mb-1"><i class="fas fa-database text-primary me-2"></i> Cache</p>
+                        <p class="mb-0 text-muted">Active</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,26 +87,33 @@
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-12">
+    <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Recent Activity</h5>
+                <span class="badge bg-primary" id="pass-count">0 passes</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>Satellite</th>
-                                <th>Time</th>
+                                <th>Date & Time</th>
                                 <th>Max Elevation</th>
                                 <th>Azimuth</th>
                                 <th>Distance</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="recent-passes">
                             <tr>
-                                <td colspan="5" class="text-center">Loading recent passes...</td>
+                                <td colspan="6" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0">Loading recent passes...</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -78,66 +125,169 @@
 
 <script>
 // Fetch satellite data
-fetch('/api/satellites')
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById('satellite-count').textContent = data.count;
-        document.getElementById('last-update').textContent = new Date(data.updated).toLocaleString();
-    })
-    .catch(error => {
-        console.error('Error fetching satellite data:', error);
-        document.getElementById('satellite-count').textContent = 'Error';
-        document.getElementById('last-update').textContent = 'Error loading data';
-    });
+function fetchSatelliteData() {
+    fetch('/api/satellites')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('satellite-count').textContent = data.count;
+            document.getElementById('last-update').textContent = new Date(data.updated).toLocaleString();
+        })
+        .catch(error => {
+            console.error('Error fetching satellite data:', error);
+            document.getElementById('satellite-count').textContent = 'Error';
+            document.getElementById('last-update').textContent = 'Error loading data';
+        });
+}
 
 // Fetch next pass and recent passes
-fetch('/api/passes?hours=48')
-    .then(response => response.json())
-    .then(data => {
-        const nextPassContent = document.getElementById('next-pass-content');
-        const recentPasses = document.getElementById('recent-passes');
-        
-        if (data.passes && data.passes.length > 0) {
-            // Next pass
-            const nextPass = data.passes[0];
-            nextPassContent.innerHTML = `
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5>${nextPass.satellite}</h5>
-                        <p class="mb-1"><strong>Time:</strong> ${new Date(nextPass.time).toLocaleString()}</p>
-                        <p class="mb-1"><strong>Max Elevation:</strong> ${nextPass.altitude}°</p>
-                        <p class="mb-0"><strong>Azimuth:</strong> ${nextPass.azimuth}°</p>
+function fetchPassesData() {
+    const tableBody = document.getElementById('recent-passes');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 mb-0">Loading passes...</p>
+            </td>
+        </tr>
+    `;
+    
+    fetch('/api/passes?hours=48')
+        .then(response => response.json())
+        .then(data => {
+            const nextPassContent = document.getElementById('next-pass-content');
+            const recentPasses = document.getElementById('recent-passes');
+            
+            document.getElementById('pass-count').textContent = `${data.passes.length} passes`;
+            
+            if (data.passes && data.passes.length > 0) {
+                // Next pass
+                const nextPass = data.passes[0];
+                nextPassContent.innerHTML = `
+                    <div class="text-center">
+                        <h4 class="mb-3">${nextPass.satellite}</h4>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-calendar-alt text-primary me-1"></i> <strong>Time</strong></p>
+                                <p class="mb-0">${new Date(nextPass.time).toLocaleString()}</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-arrow-up text-primary me-1"></i> <strong>Max Elevation</strong></p>
+                                <p class="mb-0">${nextPass.altitude}°</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-compass text-primary me-1"></i> <strong>Azimuth</strong></p>
+                                <p class="mb-0">${nextPass.azimuth}°</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-ruler-vertical text-primary me-1"></i> <strong>Distance</strong></p>
+                                <p class="mb-0">${nextPass.distance} km</p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-success"><i class="fas fa-eye me-1"></i> Visible</span>
+                        </div>
                     </div>
-                    <div>
-                        <span class="badge bg-success">Visible</span>
+                `;
+                
+                // Recent passes (show first 10)
+                recentPasses.innerHTML = '';
+                const passesToShow = Math.min(10, data.passes.length);
+                for (let i = 0; i < passesToShow; i++) {
+                    const pass = data.passes[i];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${pass.satellite}</td>
+                        <td>${new Date(pass.time).toLocaleString()}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span>${pass.altitude}°</span>
+                                <div class="progress ms-2" style="width: 100px; height: 8px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                         style="width: ${Math.min(100, pass.altitude)}%" 
+                                         aria-valuenow="${pass.altitude}" aria-valuemin="0" aria-valuemax="90"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${pass.azimuth}°</td>
+                        <td>${pass.distance} km</td>
+                        <td><span class="badge bg-success">Visible</span></td>
+                    `;
+                    recentPasses.appendChild(row);
+                }
+            } else {
+                nextPassContent.innerHTML = `
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-0">No upcoming passes found</p>
                     </div>
+                `;
+                recentPasses.innerHTML = '<tr><td colspan="6" class="text-center">No passes found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching pass data:', error);
+            document.getElementById('next-pass-content').innerHTML = `
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                    </div>
+                    <p class="text-danger mb-0">Error loading pass data</p>
                 </div>
             `;
-            
-            // Recent passes (show first 5)
-            recentPasses.innerHTML = '';
-            const passesToShow = Math.min(5, data.passes.length);
-            for (let i = 0; i < passesToShow; i++) {
-                const pass = data.passes[i];
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${pass.satellite}</td>
-                    <td>${new Date(pass.time).toLocaleString()}</td>
-                    <td>${pass.altitude}°</td>
-                    <td>${pass.azimuth}°</td>
-                    <td>${pass.distance} km</td>
-                `;
-                recentPasses.appendChild(row);
-            }
-        } else {
-            nextPassContent.innerHTML = '<p class="text-muted">No upcoming passes found</p>';
-            recentPasses.innerHTML = '<tr><td colspan="5" class="text-center">No passes found</td></tr>';
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching pass data:', error);
-        document.getElementById('next-pass-content').innerHTML = '<p class="text-danger">Error loading pass data</p>';
-        document.getElementById('recent-passes').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading passes</td></tr>';
+            document.getElementById('recent-passes').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading passes</td></tr>';
+        });
+}
+
+// Clear cache function
+document.getElementById('clear-cache-btn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to clear all cached data?')) {
+        fetch('/api/cache/clear', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || 'Cache cleared successfully!');
+                // Refresh data after clearing cache
+                fetchSatelliteData();
+                fetchPassesData();
+            })
+            .catch(error => {
+                console.error('Error clearing cache:', error);
+                alert('Error clearing cache');
+            });
+    }
+});
+
+// Refresh data function
+document.getElementById('refresh-btn').addEventListener('click', function() {
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Refreshing...';
+    btn.disabled = true;
+    
+    Promise.all([
+        fetchSatelliteData(),
+        fetchPassesData()
+    ]).then(() => {
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            alert('Data refreshed successfully!');
+        }, 500);
+    }).catch(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     });
+});
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    fetchSatelliteData();
+    fetchPassesData();
+});
 </script>
 {% endblock %}

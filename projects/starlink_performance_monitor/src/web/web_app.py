@@ -17,7 +17,6 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for
-from flask_socketio import SocketIO, emit
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
@@ -25,22 +24,18 @@ from sqlalchemy.orm import sessionmaker
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
+# Import these first before other imports that might depend on them
 from src.database.db_manager import get_database_manager, get_db_session
+from src.utils.logging_config import setup_logging, get_logger
 
 # Add project root to path for imports
 import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from src.utils.logging_config import setup_logging, get_logger
-
-# Add the src directory to the path so we can import from monitor
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-
+# Import after the initial setup
 from src.monitor.monitor import PerformanceMetric, Base
-from src.web.realtime_updater import start_realtime_updater, stop_realtime_updater
+from src.web.realtime_manager import start_realtime_updater, stop_realtime_updater
 
 # Configure logging
 setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
@@ -313,7 +308,6 @@ LANGUAGES = {
 # Create Flask app with template folder specified
 template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=template_dir)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')  # Use threading instead of eventlet
 
 # Add secret key for sessions
 app.secret_key = os.urandom(24)
@@ -584,38 +578,8 @@ def main():
     # Update app configuration
     app.config['CONFIG_PATH'] = args.config
     
-    # Run the application with SocketIO
-    socketio.run(app, host=args.host, port=args.port, debug=args.debug)
-
-@socketio.on('connect')
-def handle_connect():
-    logger.info('Client connected')
-    emit('status', {'msg': 'Connected to server'})
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    logger.info('Client disconnected')
-
-@socketio.on('request_metrics')
-def handle_metrics_request():
-    """Handle real-time metrics request from client."""
-    try:
-        web_app = WebApp()
-        df = web_app.get_recent_metrics(1)  # Last hour
-        
-        if not df.empty:
-            latest = df.iloc[0]
-            metrics = {
-                'download_mbps': latest['download_mbps'],
-                'upload_mbps': latest['upload_mbps'],
-                'ping_ms': latest['ping_ms'],
-                'packet_loss_percent': latest['packet_loss_percent'],
-                'timestamp': latest['timestamp']
-            }
-            emit('metrics_update', metrics)
-    except Exception as e:
-        logger.error(f"Error handling metrics request: {e}")
-
+    # Run the application with Flask
+    app.run(host=args.host, port=args.port, debug=args.debug)
 
 # Global variable to track if realtime updates have been started
 _realtime_updates_started = False

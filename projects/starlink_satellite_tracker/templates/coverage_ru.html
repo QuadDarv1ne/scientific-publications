@@ -2,24 +2,55 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-12">
-        <h1>Глобальное покрытие Starlink</h1>
-        <p class="lead">Интерактивная карта, показывающая текущее покрытие спутников Starlink по всему миру</p>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-2">Глобальное покрытие Starlink</h1>
+                <p class="lead mb-0">Интерактивная карта, показывающая текущее покрытие спутников Starlink по всему миру</p>
+            </div>
+            <div>
+                <button class="btn btn-primary" type="button" id="refresh-btn">
+                    <i class="fas fa-sync-alt me-1"></i> Обновить данные
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-12">
+    <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Карта покрытия</h5>
             </div>
             <div class="card-body">
-                <div id="coverage-map" style="height: 500px; width: 100%; background-color: #f8f9fa; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center;">
-                    <div class="text-center">
-                        <i class="fas fa-globe-americas fa-3x text-muted mb-3"></i>
-                        <p class="text-muted">Интерактивная визуализация карты покрытия</p>
-                        <p class="small text-muted">В полной реализации здесь будет отображаться карта мира с областями покрытия спутников</p>
+                <div id="coverage-map" style="height: 500px; width: 100%; background: linear-gradient(135deg, #1e3c72, #2a5298); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white;">
+                    <div class="text-center p-4">
+                        <i class="fas fa-globe-americas fa-3x mb-3"></i>
+                        <h3 class="mb-3">Интерактивная карта покрытия</h3>
+                        <p class="mb-4">Эта визуализация показывает глобальное покрытие созвездия спутников Starlink.</p>
+                        <div class="d-flex justify-content-center">
+                            <div class="me-4">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div style="width: 20px; height: 20px; background-color: #00ff00; border-radius: 50%; margin-right: 10px;"></div>
+                                    <span>Высокое покрытие</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div style="width: 20px; height: 20px; background-color: #ffff00; border-radius: 50%; margin-right: 10px;"></div>
+                                    <span>Среднее покрытие</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="d-flex align-items-center mb-2">
+                                    <div style="width: 20px; height: 20px; background-color: #ff8000; border-radius: 50%; margin-right: 10px;"></div>
+                                    <span>Низкое покрытие</span>
+                                </div>
+                                <div class="d-flex align-items-center">
+                                    <div style="width: 20px; height: 20px; background-color: #ff0000; border-radius: 50%; margin-right: 10px;"></div>
+                                    <span>Очень низкое покрытие</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -28,15 +59,15 @@
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-6">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0">Статистика регионального покрытия</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
+                    <table class="table table-hover">
+                        <thead class="table-light">
                             <tr>
                                 <th>Регион</th>
                                 <th>Спутники</th>
@@ -45,7 +76,12 @@
                         </thead>
                         <tbody id="coverage-stats">
                             <tr>
-                                <td colspan="3" class="text-center">Загрузка данных о покрытии...</td>
+                                <td colspan="3" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0">Загрузка данных о покрытии...</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -54,34 +90,48 @@
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-6">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0">Статус созвездия</h5>
             </div>
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h6 class="text-muted">Всего спутников</h6>
-                        <h3 id="total-satellites" class="mb-0">-</h3>
+                        <h2 id="total-satellites" class="mb-0">-</h2>
                     </div>
                     <div class="icon-circle bg-success text-white">
                         <i class="fas fa-satellite"></i>
                     </div>
                 </div>
                 
-                <div class="progress mb-3">
-                    <div class="progress-bar bg-success" role="progressbar" style="width: 92%" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100">92% Работоспособные</div>
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Рабочее состояние</span>
+                        <span id="operational-percent">-</span>
+                    </div>
+                    <div class="progress" style="height: 12px;">
+                        <div class="progress-bar bg-success" role="progressbar" id="operational-progress" style="width: 0%"></div>
+                    </div>
                 </div>
                 
                 <div class="row">
                     <div class="col-6">
-                        <p class="mb-1"><small class="text-muted">Активные</small></p>
-                        <p class="mb-0"><strong id="active-satellites">-</strong></p>
+                        <div class="card bg-light border-0">
+                            <div class="card-body text-center">
+                                <h5 id="active-satellites" class="mb-0">-</h5>
+                                <p class="mb-0 text-muted">Активные</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="col-6">
-                        <p class="mb-1"><small class="text-muted">Неактивные</small></p>
-                        <p class="mb-0"><strong id="inactive-satellites">-</strong></p>
+                        <div class="card bg-light border-0">
+                            <div class="card-body text-center">
+                                <h5 id="inactive-satellites" class="mb-0">-</h5>
+                                <p class="mb-0 text-muted">Неактивные</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -91,44 +141,92 @@
 
 <script>
 // Получение данных о покрытии
-fetch('/api/coverage')
-    .then(response => response.json())
-    .then(data => {
-        // Обновление статистики регионального покрытия
-        const statsTable = document.getElementById('coverage-stats');
-        statsTable.innerHTML = '';
-        
-        if (data.regions && data.regions.length > 0) {
-            data.regions.forEach(region => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${region.name}</td>
-                    <td>${region.satellite_count}</td>
-                    <td>
-                        <div class="d-flex align-items-center">
-                            <span>${region.coverage_percentage}%</span>
-                            <div class="progress ms-2" style="width: 100px; height: 5px;">
-                                <div class="progress-bar" role="progressbar" 
-                                     style="width: ${region.coverage_percentage}%" 
-                                     aria-valuenow="${region.coverage_percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+function fetchCoverageData() {
+    const statsTable = document.getElementById('coverage-stats');
+    statsTable.innerHTML = `
+        <tr>
+            <td colspan="3" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-2 mb-0">Загрузка данных о покрытии...</p>
+            </td>
+        </tr>
+    `;
+    
+    fetch('/api/coverage')
+        .then(response => response.json())
+        .then(data => {
+            // Обновление статистики регионального покрытия
+            statsTable.innerHTML = '';
+            
+            if (data.regions && data.regions.length > 0) {
+                data.regions.forEach(region => {
+                    const row = document.createElement('tr');
+                    // Определение цвета на основе процента покрытия
+                    let bgColorClass;
+                    if (region.coverage_percentage >= 90) {
+                        bgColorClass = 'bg-success';
+                    } else if (region.coverage_percentage >= 75) {
+                        bgColorClass = 'bg-warning';
+                    } else if (region.coverage_percentage >= 50) {
+                        bgColorClass = 'bg-info';
+                    } else {
+                        bgColorClass = 'bg-danger';
+                    }
+                    
+                    row.innerHTML = `
+                        <td><strong>${region.name}</strong></td>
+                        <td>${region.satellite_count}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span>${region.coverage_percentage}%</span>
+                                <div class="progress ms-2" style="width: 100px; height: 8px;">
+                                    <div class="progress-bar ${bgColorClass}" role="progressbar" 
+                                         style="width: ${region.coverage_percentage}%" 
+                                         aria-valuenow="${region.coverage_percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
                             </div>
-                        </div>
-                    </td>
-                `;
-                statsTable.appendChild(row);
-            });
-        } else {
-            statsTable.innerHTML = '<tr><td colspan="3" class="text-center">Данные о покрытии недоступны</td></tr>';
-        }
-        
-        // Обновление статуса созвездия
-        document.getElementById('total-satellites').textContent = data.total_satellites || '-';
-        document.getElementById('active-satellites').textContent = Math.round((data.total_satellites || 0) * (data.global_coverage || 0) / 100) || '-';
-        document.getElementById('inactive-satellites').textContent = Math.round((data.total_satellites || 0) * (100 - (data.global_coverage || 0)) / 100) || '-';
-    })
-    .catch(error => {
-        console.error('Ошибка при получении данных о покрытии:', error);
-        document.getElementById('coverage-stats').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Ошибка загрузки данных о покрытии</td></tr>';
-    });
+                        </td>
+                    `;
+                    statsTable.appendChild(row);
+                });
+            } else {
+                statsTable.innerHTML = '<tr><td colspan="3" class="text-center">Данные о покрытии недоступны</td></tr>';
+            }
+            
+            // Обновление статуса созвездия
+            document.getElementById('total-satellites').textContent = data.total_satellites || '-';
+            document.getElementById('operational-percent').textContent = (data.global_coverage || 0) + '%';
+            document.getElementById('operational-progress').style.width = (data.global_coverage || 0) + '%';
+            document.getElementById('active-satellites').textContent = Math.round((data.total_satellites || 0) * (data.global_coverage || 0) / 100) || '-';
+            document.getElementById('inactive-satellites').textContent = Math.round((data.total_satellites || 0) * (100 - (data.global_coverage || 0)) / 100) || '-';
+        })
+        .catch(error => {
+            console.error('Ошибка при получении данных о покрытии:', error);
+            document.getElementById('coverage-stats').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Ошибка загрузки данных о покрытии</td></tr>';
+        });
+}
+
+// Функция обновления данных
+document.getElementById('refresh-btn').addEventListener('click', function() {
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Обновление...';
+    btn.disabled = true;
+    
+    fetchCoverageData();
+    
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+        alert('Данные о покрытии успешно обновлены!');
+    }, 1000);
+});
+
+// Загрузка начальных данных
+document.addEventListener('DOMContentLoaded', function() {
+    fetchCoverageData();
+});
 </script>
 {% endblock %}

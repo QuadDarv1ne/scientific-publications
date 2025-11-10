@@ -3,8 +3,8 @@
 {% block title %}{{ t.settings }} - {{ t.site_name }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">{{ t.settings }}</h1>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 page-heading">{{ t.settings }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" id="saveSettings">
@@ -17,50 +17,55 @@
     </div>
 </div>
 
-<!-- Settings Navigation -->
-<div class="row">
-    <div class="col-md-3">
-        <div class="list-group">
-            <a href="#general" class="list-group-item list-group-item-action active" data-bs-toggle="list">
-                <i class="fas fa-cog"></i> {{ t.general }}
-            </a>
-            <a href="#monitoring" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                <i class="fas fa-satellite"></i> {{ t.monitoring }}
-            </a>
-            <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                <i class="fas fa-bell"></i> {{ t.notifications }}
-            </a>
-            <a href="#database" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                <i class="fas fa-database"></i> {{ t.database }}
-            </a>
-            <a href="#web" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                <i class="fas fa-globe"></i> {{ t.web_interface }}
-            </a>
-            <a href="#weather" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                <i class="fas fa-cloud-sun"></i> {{ t.weather_integration }}
-            </a>
-            <a href="#users" class="list-group-item list-group-item-action" data-bs-toggle="list">
-                <i class="fas fa-users"></i> {{ t.user_management }}
-            </a>
+<div class="row g-4">
+    <!-- Settings Navigation -->
+    <div class="col-lg-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{{ t.navigation }}</h5>
+            </div>
+            <div class="list-group list-group-flush">
+                <a href="#general" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                    <i class="fas fa-cog me-2"></i> {{ t.general }}
+                </a>
+                <a href="#monitoring" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-satellite me-2"></i> {{ t.monitoring }}
+                </a>
+                <a href="#notifications" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-bell me-2"></i> {{ t.notifications }}
+                </a>
+                <a href="#database" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-database me-2"></i> {{ t.database }}
+                </a>
+                <a href="#web" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-globe me-2"></i> {{ t.web_interface }}
+                </a>
+                <a href="#weather" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-cloud-sun me-2"></i> {{ t.weather_integration }}
+                </a>
+                <a href="#users" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="fas fa-users me-2"></i> {{ t.user_management }}
+                </a>
+            </div>
         </div>
     </div>
     
     <!-- Settings Content -->
-    <div class="col-md-9">
+    <div class="col-lg-9">
         <div class="tab-content">
             <!-- General Settings -->
             <div class="tab-pane fade show active" id="general">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">{{ t.general_settings }}</h5>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{{ t.general_settings }}</h5>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <label for="siteName" class="form-label">{{ t.site_name }}</label>
+                        <div class="mb-4">
+                            <label for="siteName" class="form-label fw-bold">{{ t.site_name }}</label>
                             <input type="text" class="form-control" id="siteName" value="{{ t.site_name }}">
                         </div>
-                        <div class="mb-3">
-                            <label for="timezone" class="form-label">{{ t.timezone }}</label>
+                        <div class="mb-4">
+                            <label for="timezone" class="form-label fw-bold">{{ t.timezone }}</label>
                             <select class="form-select" id="timezone">
                                 <option value="UTC">UTC</option>
                                 <option value="America/New_York">Eastern Time (US & Canada)</option>
@@ -69,17 +74,17 @@
                                 <option value="Europe/Moscow" selected>Moscow</option>
                             </select>
                         </div>
-                        <div class="mb-3">
-                            <label for="language" class="form-label">{{ t.language }}</label>
+                        <div class="mb-4">
+                            <label for="language" class="form-label fw-bold">{{ t.language }}</label>
                             <select class="form-select" id="language">
                                 <option value="en" {% if session.get('language', 'en') == 'en' %}selected{% endif %}>English</option>
                                 <option value="ru" {% if session.get('language', 'en') == 'ru' %}selected{% endif %}>Русский</option>
                                 <option value="es">Español</option>
                             </select>
                         </div>
-                        <div class="form-check mb-3">
+                        <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="autoUpdate" checked>
-                            <label class="form-check-label" for="autoUpdate">
+                            <label class="form-check-label fw-bold" for="autoUpdate">
                                 {{ t.auto_update }}
                             </label>
                         </div>
@@ -89,40 +94,41 @@
             
             <!-- Monitoring Settings -->
             <div class="tab-pane fade" id="monitoring">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">{{ t.monitoring_settings }}</h5>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{{ t.monitoring_settings }}</h5>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <label for="monitoringInterval" class="form-label">{{ t.monitoring_interval }}</label>
+                        <div class="mb-4">
+                            <label for="monitoringInterval" class="form-label fw-bold">{{ t.monitoring_interval }}</label>
                             <input type="number" class="form-control" id="monitoringInterval" value="15" min="1" max="60">
+                            <div class="form-text">{{ t.minutes }}</div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">{{ t.speed_test_config }}</label>
-                            <div class="form-check">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ t.speed_test_config }}</label>
+                            <div class="form-check form-switch mb-2">
                                 <input class="form-check-input" type="checkbox" id="speedTestEnabled" checked>
                                 <label class="form-check-label" for="speedTestEnabled">
                                     {{ t.enable_speed_tests }}
                                 </label>
                             </div>
-                            <div class="form-check">
+                            <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" id="useSpecificServers" checked>
                                 <label class="form-check-label" for="useSpecificServers">
                                     {{ t.use_specific_servers }}
                                 </label>
                             </div>
-                            <input type="text" class="form-control mt-2" id="speedTestServers" placeholder="{{ t.server_ids }}" value="23456,12345">
+                            <input type="text" class="form-control" id="speedTestServers" placeholder="{{ t.server_ids }}" value="23456,12345">
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">{{ t.ping_test_config }}</label>
-                            <div class="form-check">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ t.ping_test_config }}</label>
+                            <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" id="pingTestEnabled" checked>
                                 <label class="form-check-label" for="pingTestEnabled">
                                     {{ t.enable_ping_tests }}
                                 </label>
                             </div>
-                            <div class="row mt-2">
+                            <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <input type="text" class="form-control" placeholder="{{ t.server_name }}" value="Google DNS">
                                 </div>
@@ -130,7 +136,7 @@
                                     <input type="text" class="form-control" placeholder="{{ t.ip_address }}" value="8.8.8.8">
                                 </div>
                             </div>
-                            <div class="row mt-2">
+                            <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <input type="text" class="form-control" placeholder="{{ t.server_name }}" value="Cloudflare">
                                 </div>
@@ -138,7 +144,7 @@
                                     <input type="text" class="form-control" placeholder="{{ t.ip_address }}" value="1.1.1.1">
                                 </div>
                             </div>
-                            <button class="btn btn-sm btn-outline-primary mt-2">
+                            <button class="btn btn-sm btn-outline-primary">
                                 <i class="fas fa-plus"></i> {{ t.add_server }}
                             </button>
                         </div>
@@ -148,28 +154,28 @@
             
             <!-- Notification Settings -->
             <div class="tab-pane fade" id="notifications">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">{{ t.notification_settings }}</h5>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{{ t.notification_settings }}</h5>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <label class="form-label">{{ t.telegram_notifications }}</label>
-                            <div class="form-check">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ t.telegram_notifications }}</label>
+                            <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" id="telegramEnabled" checked>
                                 <label class="form-check-label" for="telegramEnabled">
                                     {{ t.enable_telegram }}
                                 </label>
                             </div>
-                            <div class="mb-2">
+                            <div class="mb-3">
                                 <label for="telegramBotToken" class="form-label">{{ t.bot_token }}</label>
                                 <input type="password" class="form-control" id="telegramBotToken" value="YOUR_BOT_TOKEN_HERE">
                             </div>
-                            <div class="mb-2">
+                            <div class="mb-3">
                                 <label for="telegramChatId" class="form-label">{{ t.chat_id }}</label>
                                 <input type="text" class="form-control" id="telegramChatId" value="YOUR_CHAT_ID_HERE">
                             </div>
-                            <div class="row">
+                            <div class="row g-3">
                                 <div class="col-md-6">
                                     <label for="telegramDownloadThreshold" class="form-label">{{ t.download_threshold }}</label>
                                     <input type="number" class="form-control" id="telegramDownloadThreshold" value="50">
@@ -180,19 +186,19 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">{{ t.email_notifications }}</label>
-                            <div class="form-check">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ t.email_notifications }}</label>
+                            <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" id="emailEnabled">
                                 <label class="form-check-label" for="emailEnabled">
                                     {{ t.enable_email }}
                                 </label>
                             </div>
-                            <div class="mb-2">
+                            <div class="mb-3">
                                 <label for="smtpServer" class="form-label">{{ t.smtp_server }}</label>
                                 <input type="text" class="form-control" id="smtpServer" placeholder="smtp.gmail.com">
                             </div>
-                            <div class="row">
+                            <div class="row g-3">
                                 <div class="col-md-6">
                                     <label for="smtpPort" class="form-label">{{ t.port }}</label>
                                     <input type="number" class="form-control" id="smtpPort" value="587">
@@ -202,7 +208,7 @@
                                     <input type="text" class="form-control" id="smtpUsername" placeholder="your.email@gmail.com">
                                 </div>
                             </div>
-                            <div class="mb-2">
+                            <div class="mb-3">
                                 <label for="smtpPassword" class="form-label">{{ t.password }}</label>
                                 <input type="password" class="form-control" id="smtpPassword">
                             </div>
@@ -213,13 +219,13 @@
             
             <!-- Database Settings -->
             <div class="tab-pane fade" id="database">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">{{ t.database_settings }}</h5>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{{ t.database_settings }}</h5>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <label for="dbType" class="form-label">{{ t.database_type }}</label>
+                        <div class="mb-4">
+                            <label for="dbType" class="form-label fw-bold">{{ t.database_type }}</label>
                             <select class="form-select" id="dbType">
                                 <option value="sqlite" selected>SQLite (Embedded)</option>
                                 <option value="postgresql">PostgreSQL</option>
@@ -227,27 +233,27 @@
                             </select>
                         </div>
                         <div id="dbConfigFields">
-                            <div class="mb-3">
-                                <label for="dbHost" class="form-label">{{ t.host }}</label>
+                            <div class="mb-4">
+                                <label for="dbHost" class="form-label fw-bold">{{ t.host }}</label>
                                 <input type="text" class="form-control" id="dbHost" value="localhost">
                             </div>
-                            <div class="row">
+                            <div class="row g-3 mb-4">
                                 <div class="col-md-6">
-                                    <label for="dbPort" class="form-label">{{ t.port }}</label>
+                                    <label for="dbPort" class="form-label fw-bold">{{ t.port }}</label>
                                     <input type="number" class="form-control" id="dbPort" value="5432">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="dbName" class="form-label">{{ t.database_name }}</label>
+                                    <label for="dbName" class="form-label fw-bold">{{ t.database_name }}</label>
                                     <input type="text" class="form-control" id="dbName" value="starlink_monitor">
                                 </div>
                             </div>
-                            <div class="row">
+                            <div class="row g-3 mb-4">
                                 <div class="col-md-6">
-                                    <label for="dbUser" class="form-label">{{ t.username }}</label>
+                                    <label for="dbUser" class="form-label fw-bold">{{ t.username }}</label>
                                     <input type="text" class="form-control" id="dbUser" value="monitor_user">
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="dbPassword" class="form-label">{{ t.password }}</label>
+                                    <label for="dbPassword" class="form-label fw-bold">{{ t.password }}</label>
                                     <input type="password" class="form-control" id="dbPassword">
                                 </div>
                             </div>
@@ -258,34 +264,30 @@
             
             <!-- Web Interface Settings -->
             <div class="tab-pane fade" id="web">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">{{ t.web_interface_settings }}</h5>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{{ t.web_interface_settings }}</h5>
                     </div>
                     <div class="card-body">
-                        <div class="row">
+                        <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="webHost" class="form-label">{{ t.host }}</label>
-                                    <input type="text" class="form-control" id="webHost" value="0.0.0.0">
-                                </div>
+                                <label for="webHost" class="form-label fw-bold">{{ t.host }}</label>
+                                <input type="text" class="form-control" id="webHost" value="0.0.0.0">
                             </div>
                             <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label for="webPort" class="form-label">{{ t.port }}</label>
-                                    <input type="number" class="form-control" id="webPort" value="8050">
-                                </div>
+                                <label for="webPort" class="form-label fw-bold">{{ t.port }}</label>
+                                <input type="number" class="form-control" id="webPort" value="8050">
                             </div>
                         </div>
-                        <div class="form-check mb-3">
+                        <div class="form-check form-switch mb-4">
                             <input class="form-check-input" type="checkbox" id="webDebug">
-                            <label class="form-check-label" for="webDebug">
+                            <label class="form-check-label fw-bold" for="webDebug">
                                 {{ t.enable_debug_mode }}
                             </label>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">{{ t.authentication }}</label>
-                            <div class="form-check">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ t.authentication }}</label>
+                            <div class="form-check form-switch mb-3">
                                 <input class="form-check-input" type="checkbox" id="authEnabled" checked>
                                 <label class="form-check-label" for="authEnabled">
                                     {{ t.enable_authentication }}
@@ -303,52 +305,52 @@
             
             <!-- Weather Integration Settings -->
             <div class="tab-pane fade" id="weather">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">{{ t.weather_integration }}</h5>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{{ t.weather_integration }}</h5>
                     </div>
                     <div class="card-body">
-                        <div class="form-check mb-3">
+                        <div class="form-check form-switch mb-4">
                             <input class="form-check-input" type="checkbox" id="weatherEnabled" checked>
-                            <label class="form-check-label" for="weatherEnabled">
+                            <label class="form-check-label fw-bold" for="weatherEnabled">
                                 {{ t.enable_weather_integration }}
                             </label>
                         </div>
-                        <div class="mb-3">
-                            <label for="weatherApiKey" class="form-label">{{ t.api_key }}</label>
+                        <div class="mb-4">
+                            <label for="weatherApiKey" class="form-label fw-bold">{{ t.api_key }}</label>
                             <input type="password" class="form-control" id="weatherApiKey" value="YOUR_OPENMETEO_API_KEY">
                         </div>
-                        <div class="row">
+                        <div class="row g-3 mb-4">
                             <div class="col-md-6">
-                                <label for="weatherLatitude" class="form-label">{{ t.latitude }}</label>
+                                <label for="weatherLatitude" class="form-label fw-bold">{{ t.latitude }}</label>
                                 <input type="text" class="form-control" id="weatherLatitude" value="55.7558">
                             </div>
                             <div class="col-md-6">
-                                <label for="weatherLongitude" class="form-label">{{ t.longitude }}</label>
+                                <label for="weatherLongitude" class="form-label fw-bold">{{ t.longitude }}</label>
                                 <input type="text" class="form-control" id="weatherLongitude" value="37.6173">
                             </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">{{ t.weather_parameters }}</label>
-                            <div class="form-check">
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">{{ t.weather_parameters }}</label>
+                            <div class="form-check form-switch mb-2">
                                 <input class="form-check-input" type="checkbox" id="paramTemp" checked>
                                 <label class="form-check-label" for="paramTemp">
                                     {{ t.temperature }}
                                 </label>
                             </div>
-                            <div class="form-check">
+                            <div class="form-check form-switch mb-2">
                                 <input class="form-check-input" type="checkbox" id="paramPrecip" checked>
                                 <label class="form-check-label" for="paramPrecip">
                                     {{ t.precipitation }}
                                 </label>
                             </div>
-                            <div class="form-check">
+                            <div class="form-check form-switch mb-2">
                                 <input class="form-check-input" type="checkbox" id="paramWind" checked>
                                 <label class="form-check-label" for="paramWind">
                                     {{ t.wind_speed }}
                                 </label>
                             </div>
-                            <div class="form-check">
+                            <div class="form-check form-switch">
                                 <input class="form-check-input" type="checkbox" id="paramCloud" checked>
                                 <label class="form-check-label" for="paramCloud">
                                     {{ t.cloud_cover }}
@@ -361,12 +363,12 @@
             
             <!-- User Management -->
             <div class="tab-pane fade" id="users">
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="card-title">{{ t.user_management }}</h5>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">{{ t.user_management }}</h5>
                     </div>
                     <div class="card-body">
-                        <div class="table-responsive">
+                        <div class="table-responsive mb-4">
                             <table class="table table-striped">
                                 <thead>
                                     <tr>
@@ -382,7 +384,7 @@
                                         <td>{{ t.administrator }}</td>
                                         <td>2025-11-09 14:30:22</td>
                                         <td>
-                                            <button class="btn btn-sm btn-outline-primary">{{ t.edit }}</button>
+                                            <button class="btn btn-sm btn-outline-primary me-1">{{ t.edit }}</button>
                                             <button class="btn btn-sm btn-outline-danger">{{ t.delete }}</button>
                                         </td>
                                     </tr>

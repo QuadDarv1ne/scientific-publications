@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">{{ t.dashboard }}</h1>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 page-heading">{{ t.dashboard }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
@@ -28,72 +28,84 @@
 </div>
 
 <!-- Status Indicator -->
-<div class="row mb-3">
+<div class="row mb-4">
     <div class="col-12">
-        <div class="alert alert-info d-flex align-items-center" role="alert" id="statusIndicator">
-            <i class="fas fa-info-circle me-2"></i>
+        <div class="alert alert-info d-flex align-items-center rounded-pill" role="alert" id="statusIndicator">
+            <i class="fas fa-info-circle me-2 ms-3"></i>
             <div id="statusMessage">{{ t.connecting_data_stream }}</div>
         </div>
     </div>
 </div>
 
 <!-- Current Metrics -->
-<div class="row mb-4">
-    <div class="col-md-3">
-        <div class="card metric-card text-white bg-primary">
+<div class="row mb-4 g-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card h-100 border-0 shadow-sm">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-download"></i> {{ t.download_speed }}</h5>
-                <h2 class="card-text" id="downloadSpeed">-- Mbps</h2>
-                <small>Last updated: <span id="downloadTime">--</span></small>
-                <div class="progress mt-2" style="height: 5px;">
-                    <div class="progress-bar" id="downloadProgress" role="progressbar" style="width: 0%"></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0"><i class="fas fa-download text-primary"></i> {{ t.download_speed }}</h5>
+                    <div class="badge bg-primary">Mbps</div>
+                </div>
+                <h2 class="card-text display-6 mb-1" id="downloadSpeed">--</h2>
+                <small class="text-muted">Last updated: <span id="downloadTime">--</span></small>
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-primary" id="downloadProgress" role="progressbar" style="width: 0%"></div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card metric-card text-white bg-success">
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card h-100 border-0 shadow-sm">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-upload"></i> {{ t.upload_speed }}</h5>
-                <h2 class="card-text" id="uploadSpeed">-- Mbps</h2>
-                <small>Last updated: <span id="uploadTime">--</span></small>
-                <div class="progress mt-2" style="height: 5px;">
-                    <div class="progress-bar" id="uploadProgress" role="progressbar" style="width: 0%"></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0"><i class="fas fa-upload text-success"></i> {{ t.upload_speed }}</h5>
+                    <div class="badge bg-success">Mbps</div>
+                </div>
+                <h2 class="card-text display-6 mb-1" id="uploadSpeed">--</h2>
+                <small class="text-muted">Last updated: <span id="uploadTime">--</span></small>
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-success" id="uploadProgress" role="progressbar" style="width: 0%"></div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card metric-card text-white bg-info">
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card h-100 border-0 shadow-sm">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-stopwatch"></i> {{ t.ping }}</h5>
-                <h2 class="card-text" id="pingTime">-- ms</h2>
-                <small>Last updated: <span id="pingTimeTime">--</span></small>
-                <div class="progress mt-2" style="height: 5px;">
-                    <div class="progress-bar" id="pingProgress" role="progressbar" style="width: 0%"></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0"><i class="fas fa-stopwatch text-info"></i> {{ t.ping }}</h5>
+                    <div class="badge bg-info">ms</div>
+                </div>
+                <h2 class="card-text display-6 mb-1" id="pingTime">--</h2>
+                <small class="text-muted">Last updated: <span id="pingTimeTime">--</span></small>
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-info" id="pingProgress" role="progressbar" style="width: 0%"></div>
                 </div>
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card metric-card text-white bg-warning">
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card h-100 border-0 shadow-sm">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-exclamation-triangle"></i> {{ t.packet_loss }}</h5>
-                <h2 class="card-text" id="packetLoss">-- %</h2>
-                <small>Last updated: <span id="packetLossTime">--</span></small>
-                <div class="progress mt-2" style="height: 5px;">
-                    <div class="progress-bar" id="packetLossProgress" role="progressbar" style="width: 0%"></div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> {{ t.packet_loss }}</h5>
+                    <div class="badge bg-warning">% </div>
+                </div>
+                <h2 class="card-text display-6 mb-1" id="packetLoss">--</h2>
+                <small class="text-muted">Last updated: <span id="packetLossTime">--</span></small>
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-warning" id="packetLossProgress" role="progressbar" style="width: 0%"></div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Charts -->
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
+<!-- Charts Section -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">{{ t.performance_history_chart }}</h5>
                 <div class="btn-group btn-group-sm" role="group">
                     <button type="button" class="btn btn-outline-primary" id="chartTypeLine">{{ t.line }}</button>
@@ -102,64 +114,74 @@
                 </div>
             </div>
             <div class="card-body">
-                <canvas id="performanceChart" height="300"></canvas>
+                <div class="chart-container">
+                    <canvas id="performanceChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">{{ t.download_distribution }}</h5>
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{{ t.download_distribution }}</h5>
             </div>
             <div class="card-body">
-                <canvas id="downloadDistribution" height="250"></canvas>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="downloadDistribution"></canvas>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">{{ t.ping_performance }}</h5>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{{ t.ping_performance }}</h5>
             </div>
             <div class="card-body">
-                <canvas id="pingChart" height="250"></canvas>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="pingChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">{{ t.packet_loss_over_time }}</h5>
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{{ t.packet_loss_over_time }}</h5>
             </div>
             <div class="card-body">
-                <canvas id="packetLossChart" height="250"></canvas>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="packetLossChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">{{ t.performance_summary }}</h5>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{{ t.performance_summary }}</h5>
             </div>
             <div class="card-body">
-                <canvas id="summaryChart" height="250"></canvas>
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="summaryChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <!-- Weather Correlation Analysis -->
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">{{ t.weather_correlation_analysis }}</h5>
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{{ t.weather_correlation_analysis }}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -186,11 +208,11 @@
 </div>
 
 <!-- Alerts Section -->
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">{{ t.recent_alerts }}</h5>
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">{{ t.recent_alerts }}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -260,25 +282,25 @@
         const statusMessage = document.getElementById('statusMessage');
         
         // Remove existing classes
-        statusIndicator.className = 'alert d-flex align-items-center';
+        statusIndicator.className = 'alert d-flex align-items-center rounded-pill';
         
         // Add appropriate class based on type
         switch(type) {
             case 'success':
                 statusIndicator.classList.add('alert-success');
-                statusIndicator.innerHTML = '<i class="fas fa-check-circle me-2"></i><div id="statusMessage">' + message + '</div>';
+                statusIndicator.innerHTML = '<i class="fas fa-check-circle me-2 ms-3"></i><div id="statusMessage">' + message + '</div>';
                 break;
             case 'warning':
                 statusIndicator.classList.add('alert-warning');
-                statusIndicator.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><div id="statusMessage">' + message + '</div>';
+                statusIndicator.innerHTML = '<i class="fas fa-exclamation-triangle me-2 ms-3"></i><div id="statusMessage">' + message + '</div>';
                 break;
             case 'danger':
                 statusIndicator.classList.add('alert-danger');
-                statusIndicator.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i><div id="statusMessage">' + message + '</div>';
+                statusIndicator.innerHTML = '<i class="fas fa-exclamation-circle me-2 ms-3"></i><div id="statusMessage">' + message + '</div>';
                 break;
             default:
                 statusIndicator.classList.add('alert-info');
-                statusIndicator.innerHTML = '<i class="fas fa-info-circle me-2"></i><div id="statusMessage">' + message + '</div>';
+                statusIndicator.innerHTML = '<i class="fas fa-info-circle me-2 ms-3"></i><div id="statusMessage">' + message + '</div>';
         }
     }
     
@@ -293,10 +315,10 @@
             
             if (data) {
                 // Update metric values
-                document.getElementById('downloadSpeed').textContent = data.download_mbps.toFixed(2) + ' Mbps';
-                document.getElementById('uploadSpeed').textContent = data.upload_mbps.toFixed(2) + ' Mbps';
-                document.getElementById('pingTime').textContent = data.ping_ms.toFixed(2) + ' ms';
-                document.getElementById('packetLoss').textContent = data.packet_loss_percent.toFixed(2) + ' %';
+                document.getElementById('downloadSpeed').textContent = data.download_mbps.toFixed(2);
+                document.getElementById('uploadSpeed').textContent = data.upload_mbps.toFixed(2);
+                document.getElementById('pingTime').textContent = data.ping_ms.toFixed(2);
+                document.getElementById('packetLoss').textContent = data.packet_loss_percent.toFixed(2);
                 
                 // Update timestamps
                 const timestamp = new Date(data.timestamp).toLocaleTimeString();
@@ -407,17 +429,21 @@
                 datasets: [{
                     label: '{{ t.download_speed }} (Mbps)',
                     data: downloadSpeeds,
-                    borderColor: 'rgb(54, 162, 235)',
-                    backgroundColor: chartType === 'area' ? 'rgba(54, 162, 235, 0.2)' : 'transparent',
-                    tension: chartType === 'line' || chartType === 'area' ? 0.1 : 0,
-                    fill: chartType === 'area'
+                    borderColor: 'rgb(13, 110, 253)',
+                    backgroundColor: chartType === 'area' ? 'rgba(13, 110, 253, 0.1)' : 'transparent',
+                    tension: chartType === 'line' || chartType === 'area' ? 0.3 : 0,
+                    fill: chartType === 'area',
+                    pointRadius: 3,
+                    pointHoverRadius: 6
                 }, {
                     label: '{{ t.upload_speed }} (Mbps)',
                     data: uploadSpeeds,
-                    borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: chartType === 'area' ? 'rgba(75, 192, 192, 0.2)' : 'transparent',
-                    tension: chartType === 'line' || chartType === 'area' ? 0.1 : 0,
-                    fill: chartType === 'area'
+                    borderColor: 'rgb(25, 135, 84)',
+                    backgroundColor: chartType === 'area' ? 'rgba(25, 135, 84, 0.1)' : 'transparent',
+                    tension: chartType === 'line' || chartType === 'area' ? 0.3 : 0,
+                    fill: chartType === 'area',
+                    pointRadius: 3,
+                    pointHoverRadius: 6
                 }]
             },
             options: {
@@ -425,16 +451,36 @@
                 maintainAspectRatio: false,
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
                     }
                 },
                 plugins: {
                     legend: {
                         position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
                     },
                     tooltip: {
                         mode: 'index',
-                        intersect: false
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        padding: 12,
+                        titleFont: {
+                            size: 14
+                        },
+                        bodyFont: {
+                            size: 13
+                        }
                     }
                 }
             }
@@ -454,10 +500,12 @@
                 datasets: [{
                     label: '{{ t.ping }} (ms)',
                     data: pingTimes,
-                    borderColor: 'rgb(255, 99, 132)',
-                    backgroundColor: chartType === 'area' ? 'rgba(255, 99, 132, 0.2)' : 'transparent',
-                    tension: chartType === 'line' || chartType === 'area' ? 0.1 : 0,
-                    fill: chartType === 'area'
+                    borderColor: 'rgb(13, 202, 240)',
+                    backgroundColor: chartType === 'area' ? 'rgba(13, 202, 240, 0.1)' : 'transparent',
+                    tension: chartType === 'line' || chartType === 'area' ? 0.3 : 0,
+                    fill: chartType === 'area',
+                    pointRadius: 3,
+                    pointHoverRadius: 6
                 }]
             },
             options: {
@@ -465,7 +513,30 @@
                 maintainAspectRatio: false,
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        padding: 12
                     }
                 }
             }
@@ -485,10 +556,12 @@
                 datasets: [{
                     label: '{{ t.packet_loss }} (%)',
                     data: packetLoss,
-                    borderColor: 'rgb(255, 159, 64)',
-                    backgroundColor: chartType === 'area' ? 'rgba(255, 159, 64, 0.2)' : 'transparent',
-                    tension: chartType === 'line' || chartType === 'area' ? 0.1 : 0,
-                    fill: chartType === 'area'
+                    borderColor: 'rgb(255, 193, 7)',
+                    backgroundColor: chartType === 'area' ? 'rgba(255, 193, 7, 0.1)' : 'transparent',
+                    tension: chartType === 'line' || chartType === 'area' ? 0.3 : 0,
+                    fill: chartType === 'area',
+                    pointRadius: 3,
+                    pointHoverRadius: 6
                 }]
             },
             options: {
@@ -497,7 +570,30 @@
                 scales: {
                     y: {
                         beginAtZero: true,
-                        max: 100
+                        max: 100,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                        padding: 12
                     }
                 }
             }
@@ -537,9 +633,10 @@
                 datasets: [{
                     label: '{{ t.frequency }}',
                     data: downloadBins,
-                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                    borderColor: 'rgb(54, 162, 235)',
-                    borderWidth: 1
+                    backgroundColor: 'rgba(13, 110, 253, 0.7)',
+                    borderColor: 'rgb(13, 110, 253)',
+                    borderWidth: 1,
+                    borderRadius: 4
                 }]
             },
             options: {
@@ -547,7 +644,20 @@
                 maintainAspectRatio: false,
                 scales: {
                     y: {
-                        beginAtZero: true
+                        beginAtZero: true,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
                     }
                 }
             }
@@ -574,12 +684,14 @@
                     label: '{{ t.performance_metrics }}',
                     data: [avgDownload, avgUpload, avgPing, avgPacketLoss],
                     fill: true,
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgb(255, 99, 132)',
-                    pointBackgroundColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(13, 110, 253, 0.2)',
+                    borderColor: 'rgb(13, 110, 253)',
+                    pointBackgroundColor: 'rgb(13, 110, 253)',
                     pointBorderColor: '#fff',
                     pointHoverBackgroundColor: '#fff',
-                    pointHoverBorderColor: 'rgb(255, 99, 132)'
+                    pointHoverBorderColor: 'rgb(13, 110, 253)',
+                    pointRadius: 4,
+                    pointHoverRadius: 6
                 }]
             },
             options: {
@@ -588,10 +700,28 @@
                 scales: {
                     r: {
                         angleLines: {
-                            display: true
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.1)'
                         },
                         suggestedMin: 0,
-                        suggestedMax: 100
+                        suggestedMax: 100,
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.1)'
+                        },
+                        pointLabels: {
+                            font: {
+                                size: 12
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
                     }
                 }
             }

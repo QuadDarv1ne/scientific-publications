@@ -2,44 +2,84 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-12">
-        <h1>Панель управления трекера спутников Starlink</h1>
-        <p class="lead">Отслеживание спутников Starlink от SpaceX в реальном времени</p>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-2">Панель управления трекера спутников Starlink</h1>
+                <p class="lead mb-0">Отслеживание спутников Starlink от SpaceX в реальном времени</p>
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-outline-primary me-2" type="button" id="refresh-btn">
+                    <i class="fas fa-sync-alt me-1"></i> Обновить данные
+                </button>
+                <button class="btn btn-primary" type="button" id="clear-cache-btn">
+                    <i class="fas fa-broom me-1"></i> Очистить кэш
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0">Текущий статус</h5>
             </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <h6 class="text-muted">Отслеживаемые спутники</h6>
-                        <h3 id="satellite-count" class="mb-0">-</h3>
-                    </div>
-                    <div class="icon-circle bg-primary text-white">
-                        <i class="fas fa-satellite"></i>
-                    </div>
+            <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                <div class="icon-circle bg-primary text-white mb-3">
+                    <i class="fas fa-satellite"></i>
                 </div>
-                <div class="mt-3">
+                <h2 id="satellite-count" class="display-4 mb-2">-</h2>
+                <p class="text-muted mb-3">Отслеживаемые спутники</p>
+                <div class="mt-2 text-center">
                     <small class="text-muted">Последнее обновление: <span id="last-update">-</span></small>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0">Следующий видимый пролет</h5>
             </div>
             <div class="card-body">
-                <div id="next-pass-content">
-                    <p class="text-muted">Расчет следующего пролета спутника...</p>
-                    <div id="next-pass">-</div>
+                <div id="next-pass-content" class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-hourglass-half fa-2x text-muted"></i>
+                    </div>
+                    <p class="text-muted mb-0">Расчет следующего пролета спутника...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-12">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">Системная информация</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <div>
+                        <p class="mb-1"><i class="fas fa-map-marker-alt text-primary me-2"></i> Местоположение</p>
+                        <p class="mb-0 text-muted">Москва, Россия</p>
+                    </div>
+                    <div>
+                        <p class="mb-1"><i class="fas fa-clock text-primary me-2"></i> Часовой пояс</p>
+                        <p class="mb-0 text-muted">GMT+3</p>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="mb-1"><i class="fas fa-signal text-primary me-2"></i> Источник данных</p>
+                        <p class="mb-0 text-muted">Celestrak</p>
+                    </div>
+                    <div>
+                        <p class="mb-1"><i class="fas fa-database text-primary me-2"></i> Кэш</p>
+                        <p class="mb-0 text-muted">Активен</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,26 +87,33 @@
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-12">
+    <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Недавняя активность</h5>
+                <span class="badge bg-primary" id="pass-count">0 пролетов</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>Спутник</th>
-                                <th>Время</th>
+                                <th>Дата и время</th>
                                 <th>Макс. высота</th>
                                 <th>Азимут</th>
                                 <th>Расстояние</th>
+                                <th>Статус</th>
                             </tr>
                         </thead>
                         <tbody id="recent-passes">
                             <tr>
-                                <td colspan="5" class="text-center">Загрузка последних пролетов...</td>
+                                <td colspan="6" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0">Загрузка последних пролетов...</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -78,66 +125,169 @@
 
 <script>
 // Получение данных о спутниках
-fetch('/api/satellites')
-    .then(response => response.json())
-    .then(data => {
-        document.getElementById('satellite-count').textContent = data.count;
-        document.getElementById('last-update').textContent = new Date(data.updated).toLocaleString();
-    })
-    .catch(error => {
-        console.error('Ошибка при получении данных о спутниках:', error);
-        document.getElementById('satellite-count').textContent = 'Ошибка';
-        document.getElementById('last-update').textContent = 'Ошибка загрузки данных';
-    });
+function fetchSatelliteData() {
+    fetch('/api/satellites')
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('satellite-count').textContent = data.count;
+            document.getElementById('last-update').textContent = new Date(data.updated).toLocaleString();
+        })
+        .catch(error => {
+            console.error('Ошибка при получении данных о спутниках:', error);
+            document.getElementById('satellite-count').textContent = 'Ошибка';
+            document.getElementById('last-update').textContent = 'Ошибка загрузки данных';
+        });
+}
 
 // Получение следующего пролета и недавних пролетов
-fetch('/api/passes?hours=48')
-    .then(response => response.json())
-    .then(data => {
-        const nextPassContent = document.getElementById('next-pass-content');
-        const recentPasses = document.getElementById('recent-passes');
-        
-        if (data.passes && data.passes.length > 0) {
-            // Следующий пролет
-            const nextPass = data.passes[0];
-            nextPassContent.innerHTML = `
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5>${nextPass.satellite}</h5>
-                        <p class="mb-1"><strong>Время:</strong> ${new Date(nextPass.time).toLocaleString()}</p>
-                        <p class="mb-1"><strong>Макс. высота:</strong> ${nextPass.altitude}°</p>
-                        <p class="mb-0"><strong>Азимут:</strong> ${nextPass.azimuth}°</p>
+function fetchPassesData() {
+    const tableBody = document.getElementById('recent-passes');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-2 mb-0">Загрузка пролетов...</p>
+            </td>
+        </tr>
+    `;
+    
+    fetch('/api/passes?hours=48')
+        .then(response => response.json())
+        .then(data => {
+            const nextPassContent = document.getElementById('next-pass-content');
+            const recentPasses = document.getElementById('recent-passes');
+            
+            document.getElementById('pass-count').textContent = `${data.passes.length} пролетов`;
+            
+            if (data.passes && data.passes.length > 0) {
+                // Следующий пролет
+                const nextPass = data.passes[0];
+                nextPassContent.innerHTML = `
+                    <div class="text-center">
+                        <h4 class="mb-3">${nextPass.satellite}</h4>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-calendar-alt text-primary me-1"></i> <strong>Время</strong></p>
+                                <p class="mb-0">${new Date(nextPass.time).toLocaleString()}</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-arrow-up text-primary me-1"></i> <strong>Макс. высота</strong></p>
+                                <p class="mb-0">${nextPass.altitude}°</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-compass text-primary me-1"></i> <strong>Азимут</strong></p>
+                                <p class="mb-0">${nextPass.azimuth}°</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-ruler-vertical text-primary me-1"></i> <strong>Расстояние</strong></p>
+                                <p class="mb-0">${nextPass.distance} км</p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-success"><i class="fas fa-eye me-1"></i> Видимый</span>
+                        </div>
                     </div>
-                    <div>
-                        <span class="badge bg-success">Видимый</span>
+                `;
+                
+                // Недавние пролеты (показать первые 10)
+                recentPasses.innerHTML = '';
+                const passesToShow = Math.min(10, data.passes.length);
+                for (let i = 0; i < passesToShow; i++) {
+                    const pass = data.passes[i];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${pass.satellite}</td>
+                        <td>${new Date(pass.time).toLocaleString()}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span>${pass.altitude}°</span>
+                                <div class="progress ms-2" style="width: 100px; height: 8px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                         style="width: ${Math.min(100, pass.altitude)}%" 
+                                         aria-valuenow="${pass.altitude}" aria-valuemin="0" aria-valuemax="90"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${pass.azimuth}°</td>
+                        <td>${pass.distance} км</td>
+                        <td><span class="badge bg-success">Видимый</span></td>
+                    `;
+                    recentPasses.appendChild(row);
+                }
+            } else {
+                nextPassContent.innerHTML = `
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-0">Ближайших пролетов не найдено</p>
                     </div>
+                `;
+                recentPasses.innerHTML = '<tr><td colspan="6" class="text-center">Пролетов не найдено</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка при получении данных о пролетах:', error);
+            document.getElementById('next-pass-content').innerHTML = `
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                    </div>
+                    <p class="text-danger mb-0">Ошибка загрузки данных о пролетах</p>
                 </div>
             `;
-            
-            // Недавние пролеты (показать первые 5)
-            recentPasses.innerHTML = '';
-            const passesToShow = Math.min(5, data.passes.length);
-            for (let i = 0; i < passesToShow; i++) {
-                const pass = data.passes[i];
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${pass.satellite}</td>
-                    <td>${new Date(pass.time).toLocaleString()}</td>
-                    <td>${pass.altitude}°</td>
-                    <td>${pass.azimuth}°</td>
-                    <td>${pass.distance} км</td>
-                `;
-                recentPasses.appendChild(row);
-            }
-        } else {
-            nextPassContent.innerHTML = '<p class="text-muted">Ближайших пролетов не найдено</p>';
-            recentPasses.innerHTML = '<tr><td colspan="5" class="text-center">Пролетов не найдено</td></tr>';
-        }
-    })
-    .catch(error => {
-        console.error('Ошибка при получении данных о пролетах:', error);
-        document.getElementById('next-pass-content').innerHTML = '<p class="text-danger">Ошибка загрузки данных о пролетах</p>';
-        document.getElementById('recent-passes').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Ошибка загрузки пролетов</td></tr>';
+            document.getElementById('recent-passes').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Ошибка загрузки пролетов</td></tr>';
+        });
+}
+
+// Функция очистки кэша
+document.getElementById('clear-cache-btn').addEventListener('click', function() {
+    if (confirm('Вы уверены, что хотите очистить все кэшированные данные?')) {
+        fetch('/api/cache/clear', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || 'Кэш успешно очищен!');
+                // Обновить данные после очистки кэша
+                fetchSatelliteData();
+                fetchPassesData();
+            })
+            .catch(error => {
+                console.error('Ошибка при очистке кэша:', error);
+                alert('Ошибка при очистке кэша');
+            });
+    }
+});
+
+// Функция обновления данных
+document.getElementById('refresh-btn').addEventListener('click', function() {
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Обновление...';
+    btn.disabled = true;
+    
+    Promise.all([
+        fetchSatelliteData(),
+        fetchPassesData()
+    ]).then(() => {
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            alert('Данные успешно обновлены!');
+        }, 500);
+    }).catch(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
     });
+});
+
+// Загрузка начальных данных
+document.addEventListener('DOMContentLoaded', function() {
+    fetchSatelliteData();
+    fetchPassesData();
+});
 </script>
 {% endblock %}

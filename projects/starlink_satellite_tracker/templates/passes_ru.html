@@ -2,36 +2,59 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-12">
-        <h1>Предстоящие пролеты спутников</h1>
-        <p class="lead">Прогнозируемые пролеты над вашим местоположением</p>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-2">Предстоящие пролеты спутников</h1>
+                <p class="lead mb-0">Прогнозируемые пролеты над вашим местоположением</p>
+            </div>
+            <div>
+                <button class="btn btn-primary" type="button" id="refresh-btn">
+                    <i class="fas fa-sync-alt me-1"></i> Обновить данные
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row mb-4">
-    <div class="col-md-12">
+    <div class="col-12">
         <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Параметры фильтра</h5>
+            </div>
             <div class="card-body">
                 <form id="pass-filter-form" class="row g-3">
                     <div class="col-md-3">
                         <label for="latitude" class="form-label">Широта</label>
-                        <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-globe-americas"></i></span>
+                            <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
+                        </div>
                     </div>
                     <div class="col-md-3">
                         <label for="longitude" class="form-label">Долгота</label>
-                        <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                            <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
+                        </div>
                     </div>
                     <div class="col-md-3">
                         <label for="hours" class="form-label">Часов вперед</label>
-                        <select class="form-select" id="hours">
-                            <option value="24">24 часа</option>
-                            <option value="48" selected>48 часов</option>
-                            <option value="72">72 часа</option>
-                            <option value="168">1 неделя</option>
-                        </select>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                            <select class="form-select" id="hours">
+                                <option value="24">24 часа</option>
+                                <option value="48" selected>48 часов</option>
+                                <option value="72">72 часа</option>
+                                <option value="168">1 неделя</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">Обновить</button>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-1"></i> Обновить
+                        </button>
                     </div>
                 </form>
             </div>
@@ -40,7 +63,7 @@
 </div>
 
 <div class="row">
-    <div class="col-md-12">
+    <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Прогнозируемые пролеты</h5>
@@ -48,8 +71,8 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
-                        <thead class="table-dark">
+                    <table class="table table-hover">
+                        <thead class="table-light">
                             <tr>
                                 <th>Спутник</th>
                                 <th>Дата и время</th>
@@ -57,11 +80,17 @@
                                 <th>Азимут</th>
                                 <th>Расстояние</th>
                                 <th>Продолжительность</th>
+                                <th>Видимость</th>
                             </tr>
                         </thead>
                         <tbody id="passes-table">
                             <tr>
-                                <td colspan="6" class="text-center">Загрузка пролетов...</td>
+                                <td colspan="7" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Загрузка...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0">Загрузка пролетов...</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -75,7 +104,16 @@
 // Функция для получения и отображения пролетов
 function fetchPasses(lat, lon, hours) {
     const tableBody = document.getElementById('passes-table');
-    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Загрузка пролетов...</td></tr>';
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Загрузка...</span>
+                </div>
+                <p class="mt-2 mb-0">Загрузка пролетов...</p>
+            </td>
+        </tr>
+    `;
     
     fetch(`/api/passes?lat=${lat}&lon=${lon}&hours=${hours}`)
         .then(response => response.json())
@@ -89,14 +127,27 @@ function fetchPasses(lat, lon, hours) {
                     // Расчет приблизительной продолжительности (упрощенный расчет)
                     const duration = Math.max(1, Math.round(pass.altitude / 10)); // В минутах
                     
+                    // Определение видимости на основе высоты
+                    let visibilityClass, visibilityText;
+                    if (pass.altitude >= 30) {
+                        visibilityClass = 'bg-success';
+                        visibilityText = 'Отличная';
+                    } else if (pass.altitude >= 15) {
+                        visibilityClass = 'bg-warning text-dark';
+                        visibilityText = 'Хорошая';
+                    } else {
+                        visibilityClass = 'bg-danger';
+                        visibilityText = 'Плохая';
+                    }
+                    
                     row.innerHTML = `
-                        <td>${pass.satellite}</td>
+                        <td><strong>${pass.satellite}</strong></td>
                         <td>${new Date(pass.time).toLocaleString()}</td>
                         <td>
                             <div class="d-flex align-items-center">
                                 <span>${pass.altitude}°</span>
-                                <div class="progress ms-2" style="width: 100px; height: 5px;">
-                                    <div class="progress-bar" role="progressbar" 
+                                <div class="progress ms-2" style="width: 100px; height: 8px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" 
                                          style="width: ${Math.min(100, pass.altitude)}%" 
                                          aria-valuenow="${pass.altitude}" aria-valuemin="0" aria-valuemax="90"></div>
                                 </div>
@@ -105,16 +156,17 @@ function fetchPasses(lat, lon, hours) {
                         <td>${pass.azimuth}°</td>
                         <td>${pass.distance} км</td>
                         <td>~${duration} мин</td>
+                        <td><span class="badge ${visibilityClass}">${visibilityText}</span></td>
                     `;
                     tableBody.appendChild(row);
                 });
             } else {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Пролетов не найдено для указанного местоположения и периода времени</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="7" class="text-center">Пролетов не найдено для указанного местоположения и периода времени</td></tr>';
             }
         })
         .catch(error => {
             console.error('Ошибка при получении данных о пролетах:', error);
-            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Ошибка загрузки данных о пролетах</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Ошибка загрузки данных о пролетах</td></tr>';
         });
 }
 
@@ -127,6 +179,25 @@ document.getElementById('pass-filter-form').addEventListener('submit', function(
     const hours = document.getElementById('hours').value;
     
     fetchPasses(lat, lon, hours);
+});
+
+// Функция обновления данных
+document.getElementById('refresh-btn').addEventListener('click', function() {
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Обновление...';
+    btn.disabled = true;
+    
+    const lat = document.getElementById('latitude').value;
+    const lon = document.getElementById('longitude').value;
+    const hours = document.getElementById('hours').value;
+    
+    fetchPasses(lat, lon, hours);
+    
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }, 1000);
 });
 
 // Загрузка начальных данных
