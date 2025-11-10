@@ -15,6 +15,15 @@ import hashlib
 import base64
 from io import BytesIO
 
+# Try to import skyfield, but handle if not available
+try:
+    from skyfield.api import load
+    SKYFIELD_AVAILABLE = True
+except ImportError:
+    SKYFIELD_AVAILABLE = False
+    load = None
+    logging.warning("Skyfield not installed. Some visualization features disabled.")
+
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
@@ -269,6 +278,13 @@ def export():
     """Page for exporting satellite data."""
     language = request.args.get('lang', 'en')
     template = get_template_name('export', language)
+    return render_template(template)
+
+@app.route('/visualization')
+def visualization():
+    """Page for interactive satellite visualization."""
+    language = request.args.get('lang', 'en')
+    template = get_template_name('visualization', language)
     return render_template(template)
 
 @app.route('/api/satellites')
@@ -532,6 +548,89 @@ def clear_cache():
     except Exception as e:
         app.logger.error(f"Error clearing cache: {e}")
         return jsonify({'error': 'Failed to clear cache'}), 500
+
+@app.route('/api/visualization/orbits')
+@handle_api_errors
+def api_visualize_orbits():
+    """API endpoint for generating interactive orbit visualization."""
+    try:
+        import plotly.graph_objects as go
+        import plotly.utils
+        import json
+        from datetime import datetime, timedelta
+        
+        # Get parameters
+        hours = int(request.args.get('hours', 2))
+        max_satellites = int(request.args.get('satellites', 10))
+        
+        # Update TLE data if needed
+        satellites = tracker_instance.update_tle_data()
+        
+        if not satellites:
+            return jsonify({'error': 'No satellite data available'}), 404
+        
+        # Limit number of satellites for performance
+        satellites_to_plot = satellites[:min(max_satellites, len(satellites))]
+        
+        # Create 3D plot
+        fig = go.Figure()
+        
+        # Time range for orbit calculation
+        if not SKYFIELD_AVAILABLE or load is None:
+            return jsonify({'error': 'Skyfield not installed. Required for orbit calculations.'}), 501
+        
+        ts = load.timescale()
+        t0 = ts.now()
+        t1 = ts.from_datetime(datetime.now() + timedelta(hours=hours))
+        times = ts.linspace(t0, t1, config['visualization']['orbit_points'])
+        
+        # Plot orbits for selected satellites
+        for satellite in satellites_to_plot:
+            try:
+                geocentric = satellite.at(times)
+                x, y, z = geocentric.position.km
+                
+                fig.add_trace(go.Scatter3d(
+                    x=x, y=y, z=z,
+                    mode='lines',
+                    name=satellite.name.split()[0],
+                    line=dict(width=2)
+                ))
+            except Exception as e:
+                app.logger.warning(f"Error plotting orbit for {satellite.name}: {e}")
+                continue
+        
+        # Update layout
+        fig.update_layout(
+            title='Starlink Satellite Orbits',
+            scene=dict(
+                xaxis_title='X (km)',
+                yaxis_title='Y (km)',
+                zaxis_title='Z (km)',
+                aspectmode='data'
+            ),
+            margin=dict(l=0, r=0, b=0, t=30)
+        )
+        
+        # Convert to JSON for web delivery
+        graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
+        
+        return jsonify({
+            'plot': graphJSON,
+            'satellite_count': len(satellites_to_plot),
+            'hours': hours,
+            'generated': datetime.now().isoformat()
+        })
+    except ImportError as e:
+        error_msg = str(e)
+        if 'plotly' in error_msg.lower():
+            return jsonify({'error': 'Plotly not installed. Please install with: pip install plotly'}), 501
+        else:
+            app.logger.error(f"Import error in api_visualize_orbits: {e}")
+            return jsonify({'error': 'Missing required dependencies'}), 500
+    except Exception as e:
+        app.logger.error(f"Error in api_visualize_orbits: {e}")
+        return jsonify({'error': 'Failed to generate orbit visualization'}), 500
 
 @app.errorhandler(404)
 def not_found(error):
