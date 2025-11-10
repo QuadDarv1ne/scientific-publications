@@ -42,6 +42,7 @@ class TestStarlinkTracker(unittest.TestCase):
         # Mock time scale and earth data
         mock_ts = MagicMock()
         mock_earth = MagicMock()
+        # First call to load.timescale(), second call to load('earth.bsp')
         mock_load.side_effect = [mock_ts, mock_earth]
         
         mock_makedirs.return_value = None
@@ -57,8 +58,9 @@ class TestStarlinkTracker(unittest.TestCase):
     @patch('os.makedirs')
     def test_initialization_with_earth_load_failure(self, mock_makedirs, mock_load):
         """Test initialization when earth data fails to load."""
-        # Mock time scale and earth data failure
+        # Mock time scale (first call) and earth data failure (second call)
         mock_ts = MagicMock()
+        # First call returns timescale, second call raises exception
         mock_load.side_effect = [mock_ts, Exception("Earth data load failed")]
         
         mock_makedirs.return_value = None
