@@ -11,6 +11,7 @@ from email.mime.multipart import MIMEMultipart
 import requests
 import logging
 from datetime import datetime, timedelta
+from typing import Dict, Any, Optional
 
 # Import our configuration manager
 from utils.config_manager import get_config
@@ -26,69 +27,109 @@ except ImportError:
 
 
 class NotificationSystem:
-    def __init__(self, config=None):
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
         """Initialize notification system with configuration."""
         self.config = config or get_config()
         self.email_config = self.config.get('notifications', {}).get('email', {})
         self.telegram_config = self.config.get('notifications', {}).get('telegram', {})
+        self.logger = logging.getLogger(__name__)
         
-    def send_email_notification(self, subject, message, recipient):
+    def send_email_notification(self, subject: str, message: str, recipient: str) -> bool:
         """Send email notification about satellite pass."""
         if not self.email_config.get('enabled', False):
+            self.logger.info("Email notifications are disabled")
             return False
             
         try:
+            # Validate inputs
+            if not subject or not message or not recipient:
+                self.logger.error("Invalid email parameters: subject, message, and recipient are required")
+                return False
+                
             # Create message
             msg = MIMEMultipart()
-            msg['From'] = self.email_config.get('username')
+            msg['From'] = self.email_config.get('username', '')
             msg['To'] = recipient
             msg['Subject'] = subject
             
             msg.attach(MIMEText(message, 'plain'))
             
+            # Validate SMTP configuration
+            smtp_server = self.email_config.get('smtp_server')
+            smtp_port = self.email_config.get('smtp_port')
+            username = self.email_config.get('username')
+            password = self.email_config.get('password')
+            
+            if not smtp_server or not smtp_port or not username or not password:
+                self.logger.error("Email configuration is incomplete")
+                return False
+            
             # Create SMTP session
-            server = smtplib.SMTP(self.email_config.get('smtp_server'), 
-                                self.email_config.get('smtp_port'))
+            server = smtplib.SMTP(smtp_server, smtp_port)
             server.starttls(context=ssl.create_default_context())
-            server.login(self.email_config.get('username'), 
-                        self.email_config.get('password'))
+            server.login(username, password)
             
             # Send email
             text = msg.as_string()
-            server.sendmail(self.email_config.get('username'), recipient, text)
+            server.sendmail(username, recipient, text)
             server.quit()
             
-            logging.info(f"Email notification sent to {recipient}")
+            self.logger.info(f"Email notification sent to {recipient}")
             return True
             
         except Exception as e:
-            logging.error(f"Failed to send email notification: {e}")
+            self.logger.error(f"Failed to send email notification: {e}")
             return False
     
-    def send_telegram_notification(self, message):
+    def send_telegram_notification(self, message: str) -> bool:
         """Send Telegram notification about satellite pass."""
-        if not self.telegram_config.get('enabled', False) or not TELEGRAM_AVAILABLE:
+        if not self.telegram_config.get('enabled', False):
+            self.logger.info("Telegram notifications are disabled")
+            return False
+            
+        if not TELEGRAM_AVAILABLE:
+            self.logger.warning("Telegram library not available")
             return False
             
         try:
-            if TELEGRAM_AVAILABLE and Bot is not None:
-                bot = Bot(token=self.telegram_config.get('bot_token'))
-                bot.send_message(chat_id=self.telegram_config.get('chat_id'), text=message)
-                logging.info("Telegram notification sent")
+            # Validate inputs
+            if not message:
+                self.logger.error("Message is required for Telegram notification")
+                return False
+                
+            # Validate Telegram configuration
+            bot_token = self.telegram_config.get('bot_token')
+            chat_id = self.telegram_config.get('chat_id')
+            
+            if not bot_token or not chat_id:
+                self.logger.error("Telegram configuration is incomplete")
+                return False
+            
+            if Bot is not None:
+                bot = Bot(token=bot_token)
+                bot.send_message(chat_id=chat_id, text=message)
+                self.logger.info("Telegram notification sent")
                 return True
             else:
-                logging.warning("Telegram not available, skipping notification")
+                self.logger.warning("Telegram Bot is not available")
                 return False
             
         except Exception as e:
-            logging.error(f"Failed to send Telegram notification: {e}")
+            self.logger.error(f"Failed to send Telegram notification: {e}")
             return False
     
-    def notify_upcoming_pass(self, satellite_name, pass_time, max_elevation, azimuth):
+    def notify_upcoming_pass(self, satellite_name: str, pass_time: datetime, 
+                           max_elevation: float, azimuth: float) -> bool:
         """Send notification about an upcoming satellite pass."""
-        # Format message
-        time_str = pass_time.strftime("%Y-%m-%d %H:%M:%S")
-        message = f"""🚀 STARLINK SATELLITE PASS ALERT 🚀
+        try:
+            # Validate inputs
+            if not satellite_name or not pass_time:
+                self.logger.error("Satellite name and pass time are required")
+                return False
+                
+            # Format message
+            time_str = pass_time.strftime("%Y-%m-%d %H:%M:%S")
+            message = f"""🚀 STARLINK SATELLITE PASS ALERT 🚀
 
 Satellite: {satellite_name}
 Time: {time_str}
@@ -98,44 +139,65 @@ Azimuth: {azimuth:.1f}°
 Best viewing conditions expected!
 Look up and enjoy the show! 🌌
 """
-        
-        # Send notifications based on configuration
-        success = True
-        
-        if self.email_config.get('enabled', False):
-            # In a real implementation, you'd have recipient emails configured
-            # For now, we'll just log that we would send an email
-            logging.info(f"Would send email: {message}")
-            # success &= self.send_email_notification(
-            #     "Starlink Satellite Pass Alert", 
-            #     message, 
-            #     self.email_config.get('recipient', '')
-            # )
-        
-        if self.telegram_config.get('enabled', False):
-            success &= self.send_telegram_notification(message)
-        
-        return success
+            
+            # Send notifications based on configuration
+            success = True
+            
+            if self.email_config.get('enabled', False):
+                recipient = self.email_config.get('recipient', '')
+                if recipient:
+                    email_success = self.send_email_notification(
+                        "Starlink Satellite Pass Alert", 
+                        message, 
+                        recipient
+                    )
+                    success = success and email_success
+                else:
+                    self.logger.warning("Email recipient not configured")
+            
+            if self.telegram_config.get('enabled', False):
+                telegram_success = self.send_telegram_notification(message)
+                success = success and telegram_success
+            
+            if success:
+                self.logger.info(f"Notification sent successfully for {satellite_name}")
+            else:
+                self.logger.warning(f"Some notifications failed for {satellite_name}")
+                
+            return success
+            
+        except Exception as e:
+            self.logger.error(f"Error sending notification for {satellite_name}: {e}")
+            return False
 
 
 def create_notification_example():
     """Create an example of how to use the notification system."""
-    # Initialize notification system with config
-    notifier = NotificationSystem()
-    
-    # Example notification
-    notifier.notify_upcoming_pass(
-        "STARLINK-1234",
-        datetime.now() + timedelta(minutes=45),
-        65.5,
-        42.3
-    )
+    try:
+        # Initialize notification system with config
+        notifier = NotificationSystem()
+        
+        # Example notification
+        success = notifier.notify_upcoming_pass(
+            "STARLINK-1234",
+            datetime.now() + timedelta(minutes=45),
+            65.5,
+            42.3
+        )
+        
+        if success:
+            print("Notification example completed successfully")
+        else:
+            print("Notification example failed")
+            
+    except Exception as e:
+        print(f"Error in notification example: {e}")
 
 
 if __name__ == "__main__":
     # Setup logging
     logging.basicConfig(level=logging.INFO, 
-                       format='%(asctime)s - %(levelname)s - %(message)s')
+                       format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     
     # Run example
     create_notification_example()

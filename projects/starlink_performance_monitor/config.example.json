@@ -5,7 +5,12 @@
     "port": 5432,
     "name": "starlink_monitor",
     "user": "monitor_user",
-    "password": "secure_password"
+    "password": "secure_password",
+    "pool_size": 10,
+    "max_overflow": 20,
+    "pool_recycle": 3600,
+    "pool_pre_ping": true,
+    "echo": false
   },
   "monitoring": {
     "starlink": {
@@ -62,6 +67,16 @@
       "password": "your_app_password",
       "recipients": ["admin@example.com"],
       "daily_report_hour": 8
+    },
+    "escalation": {
+      "enabled": true,
+      "intervals": [60, 120, 240],
+      "max_level": 3,
+      "recipients": {
+        "level_1": ["admin@example.com"],
+        "level_2": ["admin@example.com", "manager@example.com"],
+        "level_3": ["admin@example.com", "manager@example.com", "director@example.com"]
+      }
     }
   },
   "weather": {

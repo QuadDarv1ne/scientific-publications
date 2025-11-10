@@ -8,12 +8,55 @@ import pandas as pd
 import json
 import csv
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from typing import Dict, Any, List, Optional
+import hashlib
 
 # Import our configuration manager
 from utils.config_manager import get_config
+
+
+class DataCache:
+    """Simple in-memory cache for processed data."""
+    
+    def __init__(self, max_size: int = 100):
+        self.cache = {}
+        self.access_times = {}
+        self.max_size = max_size
+        self.logger = logging.getLogger(__name__)
+    
+    def get(self, key: str) -> Optional[Any]:
+        """Retrieve item from cache."""
+        if key in self.cache:
+            self.access_times[key] = datetime.now()
+            self.logger.debug(f"Cache hit for key: {key}")
+            return self.cache[key]
+        self.logger.debug(f"Cache miss for key: {key}")
+        return None
+    
+    def put(self, key: str, value: Any) -> None:
+        """Store item in cache."""
+        # If cache is full, remove oldest entry
+        if len(self.cache) >= self.max_size:
+            oldest_key = min(self.access_times.keys(), key=lambda k: self.access_times[k])
+            del self.cache[oldest_key]
+            del self.access_times[oldest_key]
+            self.logger.debug(f"Removed oldest cache entry: {oldest_key}")
+        
+        self.cache[key] = value
+        self.access_times[key] = datetime.now()
+        self.logger.debug(f"Added to cache: {key}")
+    
+    def clear(self) -> None:
+        """Clear all cache entries."""
+        self.cache.clear()
+        self.access_times.clear()
+        self.logger.debug("Cache cleared")
+    
+    def size(self) -> int:
+        """Get current cache size."""
+        return len(self.cache)
 
 
 class DataProcessor:
@@ -31,6 +74,24 @@ class DataProcessor:
         })
         self.data_directory = self.config.get('data_sources', {}).get('tle_cache_path', 'data/tle_cache/')
         
+        # Initialize cache
+        self.cache = DataCache(max_size=50)
+        
+        # Cache for processed satellite data
+        self._satellite_cache = {}
+        self._cache_expiry = timedelta(minutes=30)  # Cache expires after 30 minutes
+    
+    def _generate_cache_key(self, filename: str, criteria: Optional[Dict[str, Any]] = None) -> str:
+        """Generate a cache key based on filename and criteria."""
+        key_data = filename
+        if criteria:
+            # Sort criteria to ensure consistent keys
+            sorted_criteria = sorted(criteria.items())
+            key_data += str(sorted_criteria)
+        
+        # Create hash of key data
+        return hashlib.md5(key_data.encode()).hexdigest()
+    
     def load_satellite_data(self, filename: Optional[str] = None) -> Optional[List[Dict[str, str]]]:
         """Load satellite data from TLE file or cache."""
         try:
@@ -49,10 +110,22 @@ class DataProcessor:
                     self.logger.error(f"Error listing files in directory {self.data_directory}: {e}")
                     return None
             
+            # Ensure filename is not None
+            if filename is None:
+                self.logger.error("Filename is None")
+                return None
+                
             if not os.path.exists(filename):
                 self.logger.error(f"TLE file not found: {filename}")
                 return None
-                
+            
+            # Check if we have cached data for this file
+            cache_key = f"satellite_data_{filename}"
+            cached_data = self.cache.get(cache_key)
+            if cached_data is not None:
+                self.logger.info(f"Using cached satellite data for {filename}")
+                return cached_data
+            
             # Load TLE data
             satellites = []
             with open(filename, 'r', encoding='utf-8') as f:
@@ -71,7 +144,9 @@ class DataProcessor:
                         'line2': line2
                     })
             
-            self.logger.info(f"Loaded {len(satellites)} satellites from {filename}")
+            # Cache the data
+            self.cache.put(cache_key, satellites)
+            self.logger.info(f"Loaded {len(satellites)} satellites from {filename} and cached")
             return satellites
             
         except Exception as e:
@@ -84,6 +159,15 @@ class DataProcessor:
             return satellites or []
             
         try:
+            # Generate cache key for filtered data
+            # For simplicity, we'll use a basic cache key - in a real implementation
+            # you might want to serialize the satellites list or use a more sophisticated approach
+            cache_key = self._generate_cache_key("filtered", criteria)
+            cached_result = self.cache.get(cache_key)
+            if cached_result is not None:
+                self.logger.info("Using cached filtered satellite data")
+                return cached_result
+            
             filtered = []
             for sat in satellites:
                 match = True
@@ -93,7 +177,9 @@ class DataProcessor:
                         break
                 if match:
                     filtered.append(sat)
-                    
+            
+            # Cache the result
+            self.cache.put(cache_key, filtered)
             self.logger.info(f"Filtered satellites: {len(satellites)} -> {len(filtered)}")
             return filtered
             
@@ -108,6 +194,13 @@ class DataProcessor:
             return False
             
         try:
+            # Check cache for export
+            cache_key = f"export_csv_{filename}"
+            cached_result = self.cache.get(cache_key)
+            if cached_result is not None and cached_result:
+                self.logger.info(f"Using cached CSV export for {filename}")
+                return True
+            
             compress = self.export_config.get('compress_large_files', True)
             df = pd.DataFrame(data)
             if compress and len(data) > 1000:
@@ -117,6 +210,9 @@ class DataProcessor:
             else:
                 df.to_csv(filename, index=False)
                 self.logger.info(f"Exported {len(data)} records to {filename}")
+            
+            # Cache successful export
+            self.cache.put(cache_key, True)
             return True
         except Exception as e:
             self.logger.error(f"Failed to export to CSV: {e}")
@@ -129,6 +225,13 @@ class DataProcessor:
             return False
             
         try:
+            # Check cache for export
+            cache_key = f"export_json_{filename}"
+            cached_result = self.cache.get(cache_key)
+            if cached_result is not None and cached_result:
+                self.logger.info(f"Using cached JSON export for {filename}")
+                return True
+            
             compress = self.export_config.get('compress_large_files', True)
             export_data = {
                 'satellites': data,
@@ -147,6 +250,9 @@ class DataProcessor:
                 with open(filename, 'w', encoding='utf-8') as f:
                     json.dump(export_data, f, indent=2)
                 self.logger.info(f"Exported {len(data)} records to {filename}")
+            
+            # Cache successful export
+            self.cache.put(cache_key, True)
             return True
         except Exception as e:
             self.logger.error(f"Failed to export to JSON: {e}")
@@ -159,6 +265,13 @@ class DataProcessor:
             return {}
             
         try:
+            # Check cache for analysis
+            cache_key = f"analysis_{len(satellites) if satellites else 0}"
+            cached_result = self.cache.get(cache_key)
+            if cached_result is not None:
+                self.logger.info("Using cached constellation analysis")
+                return cached_result
+            
             # Basic statistics
             stats = {
                 'total_satellites': len(satellites),
@@ -186,12 +299,19 @@ class DataProcessor:
                     'count': len(ids)
                 }
             
+            # Cache the analysis
+            self.cache.put(cache_key, stats)
             self.logger.info(f"Analyzed constellation with {len(satellites)} satellites")
             return stats
             
         except Exception as e:
             self.logger.error(f"Error analyzing constellation: {e}")
             return {}
+    
+    def clear_cache(self) -> None:
+        """Clear all cached data."""
+        self.cache.clear()
+        self.logger.info("Data processor cache cleared")
 
 
 def main():

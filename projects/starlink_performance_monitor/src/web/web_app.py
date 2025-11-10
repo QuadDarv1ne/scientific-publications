@@ -24,6 +24,12 @@ from sqlalchemy.orm import sessionmaker
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
+from src.database.db_manager import get_database_manager, get_db_session
+
+# Add project root to path for imports
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
 from src.utils.logging_config import setup_logging, get_logger
 
 # Add the src directory to the path so we can import from monitor
@@ -158,8 +164,8 @@ class WebApp:
             config_path: Path to configuration file
         """
         self.config = self._load_config(config_path)
-        self.db_engine = self._setup_database()
-        self.db_session = sessionmaker(bind=self.db_engine)
+        self.db_manager = get_database_manager(config_path)
+        self.db_engine = self.db_manager.get_engine()
         self.secret_key = self.config.get('web', {}).get('secret_key', os.urandom(24))
         
     def _load_config(self, config_path: str) -> Dict[str, Any]:
@@ -172,18 +178,8 @@ class WebApp:
             
     def _setup_database(self):
         """Setup database connection."""
-        db_config = self.config.get('database', {})
-        db_type = db_config.get('type', 'sqlite')
-        
-        if db_type == 'postgresql':
-            db_url = f"postgresql://{db_config.get('user', 'user')}:{db_config.get('password', 'password')}@" \
-                     f"{db_config.get('host', 'localhost')}:{db_config.get('port', 5432)}/{db_config.get('name', 'starlink_monitor')}"
-        else:
-            db_url = "sqlite:///starlink_monitor.db"
-            
-        engine = create_engine(db_url)
-        Base.metadata.create_all(engine)
-        return engine
+        # This method is now handled by the database manager
+        return self.db_manager.get_engine()
         
     def get_recent_metrics(self, hours: int = 24) -> pd.DataFrame:
         """
@@ -195,7 +191,7 @@ class WebApp:
         Returns:
             DataFrame with recent metrics
         """
-        session = self.db_session()
+        session = get_db_session()
         try:
             # Calculate time threshold
             threshold = datetime.utcnow() - timedelta(hours=hours)

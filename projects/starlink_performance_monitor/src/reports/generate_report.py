@@ -21,6 +21,13 @@ import matplotlib.dates as mdates
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 
+# Add project root to path for imports
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from src.database.db_manager import get_database_manager, get_db_session
+
 from src.monitor.monitor import PerformanceMetric, Base
 from src.utils.logging_config import setup_logging, get_logger# Configure logging
 setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
@@ -37,8 +44,8 @@ class ReportGenerator:
             config_path: Path to configuration file
         """
         self.config = self._load_config(config_path)
-        self.db_engine = self._setup_database()
-        self.db_session = sessionmaker(bind=self.db_engine)
+        self.db_manager = get_database_manager(config_path)
+        self.db_engine = self.db_manager.get_engine()
         
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration from JSON file."""
@@ -50,18 +57,8 @@ class ReportGenerator:
             
     def _setup_database(self):
         """Setup database connection."""
-        db_config = self.config.get('database', {})
-        db_type = db_config.get('type', 'sqlite')
-        
-        if db_type == 'postgresql':
-            db_url = f"postgresql://{db_config.get('user', 'user')}:{db_config.get('password', 'password')}@" \
-                     f"{db_config.get('host', 'localhost')}:{db_config.get('port', 5432)}/{db_config.get('name', 'starlink_monitor')}"
-        else:
-            db_url = "sqlite:///starlink_monitor.db"
-            
-        engine = create_engine(db_url)
-        Base.metadata.create_all(engine)
-        return engine
+        # This method is now handled by the database manager
+        return self.db_manager.get_engine()
         
     def get_metrics_for_period(self, start_date: datetime, end_date: datetime) -> pd.DataFrame:
         """
@@ -74,7 +71,7 @@ class ReportGenerator:
         Returns:
             DataFrame with metrics
         """
-        session = self.db_session()
+        session = get_db_session()
         try:
             metrics = session.query(PerformanceMetric).filter(
                 and_(

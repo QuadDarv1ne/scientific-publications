@@ -9,17 +9,17 @@ import os
 import sys
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request
+import logging
+from functools import wraps
+import hashlib
 
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-# Import our configuration manager
+# Import our configuration manager and tracker module
 from utils.config_manager import get_config
-
-# Import tracker module
 try:
     from core.main import StarlinkTracker
-    tracker = StarlinkTracker()
     TRACKER_AVAILABLE = True
 except ImportError:
     TRACKER_AVAILABLE = False
@@ -49,10 +49,83 @@ except ImportError:
                     'distance': 420.7
                 }
             ]
+
+# Simple in-memory cache for API responses
+class APICache:
+    def __init__(self, default_ttl=300):  # 5 minutes default TTL
+        self.cache = {}
+        self.timestamps = {}
+        self.default_ttl = default_ttl
+        self.logger = logging.getLogger(__name__)
     
-    tracker = StarlinkTracker()
+    def get(self, key):
+        """Retrieve cached data if not expired."""
+        if key in self.cache:
+            timestamp = self.timestamps[key]
+            if (datetime.now() - timestamp).total_seconds() < self.default_ttl:
+                self.logger.debug(f"Cache hit for key: {key}")
+                return self.cache[key]
+            else:
+                # Remove expired entry
+                del self.cache[key]
+                del self.timestamps[key]
+                self.logger.debug(f"Cache expired for key: {key}")
+        return None
+    
+    def set(self, key, value):
+        """Store data in cache."""
+        self.cache[key] = value
+        self.timestamps[key] = datetime.now()
+        self.logger.debug(f"Cached data for key: {key}")
+    
+    def clear(self):
+        """Clear all cached data."""
+        self.cache.clear()
+        self.timestamps.clear()
+        self.logger.debug("API cache cleared")
+
+# Initialize cache
+api_cache = APICache()
+
+# Cache decorator for API endpoints
+def cached(ttl=300):
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            # Generate cache key from function name and arguments
+            cache_key = f.__name__ + str(args) + str(sorted(kwargs.items()))
+            cache_key = hashlib.md5(cache_key.encode()).hexdigest()
+            
+            # Try to get from cache
+            cached_result = api_cache.get(cache_key)
+            if cached_result is not None:
+                return cached_result
+            
+            # Execute function and cache result
+            result = f(*args, **kwargs)
+            api_cache.set(cache_key, result)
+            return result
+        return wrapper
+    return decorator
+
+# Error handler decorator
+def handle_api_errors(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        try:
+            return f(*args, **kwargs)
+        except Exception as e:
+            logging.error(f"API error in {f.__name__}: {e}")
+            return jsonify({
+                'error': 'Internal server error',
+                'message': str(e) if app.config.get('DEBUG') else 'An error occurred'
+            }), 500
+    return wrapper
 
 app = Flask(__name__)
+
+# Global tracker instance
+tracker = StarlinkTracker()
 
 # Load configuration
 config = get_config()
@@ -65,33 +138,45 @@ else:
     DEFAULT_LATITUDE = 55.7558  # Moscow
     DEFAULT_LONGITUDE = 37.6173
 
+# Setup logging
+logging.basicConfig(level=logging.INFO, 
+                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# Start scheduler for automated tasks (if available)
+if TRACKER_AVAILABLE:
+    try:
+        # Only start scheduler if the method exists
+        if hasattr(tracker, 'start_scheduler') and callable(getattr(tracker, 'start_scheduler', None)):
+            tracker.start_scheduler()
+    except Exception as e:
+        app.logger.warning(f"Could not start scheduler: {e}")
+
 @app.route('/')
 def index():
     """Main dashboard showing current satellite positions."""
     return render_template('index.html')
 
 @app.route('/api/satellites')
+@handle_api_errors
+@cached(ttl=600)  # Cache for 10 minutes
 def api_satellites():
     """API endpoint returning current satellite positions."""
-    try:
-        # Update TLE data if needed
-        satellites = tracker.update_tle_data()
-        
-        # Return simplified satellite data
-        sat_data = []
-        for sat in satellites[:20]:  # Limit to first 20 for performance
-            sat_data.append({
-                'name': sat.name,
-                'id': sat.name.split('-')[-1] if '-' in sat.name else sat.name
-            })
-        
-        return jsonify({
-            'satellites': sat_data,
-            'count': len(sat_data),
-            'updated': datetime.now().isoformat()
+    # Update TLE data if needed
+    satellites = tracker.update_tle_data()
+    
+    # Return simplified satellite data
+    sat_data = []
+    for sat in satellites[:20]:  # Limit to first 20 for performance
+        sat_data.append({
+            'name': sat.name,
+            'id': sat.name.split('-')[-1] if '-' in sat.name else sat.name
         })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    
+    return jsonify({
+        'satellites': sat_data,
+        'count': len(sat_data),
+        'updated': datetime.now().isoformat()
+    })
 
 @app.route('/passes')
 def passes():
@@ -99,36 +184,46 @@ def passes():
     return render_template('passes.html')
 
 @app.route('/api/passes')
+@handle_api_errors
+@cached(ttl=300)  # Cache for 5 minutes
 def api_passes():
     """API endpoint returning predicted satellite passes."""
+    # Get location parameters from request or use defaults
     try:
-        # Get location parameters from request or use defaults
         lat = float(request.args.get('lat', DEFAULT_LATITUDE))
         lon = float(request.args.get('lon', DEFAULT_LONGITUDE))
         hours = int(request.args.get('hours', 24))
         
-        # Predict passes
-        passes = tracker.predict_passes(lat, lon, hours_ahead=hours)
-        
-        # Format for JSON serialization
-        formatted_passes = []
-        for p in passes:
-            formatted_passes.append({
-                'satellite': p['satellite'],
-                'time': p['time'].isoformat(),
-                'altitude': round(p['altitude'], 1),
-                'azimuth': round(p['azimuth'], 1),
-                'distance': round(p['distance'], 1)
-            })
-        
-        return jsonify({
-            'passes': formatted_passes,
-            'count': len(formatted_passes),
-            'location': {'latitude': lat, 'longitude': lon},
-            'period_hours': hours
+        # Validate parameters
+        if not (-90 <= lat <= 90):
+            return jsonify({'error': 'Invalid latitude. Must be between -90 and 90.'}), 400
+        if not (-180 <= lon <= 180):
+            return jsonify({'error': 'Invalid longitude. Must be between -180 and 180.'}), 400
+        if not (1 <= hours <= 168):  # Max 1 week
+            return jsonify({'error': 'Invalid hours. Must be between 1 and 168.'}), 400
+    except ValueError:
+        return jsonify({'error': 'Invalid parameter format.'}), 400
+    
+    # Predict passes
+    passes = tracker.predict_passes(lat, lon, hours_ahead=hours)
+    
+    # Format for JSON serialization
+    formatted_passes = []
+    for p in passes:
+        formatted_passes.append({
+            'satellite': p['satellite'],
+            'time': p['time'].isoformat(),
+            'altitude': round(p['altitude'], 1),
+            'azimuth': round(p['azimuth'], 1),
+            'distance': round(p['distance'], 1)
         })
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    
+    return jsonify({
+        'passes': formatted_passes,
+        'count': len(formatted_passes),
+        'location': {'latitude': lat, 'longitude': lon},
+        'period_hours': hours
+    })
 
 @app.route('/coverage')
 def coverage():
@@ -136,36 +231,35 @@ def coverage():
     return render_template('coverage.html')
 
 @app.route('/api/coverage')
+@handle_api_errors
+@cached(ttl=3600)  # Cache for 1 hour
 def api_coverage():
     """API endpoint returning global coverage data."""
-    try:
-        # In a real implementation, this would calculate coverage polygons
-        # For now, return sample data
-        coverage_data = {
-            'regions': [
-                {
-                    'name': 'North America',
-                    'satellite_count': 1500,
-                    'coverage_percentage': 98.5
-                },
-                {
-                    'name': 'Europe',
-                    'satellite_count': 800,
-                    'coverage_percentage': 95.2
-                },
-                {
-                    'name': 'Asia',
-                    'satellite_count': 750,
-                    'coverage_percentage': 87.3
-                }
-            ],
-            'total_satellites': 2500,
-            'global_coverage': 92.1
-        }
-        
-        return jsonify(coverage_data)
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    # In a real implementation, this would calculate coverage polygons
+    # For now, return sample data
+    coverage_data = {
+        'regions': [
+            {
+                'name': 'North America',
+                'satellite_count': 1500,
+                'coverage_percentage': 98.5
+            },
+            {
+                'name': 'Europe',
+                'satellite_count': 800,
+                'coverage_percentage': 95.2
+            },
+            {
+                'name': 'Asia',
+                'satellite_count': 750,
+                'coverage_percentage': 87.3
+            }
+        ],
+        'total_satellites': 2500,
+        'global_coverage': 92.1
+    }
+    
+    return jsonify(coverage_data)
 
 @app.route('/settings')
 def settings():
@@ -178,44 +272,62 @@ def export():
     return render_template('export.html')
 
 @app.route('/api/export/<format>')
+@handle_api_errors
 def api_export(format):
     """API endpoint for exporting data in various formats."""
-    try:
-        from utils.data_processor import DataProcessor
-        
-        # Initialize processor with config
-        processor = DataProcessor()
-        
-        # Load satellite data
-        satellites = processor.load_satellite_data()
-        
-        if not satellites:
-            return jsonify({'error': 'No satellite data available'}), 404
-        
-        # Generate filename with timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f'starlink_export_{timestamp}'
-        
-        if format == 'json':
-            # Export to JSON
-            processor.export_to_json(satellites, filename + '.json')
-            # Return the data
-            with open(filename + '.json', 'r') as f:
-                data = json.load(f)
-            return jsonify(data)
-        elif format == 'csv':
-            # Export to CSV
-            processor.export_to_csv(satellites, filename + '.csv')
-            # Return the data
-            import pandas as pd
-            df = pd.read_csv(filename + '.csv')
-            csv_data = df.to_csv(index=False)
-            return csv_data, 200, {'Content-Type': 'text/csv'}
-        else:
-            return jsonify({'error': f'Unsupported format: {format}'}), 400
-            
-    except Exception as e:
-        return jsonify({'error': str(e)}), 500
+    from utils.data_processor import DataProcessor
+    
+    # Initialize processor with config
+    processor = DataProcessor()
+    
+    # Load satellite data
+    satellites = processor.load_satellite_data()
+    
+    if not satellites:
+        return jsonify({'error': 'No satellite data available'}), 404
+    
+    # Generate filename with timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    filename = f'starlink_export_{timestamp}'
+    
+    if format == 'json':
+        # Export to JSON
+        processor.export_to_json(satellites, filename + '.json')
+        # Return the data
+        with open(filename + '.json', 'r') as f:
+            data = json.load(f)
+        return jsonify(data)
+    elif format == 'csv':
+        # Export to CSV
+        processor.export_to_csv(satellites, filename + '.csv')
+        # Return the data
+        import pandas as pd
+        df = pd.read_csv(filename + '.csv')
+        csv_data = df.to_csv(index=False)
+        return csv_data, 200, {'Content-Type': 'text/csv'}
+    else:
+        return jsonify({'error': f'Unsupported format: {format}'}), 400
+
+@app.route('/api/cache/clear', methods=['POST'])
+@handle_api_errors
+def clear_cache():
+    """API endpoint to clear the cache."""
+    api_cache.clear()
+    if TRACKER_AVAILABLE:
+        # Try to clear tracker caches if method exists
+        if hasattr(tracker, 'clear_caches') and callable(getattr(tracker, 'clear_caches', None)):
+            tracker.clear_caches()
+    return jsonify({'message': 'Cache cleared successfully'})
+
+@app.errorhandler(404)
+def not_found(error):
+    """Handle 404 errors."""
+    return jsonify({'error': 'Not found'}), 404
+
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors."""
+    return jsonify({'error': 'Internal server error'}), 500
 
 def create_templates_dir():
     """Create templates directory with basic HTML files."""

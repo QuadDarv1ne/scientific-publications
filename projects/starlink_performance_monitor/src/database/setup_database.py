@@ -16,6 +16,13 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+# Add project root to path for imports
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from src.database.db_manager import get_database_manager
+
 from src.monitor.monitor import Base, PerformanceMetric
 from src.utils.logging_config import setup_logging, get_logger
 # Configure logging
@@ -29,32 +36,11 @@ def setup_database(config_path: str = "config.json"):
     Args:
         config_path: Path to configuration file
     """
-    try:
-        # Load configuration
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-    except FileNotFoundError:
-        logger.warning(f"Config file {config_path} not found, using SQLite defaults")
-        config = {}
+    # Use the database manager to set up the database
+    db_manager = get_database_manager(config_path)
+    engine = db_manager.get_engine()
     
-    # Get database configuration
-    db_config = config.get('database', {})
-    db_type = db_config.get('type', 'sqlite')
-    
-    # Create database engine
-    if db_type == 'postgresql':
-        db_url = f"postgresql://{db_config.get('user', 'user')}:{db_config.get('password', 'password')}@" \
-                 f"{db_config.get('host', 'localhost')}:{db_config.get('port', 5432)}/{db_config.get('name', 'starlink_monitor')}"
-    else:
-        db_url = "sqlite:///starlink_monitor.db"
-    
-    logger.info(f"Setting up database: {db_url}")
-    
-    # Create engine and initialize tables
-    engine = create_engine(db_url)
-    Base.metadata.create_all(engine)
-    
-    logger.info("Database setup completed successfully!")
+    logger.info(f"Database setup completed successfully with engine: {engine}")
 
 def main():
     """Main entry point for the setup script."""

@@ -11,6 +11,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
+import hashlib
 
 # Import required libraries
 try:
@@ -26,6 +27,41 @@ except ImportError as e:
 # Import our configuration manager
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from utils.config_manager import get_config
+
+
+class TLECache:
+    """Cache for TLE data with expiration."""
+    
+    def __init__(self, max_age_hours: int = 24):
+        self.cache = {}
+        self.timestamps = {}
+        self.max_age = timedelta(hours=max_age_hours)
+        self.logger = logging.getLogger(__name__)
+    
+    def get(self, url: str) -> Optional[str]:
+        """Retrieve cached TLE data if not expired."""
+        if url in self.cache:
+            age = datetime.now() - self.timestamps[url]
+            if age < self.max_age:
+                self.logger.debug(f"TLE cache hit for {url}, age: {age}")
+                return self.cache[url]
+            else:
+                self.logger.debug(f"TLE cache expired for {url}, age: {age}")
+                del self.cache[url]
+                del self.timestamps[url]
+        return None
+    
+    def put(self, url: str, data: str) -> None:
+        """Store TLE data in cache."""
+        self.cache[url] = data
+        self.timestamps[url] = datetime.now()
+        self.logger.debug(f"TLE data cached for {url}")
+    
+    def clear(self) -> None:
+        """Clear all cached TLE data."""
+        self.cache.clear()
+        self.timestamps.clear()
+        self.logger.debug("TLE cache cleared")
 
 
 class StarlinkTracker:
@@ -58,6 +94,20 @@ class StarlinkTracker:
         # Initialize scheduler
         self.scheduler = None
         
+        # Initialize TLE cache
+        self.tle_cache = TLECache(max_age_hours=6)
+        
+        # Cache for prediction results
+        self.prediction_cache = {}
+        self.prediction_cache_timestamps = {}
+        self.prediction_cache_max_age = timedelta(minutes=15)
+    
+    def _generate_prediction_cache_key(self, latitude: float, longitude: float, 
+                                     hours_ahead: int, min_elevation: float) -> str:
+        """Generate a cache key for prediction results."""
+        key_data = f"{latitude}_{longitude}_{hours_ahead}_{min_elevation}"
+        return hashlib.md5(key_data.encode()).hexdigest()
+    
     def update_tle_data(self, force=False) -> List[EarthSatellite]:
         """Download latest TLE data from Celestrak."""
         try:
@@ -86,9 +136,21 @@ class StarlinkTracker:
             # Try each URL until one works
             for url in urls_to_try:
                 try:
+                    # Check TLE cache first
+                    cached_tle = self.tle_cache.get(url)
+                    if cached_tle and not force:
+                        self.logger.info(f"Using cached TLE data from memory cache for {url}")
+                        # Save to file
+                        with open(cache_file, 'w', encoding='utf-8') as f:
+                            f.write(cached_tle)
+                        return self._load_tle_from_file(cache_file)
+                    
                     self.logger.info(f"Downloading latest TLE data from {url}")
                     response = requests.get(url, timeout=30)
                     response.raise_for_status()
+                    
+                    # Cache the TLE data
+                    self.tle_cache.put(url, response.text)
                     
                     with open(cache_file, 'w', encoding='utf-8') as f:
                         f.write(response.text)
@@ -179,6 +241,20 @@ class StarlinkTracker:
                       hours_ahead: int = 24, min_elevation: float = 10) -> List[Dict[str, Any]]:
         """Predict satellite passes over a location."""
         try:
+            # Generate cache key
+            cache_key = self._generate_prediction_cache_key(latitude, longitude, hours_ahead, min_elevation)
+            
+            # Check if we have cached results
+            if cache_key in self.prediction_cache:
+                cache_age = datetime.now() - self.prediction_cache_timestamps[cache_key]
+                if cache_age < self.prediction_cache_max_age:
+                    self.logger.info(f"Using cached prediction results, age: {cache_age}")
+                    return self.prediction_cache[cache_key]
+                else:
+                    # Remove expired cache entry
+                    del self.prediction_cache[cache_key]
+                    del self.prediction_cache_timestamps[cache_key]
+            
             if not self.satellites:
                 raise ValueError("No satellites loaded. Call update_tle_data() first.")
             
@@ -233,6 +309,10 @@ class StarlinkTracker:
                 except Exception as e:
                     self.logger.warning(f"Error predicting passes for {satellite.name}: {e}")
                     continue
+            
+            # Cache the results
+            self.prediction_cache[cache_key] = passes
+            self.prediction_cache_timestamps[cache_key] = datetime.now()
             
             self.logger.info(f"Predicted {len(passes)} passes for {len(satellites_to_process)} satellites")
             return passes
@@ -290,6 +370,13 @@ class StarlinkTracker:
         except Exception as e:
             self.logger.error(f"Error visualizing orbits: {e}")
             raise
+    
+    def clear_caches(self) -> None:
+        """Clear all caches."""
+        self.tle_cache.clear()
+        self.prediction_cache.clear()
+        self.prediction_cache_timestamps.clear()
+        self.logger.info("All caches cleared")
 
 
 def main():
