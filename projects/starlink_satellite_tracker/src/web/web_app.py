@@ -52,6 +52,14 @@ except ImportError:
                     'distance': 420.7
                 }
             ]
+        
+        def start_scheduler(self):
+            """Minimal scheduler method."""
+            pass
+        
+        def clear_caches(self):
+            """Minimal cache clearing method."""
+            pass
     
     tracker_instance = MinimalTracker()
 
