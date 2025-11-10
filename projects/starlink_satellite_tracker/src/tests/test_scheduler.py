@@ -78,7 +78,8 @@ class TestStarlinkScheduler(unittest.TestCase):
     @patch('utils.scheduler.CronParser.cron_to_schedule_job')
     def test_setup_scheduled_tasks_no_config(self, mock_cron_to_schedule, mock_clear):
         """Test setup of scheduled tasks with no config."""
-        scheduler = StarlinkScheduler({})
+        # Pass a config with no 'schedule' section
+        scheduler = StarlinkScheduler({'data_sources': {}})
         result = scheduler.setup_scheduled_tasks()
         
         self.assertFalse(result)
@@ -115,6 +116,8 @@ class TestStarlinkScheduler(unittest.TestCase):
         """Test stopping scheduler when running."""
         scheduler = StarlinkScheduler(self.test_config)
         scheduler.running = True
+        # Create a mock thread object
+        scheduler.thread = MagicMock()
         
         with patch('threading.Thread.join') as mock_join:
             with patch('schedule.clear') as mock_clear:
@@ -122,7 +125,7 @@ class TestStarlinkScheduler(unittest.TestCase):
                 
                 self.assertTrue(result)
                 self.assertFalse(scheduler.running)
-                mock_join.assert_called_once()
+                scheduler.thread.join.assert_called_once_with(timeout=5)
                 mock_clear.assert_called_once()
     
     def test_stop_scheduler_not_running(self):

@@ -158,12 +158,17 @@ class StarlinkScheduler:
     def setup_scheduled_tasks(self) -> bool:
         """Setup all scheduled tasks based on configuration."""
         try:
+            # Clear any existing scheduled jobs first
+            schedule.clear()
+            
+            # Debug logging
+            self.logger.debug(f"Schedule config: {self.schedule_config}")
+            self.logger.debug(f"Schedule config type: {type(self.schedule_config)}")
+            self.logger.debug(f"Schedule config length: {len(self.schedule_config) if self.schedule_config else 'N/A'}")
+            
             if not self.schedule_config or not isinstance(self.schedule_config, dict) or len(self.schedule_config) == 0:
                 self.logger.warning("No schedule configuration found")
                 return False
-            
-            # Clear any existing scheduled jobs
-            schedule.clear()
             
             # Setup TLE update task
             tle_cron = self.schedule_config.get('tle_update_cron', '0 0 */6 * *')
@@ -265,6 +270,9 @@ class StarlinkScheduler:
     def stop_scheduler(self) -> bool:
         """Stop the scheduler."""
         try:
+            # Always clear scheduled jobs, regardless of running state
+            schedule.clear()
+            
             if not self.running:
                 self.logger.warning("Scheduler is not running")
                 return True
@@ -272,7 +280,6 @@ class StarlinkScheduler:
             self.running = False
             if self.thread:
                 self.thread.join(timeout=5)
-            schedule.clear()
             self.execution_cache.clear()
             self.logger.info("Scheduler stopped")
             return True
