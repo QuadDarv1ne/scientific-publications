@@ -6,6 +6,7 @@ Real-time satellite tracking and visualization system for SpaceX Starlink conste
 
 import argparse
 import logging
+import math
 import os
 import sys
 import time
@@ -332,21 +333,42 @@ class StarlinkTracker:
             self.logger.error(f"Error predicting passes: {e}")
             raise
     
-    def _calculate_velocity(self, satellite: EarthSatellite, time, observer) -> float:
-        """Calculate satellite velocity relative to observer."""
+    def _calculate_velocity(self, satellite: EarthSatellite, time, observer=None) -> float:
+        """Calculate satellite velocity relative to observer or Earth center."""
         try:
             # Get positions at two nearby times
             t1 = time
             t2 = self.ts.from_datetime(time.utc_datetime() + timedelta(seconds=1))
             
-            difference = satellite - observer
-            pos1 = difference.at(t1)
-            pos2 = difference.at(t2)
-            
-            # Calculate distance traveled in 1 second
-            dist1 = pos1.distance().km
-            dist2 = pos2.distance().km
-            velocity = abs(dist2 - dist1)  # km/s
+            if observer is not None:
+                # Calculate velocity relative to observer
+                difference = satellite - observer
+                pos1 = difference.at(t1)
+                pos2 = difference.at(t2)
+                
+                # Calculate distance traveled in 1 second
+                dist1 = pos1.distance().km
+                dist2 = pos2.distance().km
+                velocity = abs(dist2 - dist1)  # km/s
+            else:
+                # Calculate orbital velocity (relative to Earth center)
+                geocentric1 = satellite.at(t1)
+                geocentric2 = satellite.at(t2)
+                
+                # Get position vectors
+                x1, y1, z1 = geocentric1.position.km
+                x2, y2, z2 = geocentric2.position.km
+                
+                # Calculate distance traveled in 1 second
+                dist1 = math.sqrt(x1**2 + y1**2 + z1**2)
+                dist2 = math.sqrt(x2**2 + y2**2 + z2**2)
+                velocity = abs(dist2 - dist1)  # km/s
+                
+                # For orbital velocity, we should calculate the magnitude of the velocity vector
+                vx = (x2 - x1)  # km/s
+                vy = (y2 - y1)  # km/s
+                vz = (z2 - z1)  # km/s
+                velocity = math.sqrt(vx**2 + vy**2 + vz**2)  # km/s
             
             return velocity
         except Exception as e:
@@ -388,6 +410,10 @@ class StarlinkTracker:
                     # Get orbital elements
                     elements = satellite.orbit_elements_at(t)
                     
+                    # Calculate additional orbital parameters
+                    velocity = self._calculate_velocity(satellite, t)  # Calculate orbital velocity
+                    brightness = self._estimate_brightness(satellite, 45, subpoint.elevation.km)  # Estimate at 45° elevation
+                    
                     return {
                         'name': satellite.name,
                         'norad_id': satellite.model.satnum,
@@ -400,7 +426,16 @@ class StarlinkTracker:
                             'inclination': elements.inclination.degrees,
                             'eccentricity': elements.eccentricity,
                             'period': elements.period_in_days * 24 * 60,  # minutes
-                            'semi_major_axis': elements.semi_major_axis.km
+                            'semi_major_axis': elements.semi_major_axis.km,
+                            'right_ascension': elements.longitude_of_ascending_node.degrees,
+                            'argument_of_perigee': elements.argument_of_perigee.degrees,
+                            'mean_anomaly': elements.mean_anomaly.degrees,
+                            'mean_motion': elements.mean_motion.radians_per_day * 180 / math.pi / 86400  # rev/s
+                        },
+                        'characteristics': {
+                            'velocity': velocity,  # km/s
+                            'brightness': brightness,  # magnitude
+                            'radar_cross_section': 'N/A'  # Would require additional data
                         },
                         'updated': t.utc_datetime().isoformat()
                     }

@@ -37,6 +37,70 @@
     </div>
 </div>
 
+<!-- Network Overview Cards -->
+<div class="row mb-4 g-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0"><i class="fas fa-satellite text-primary"></i> Satellites</h5>
+                    <div class="badge bg-primary">Active</div>
+                </div>
+                <h2 class="card-text display-6 mb-1" id="satelliteCount">1,500+</h2>
+                <small class="text-muted">In orbit</small>
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: 95%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0"><i class="fas fa-globe-americas text-success"></i> Coverage</h5>
+                    <div class="badge bg-success">Global</div>
+                </div>
+                <h2 class="card-text display-6 mb-1" id="coveragePercent">98%</h2>
+                <small class="text-muted">World population</small>
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 98%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0"><i class="fas fa-tachometer-alt text-info"></i> Latency</h5>
+                    <div class="badge bg-info">Low</div>
+                </div>
+                <h2 class="card-text display-6 mb-1" id="networkLatency">20ms</h2>
+                <small class="text-muted">Average RTT</small>
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 30%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-3 col-md-6">
+        <div class="card metric-card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> Alerts</h5>
+                    <div class="badge bg-warning">Active</div>
+                </div>
+                <h2 class="card-text display-6 mb-1" id="activeAlerts">3</h2>
+                <small class="text-muted">Requires attention</small>
+                <div class="progress mt-3" style="height: 8px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 15%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Current Metrics -->
 <div class="row mb-4 g-4">
     <div class="col-xl-3 col-md-6">
@@ -89,7 +153,7 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h5 class="card-title mb-0"><i class="fas fa-exclamation-triangle text-warning"></i> {{ t.packet_loss }}</h5>
-                    <div class="badge bg-warning">% </div>
+                    <div class="badge bg-warning">%</div>
                 </div>
                 <h2 class="card-text display-6 mb-1" id="packetLoss">--</h2>
                 <small class="text-muted">Last updated: <span id="packetLossTime">--</span></small>
@@ -180,8 +244,13 @@
 <div class="row g-4 mb-4">
     <div class="col-12">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">{{ t.weather_correlation_analysis }}</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary" id="refreshWeather">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -211,8 +280,13 @@
 <div class="row g-4">
     <div class="col-12">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">{{ t.recent_alerts }}</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary" id="viewAllAlerts">
+                        View All
+                    </button>
+                </div>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -224,11 +298,12 @@
                                 <th>{{ t.message }}</th>
                                 <th>{{ t.value }}</th>
                                 <th>{{ t.threshold }}</th>
+                                <th>Status</th>
                             </tr>
                         </thead>
                         <tbody id="alertsTableBody">
                             <tr>
-                                <td colspan="5" class="text-center">{{ t.no_recent_alerts }}</td>
+                                <td colspan="6" class="text-center">{{ t.no_recent_alerts }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -844,6 +919,72 @@
         }
     }
     
+    // Update alerts table
+    async function updateAlerts() {
+        try {
+            // In a real implementation, this would fetch actual alerts
+            // For now, we'll generate sample alerts
+            const alerts = [
+                {
+                    time: '2025-11-10 14:30:22',
+                    type: 'High Ping',
+                    message: 'Ping latency exceeded threshold',
+                    value: '85 ms',
+                    threshold: '50 ms',
+                    status: 'Active'
+                },
+                {
+                    time: '2025-11-10 13:45:11',
+                    type: 'Low Download',
+                    message: 'Download speed below expected',
+                    value: '45 Mbps',
+                    threshold: '80 Mbps',
+                    status: 'Resolved'
+                },
+                {
+                    time: '2025-11-10 12:20:05',
+                    type: 'Packet Loss',
+                    message: 'Packet loss detected',
+                    value: '3.2%',
+                    threshold: '1%',
+                    status: 'Monitoring'
+                }
+            ];
+            
+            const tableBody = document.getElementById('alertsTableBody');
+            tableBody.innerHTML = '';
+            
+            alerts.forEach(alert => {
+                const row = document.createElement('tr');
+                let statusClass = '';
+                switch(alert.status) {
+                    case 'Active':
+                        statusClass = 'bg-danger text-white';
+                        break;
+                    case 'Resolved':
+                        statusClass = 'bg-success text-white';
+                        break;
+                    case 'Monitoring':
+                        statusClass = 'bg-warning text-dark';
+                        break;
+                }
+                
+                row.innerHTML = `
+                    <td>${alert.time}</td>
+                    <td>${alert.type}</td>
+                    <td>${alert.message}</td>
+                    <td>${alert.value}</td>
+                    <td>${alert.threshold}</td>
+                    <td><span class="badge ${statusClass}">${alert.status}</span></td>
+                `;
+                
+                tableBody.appendChild(row);
+            });
+        } catch (error) {
+            console.error('Error fetching alerts:', error);
+        }
+    }
+    
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize WebSocket
@@ -853,12 +994,14 @@
         updateCurrentMetrics();
         updateCharts();
         updateWeatherCorrelations();
+        updateAlerts();
         
         // Set up refresh button
         document.getElementById('refreshBtn').addEventListener('click', function() {
             updateCurrentMetrics();
             updateCharts();
             updateWeatherCorrelations();
+            updateAlerts();
         });
         
         // Set up auto refresh button
@@ -893,6 +1036,16 @@
             changeChartType('area');
         });
         
+        // Set up weather refresh button
+        document.getElementById('refreshWeather').addEventListener('click', function() {
+            updateWeatherCorrelations();
+        });
+        
+        // Set up view all alerts button
+        document.getElementById('viewAllAlerts').addEventListener('click', function() {
+            window.location.href = '/alerts';
+        });
+        
         // Set initial chart type button state
         document.getElementById('chartTypeLine').classList.add('active');
         
@@ -900,6 +1053,7 @@
         autoRefreshInterval = setInterval(() => {
             updateCurrentMetrics();
             updateWeatherCorrelations();
+            updateAlerts();
         }, 30000); // Refresh every 30 seconds
     });
 </script>

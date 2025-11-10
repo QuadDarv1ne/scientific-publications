@@ -80,12 +80,13 @@
                                 <th>Azimuth</th>
                                 <th>Distance</th>
                                 <th>Duration</th>
+                                <th>Brightness</th>
                                 <th>Visibility</th>
                             </tr>
                         </thead>
                         <tbody id="passes-table">
                             <tr>
-                                <td colspan="7" class="text-center">
+                                <td colspan="8" class="text-center">
                                     <div class="spinner-border text-primary" role="status">
                                         <span class="visually-hidden">Loading...</span>
                                     </div>
@@ -100,13 +101,35 @@
     </div>
 </div>
 
+<!-- Satellite Details Modal -->
+<div class="modal fade" id="satelliteModal" tabindex="-1" aria-labelledby="satelliteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="satelliteModalLabel">Satellite Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="satellite-modal-body">
+                <div class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 // Function to fetch and display passes
 function fetchPasses(lat, lon, hours) {
     const tableBody = document.getElementById('passes-table');
     tableBody.innerHTML = `
         <tr>
-            <td colspan="7" class="text-center">
+            <td colspan="8" class="text-center">
                 <div class="spinner-border text-primary" role="status">
                     <span class="visually-hidden">Loading...</span>
                 </div>
@@ -140,8 +163,22 @@ function fetchPasses(lat, lon, hours) {
                         visibilityText = 'Poor';
                     }
                     
+                    // Determine brightness class
+                    let brightnessClass;
+                    if (pass.brightness < 2) {
+                        brightnessClass = 'bg-warning text-dark';
+                    } else if (pass.brightness < 4) {
+                        brightnessClass = 'bg-info';
+                    } else {
+                        brightnessClass = 'bg-secondary';
+                    }
+                    
                     row.innerHTML = `
-                        <td><strong>${pass.satellite}</strong></td>
+                        <td>
+                            <a href="#" onclick="showSatelliteDetails('${pass.satellite}')" class="text-decoration-none">
+                                <strong>${pass.satellite}</strong>
+                            </a>
+                        </td>
                         <td>${new Date(pass.time).toLocaleString()}</td>
                         <td>
                             <div class="d-flex align-items-center">
@@ -156,17 +193,117 @@ function fetchPasses(lat, lon, hours) {
                         <td>${pass.azimuth}°</td>
                         <td>${pass.distance} km</td>
                         <td>~${duration} min</td>
+                        <td>
+                            <span class="badge ${brightnessClass}">
+                                ${pass.brightness}
+                            </span>
+                        </td>
                         <td><span class="badge ${visibilityClass}">${visibilityText}</span></td>
                     `;
                     tableBody.appendChild(row);
                 });
             } else {
-                tableBody.innerHTML = '<tr><td colspan="7" class="text-center">No passes found for the specified location and time period</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="8" class="text-center">No passes found for the specified location and time period</td></tr>';
             }
         })
         .catch(error => {
             console.error('Error fetching passes data:', error);
-            tableBody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error loading passes data</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading passes data</td></tr>';
+        });
+}
+
+// Show satellite details in modal
+function showSatelliteDetails(satelliteName) {
+    const modalBody = document.getElementById('satellite-modal-body');
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+    
+    // Show the modal
+    const modal = new bootstrap.Modal(document.getElementById('satelliteModal'));
+    modal.show();
+    
+    // Fetch satellite details
+    fetch(`/api/satellite/${encodeURIComponent(satelliteName)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                modalBody.innerHTML = `<p class="text-danger">Error: ${data.error}</p>`;
+                return;
+            }
+            
+            modalBody.innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5>${data.name}</h5>
+                        <p><strong>NORAD ID:</strong> ${data.norad_id}</p>
+                        <p><strong>Last Updated:</strong> ${new Date(data.updated).toLocaleString()}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Current Position</h6>
+                        <p><strong>Latitude:</strong> ${data.position.latitude.toFixed(4)}°</p>
+                        <p><strong>Longitude:</strong> ${data.position.longitude.toFixed(4)}°</p>
+                        <p><strong>Altitude:</strong> ${data.position.altitude.toFixed(2)} km</p>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6>Orbital Parameters</h6>
+                        <div class="row">
+                            <div class="col-md-3">
+                                <p><strong>Inclination:</strong> ${data.orbit.inclination.toFixed(2)}°</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p><strong>Eccentricity:</strong> ${data.orbit.eccentricity.toFixed(4)}</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p><strong>Period:</strong> ${data.orbit.period.toFixed(2)} min</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p><strong>Semi-major axis:</strong> ${data.orbit.semi_major_axis.toFixed(2)} km</p>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-3">
+                                <p><strong>RA of Ascending Node:</strong> ${data.orbit.right_ascension.toFixed(2)}°</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p><strong>Arg of Perigee:</strong> ${data.orbit.argument_of_perigee.toFixed(2)}°</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p><strong>Mean Anomaly:</strong> ${data.orbit.mean_anomaly.toFixed(2)}°</p>
+                            </div>
+                            <div class="col-md-3">
+                                <p><strong>Mean Motion:</strong> ${data.orbit.mean_motion.toFixed(6)} rev/s</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6>Satellite Characteristics</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <p><strong>Velocity:</strong> ${data.characteristics.velocity.toFixed(2)} km/s</p>
+                            </div>
+                            <div class="col-md-4">
+                                <p><strong>Brightness:</strong> ${data.characteristics.brightness.toFixed(2)} mag</p>
+                            </div>
+                            <div class="col-md-4">
+                                <p><strong>Radar Cross Section:</strong> ${data.characteristics.radar_cross_section}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        })
+        .catch(error => {
+            console.error('Error fetching satellite details:', error);
+            modalBody.innerHTML = '<p class="text-danger">Error loading satellite details</p>';
         });
 }
 
