@@ -4,10 +4,12 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, TYPE_CHECKING
 from astropy.time import Time
-from heliopy.events.flare_detector import Flare
-from heliopy.events.cme_detector import CME
+
+if TYPE_CHECKING:
+    from heliopy.events.flare_detector import Flare, GOESData
+    from heliopy.events.cme_detector import CME
 
 
 class Plotter:
@@ -66,7 +68,7 @@ class Plotter:
         return fig
     
     @staticmethod
-    def plot_flare_lightcurve(goes_data, flares: List[Flare],
+    def plot_flare_lightcurve(goes_data: 'GOESData', flares: List['Flare'],
                               save_path: Optional[str] = None) -> plt.Figure:
         """
         Построение кривой блеска вспышек.
@@ -88,8 +90,14 @@ class Plotter:
         fig, ax = plt.subplots(figsize=(14, 6))
         
         # Построение данных GOES
+        from heliopy.events.flare_detector import GOESData, Flare
         if len(goes_data.xrsb) > 0:
-            ax.plot(goes_data.time, goes_data.xrsb, label='XRS-B', linewidth=1.5)
+            # Преобразование времени в datetime для matplotlib
+            if hasattr(goes_data.time, 'datetime'):
+                time_dt = goes_data.time.datetime
+            else:
+                time_dt = goes_data.time
+            ax.plot(time_dt, goes_data.xrsb, label='XRS-B', linewidth=1.5)
         
         # Отметка вспышек
         for flare in flares:
@@ -111,7 +119,7 @@ class Plotter:
         return fig
     
     @staticmethod
-    def plot_cme_trajectory(cme: CME,
+    def plot_cme_trajectory(cme: 'CME',
                             save_path: Optional[str] = None) -> plt.Figure:
         """
         Построение траектории CME.
