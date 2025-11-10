@@ -3,8 +3,8 @@
 {% block title %}Performance History - Starlink Monitor{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Performance History</h1>
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 page-heading">Performance History</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" id="timeRangeBtn" data-range="24h">
@@ -17,49 +17,89 @@
                 Last 30 Days
             </button>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-            <i class="fas fa-download"></i> Export
+        <div class="dropdown me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-download"></i> Export
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" id="exportCSV">CSV</a></li>
+                <li><a class="dropdown-item" href="#" id="exportJSON">JSON</a></li>
+                <li><a class="dropdown-item" href="#" id="exportPDF">PDF</a></li>
+                <li><a class="dropdown-item" href="#" id="exportExcel">Excel</a></li>
+            </ul>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="comparePeriods">
+            <i class="fas fa-balance-scale"></i> Compare
         </button>
-        <ul class="dropdown-menu">
-            <li><a class="dropdown-item" href="#" id="exportCSV">CSV</a></li>
-            <li><a class="dropdown-item" href="#" id="exportJSON">JSON</a></li>
-        </ul>
     </div>
 </div>
 
-<!-- Filters -->
+<!-- Advanced Filters -->
 <div class="row mb-4">
     <div class="col-md-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-3">
-                        <label for="metricType" class="form-label">Metric Type</label>
-                        <select class="form-select" id="metricType">
-                            <option value="all">All Metrics</option>
-                            <option value="download">Download Speed</option>
-                            <option value="upload">Upload Speed</option>
-                            <option value="ping">Ping</option>
-                            <option value="packetloss">Packet Loss</option>
-                        </select>
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0 d-flex justify-content-between align-items-center">
+                    <span>Advanced Filters</span>
+                    <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="true" aria-controls="filterCollapse">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                </h5>
+            </div>
+            <div class="collapse show" id="filterCollapse">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="metricType" class="form-label fw-bold">Metric Type</label>
+                            <select class="form-select" id="metricType">
+                                <option value="all">All Metrics</option>
+                                <option value="download">Download Speed</option>
+                                <option value="upload">Upload Speed</option>
+                                <option value="ping">Ping</option>
+                                <option value="packetloss">Packet Loss</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="serverFilter" class="form-label fw-bold">Server</label>
+                            <select class="form-select" id="serverFilter">
+                                <option value="all">All Servers</option>
+                                <option value="starlink">Starlink</option>
+                                <option value="google">Google DNS</option>
+                                <option value="cloudflare">Cloudflare</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label for="dateRange" class="form-label fw-bold">Date Range</label>
+                            <input type="text" class="form-control" id="dateRange" placeholder="Select date range">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="performanceThreshold" class="form-label fw-bold">Performance Threshold</label>
+                            <select class="form-select" id="performanceThreshold">
+                                <option value="all">All Data</option>
+                                <option value="poor">Poor Performance (&lt; 25th percentile)</option>
+                                <option value="good">Good Performance (&gt; 75th percentile)</option>
+                                <option value="outlier">Outliers (&gt; 95th percentile)</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="col-md-3">
-                        <label for="serverFilter" class="form-label">Server</label>
-                        <select class="form-select" id="serverFilter">
-                            <option value="all">All Servers</option>
-                            <option value="starlink">Starlink</option>
-                            <option value="google">Google DNS</option>
-                            <option value="cloudflare">Cloudflare</option>
-                        </select>
-                    </div>
-                    <div class="col-md-3">
-                        <label for="dateRange" class="form-label">Date Range</label>
-                        <input type="text" class="form-control" id="dateRange" placeholder="Select date range">
-                    </div>
-                    <div class="col-md-3 d-flex align-items-end">
-                        <button class="btn btn-primary w-100" id="applyFilters">
-                            <i class="fas fa-filter"></i> Apply Filters
-                        </button>
+                    <div class="row g-3 mt-2">
+                        <div class="col-md-3">
+                            <label for="minDownload" class="form-label">Min Download (Mbps)</label>
+                            <input type="number" class="form-control" id="minDownload" placeholder="0">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="maxPing" class="form-label">Max Ping (ms)</label>
+                            <input type="number" class="form-control" id="maxPing" placeholder="1000">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="maxPacketLoss" class="form-label">Max Packet Loss (%)</label>
+                            <input type="number" class="form-control" id="maxPacketLoss" placeholder="100" step="0.1">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" id="applyFilters">
+                                <i class="fas fa-filter"></i> Apply Filters
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -67,92 +107,116 @@
     </div>
 </div>
 
-<!-- Charts -->
-<div class="row">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Performance Trends</h5>
+<!-- Charts Section -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Performance Trends</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeLine">Line</button>
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeBar">Bar</button>
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeArea">Area</button>
+                </div>
             </div>
             <div class="card-body">
-                <canvas id="trendChart" height="100"></canvas>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Statistical Summary</h5>
-            </div>
-            <div class="card-body">
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>Metric</th>
-                            <th>Min</th>
-                            <th>Avg</th>
-                            <th>Max</th>
-                            <th>Std Dev</th>
-                        </tr>
-                    </thead>
-                    <tbody id="statsTable">
-                        <tr>
-                            <td>Download (Mbps)</td>
-                            <td id="downloadMin">--</td>
-                            <td id="downloadAvg">--</td>
-                            <td id="downloadMax">--</td>
-                            <td id="downloadStd">--</td>
-                        </tr>
-                        <tr>
-                            <td>Upload (Mbps)</td>
-                            <td id="uploadMin">--</td>
-                            <td id="uploadAvg">--</td>
-                            <td id="uploadMax">--</td>
-                            <td id="uploadStd">--</td>
-                        </tr>
-                        <tr>
-                            <td>Ping (ms)</td>
-                            <td id="pingMin">--</td>
-                            <td id="pingAvg">--</td>
-                            <td id="pingMax">--</td>
-                            <td id="pingStd">--</td>
-                        </tr>
-                        <tr>
-                            <td>Packet Loss (%)</td>
-                            <td id="packetLossMin">--</td>
-                            <td id="packetLossAvg">--</td>
-                            <td id="packetLossMax">--</td>
-                            <td id="packetLossStd">--</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Performance Distribution</h5>
-            </div>
-            <div class="card-body">
-                <canvas id="distributionChart" height="100"></canvas>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">Raw Data</h5>
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Statistical Summary</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped table-sm" id="dataTable">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Min</th>
+                                <th>Avg</th>
+                                <th>Max</th>
+                                <th>Std Dev</th>
+                                <th>95th %</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statsTable">
+                            <tr>
+                                <td>Download (Mbps)</td>
+                                <td id="downloadMin">--</td>
+                                <td id="downloadAvg">--</td>
+                                <td id="downloadMax">--</td>
+                                <td id="downloadStd">--</td>
+                                <td id="download95">--</td>
+                            </tr>
+                            <tr>
+                                <td>Upload (Mbps)</td>
+                                <td id="uploadMin">--</td>
+                                <td id="uploadAvg">--</td>
+                                <td id="uploadMax">--</td>
+                                <td id="uploadStd">--</td>
+                                <td id="upload95">--</td>
+                            </tr>
+                            <tr>
+                                <td>Ping (ms)</td>
+                                <td id="pingMin">--</td>
+                                <td id="pingAvg">--</td>
+                                <td id="pingMax">--</td>
+                                <td id="pingStd">--</td>
+                                <td id="ping95">--</td>
+                            </tr>
+                            <tr>
+                                <td>Packet Loss (%)</td>
+                                <td id="packetLossMin">--</td>
+                                <td id="packetLossAvg">--</td>
+                                <td id="packetLossMax">--</td>
+                                <td id="packetLossStd">--</td>
+                                <td id="packetLoss95">--</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Performance Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="distributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Raw Data</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-secondary" id="prevPage">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" id="nextPage">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover" id="dataTable">
                         <thead>
                             <tr>
                                 <th>Timestamp</th>
@@ -161,6 +225,7 @@
                                 <th>Ping (ms)</th>
                                 <th>Packet Loss (%)</th>
                                 <th>Server</th>
+                                <th>Performance Index</th>
                             </tr>
                         </thead>
                         <tbody id="dataBody">
@@ -168,6 +233,58 @@
                         </tbody>
                     </table>
                 </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        Showing <span id="startRow">0</span> to <span id="endRow">0</span> of <span id="totalRows">0</span> entries
+                    </div>
+                    <div>
+                        <select class="form-select form-select-sm d-inline-block w-auto" id="rowsPerPage">
+                            <option value="10">10 rows</option>
+                            <option value="25" selected>25 rows</option>
+                            <option value="50">50 rows</option>
+                            <option value="100">100 rows</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comparison Modal -->
+<div class="modal fade" id="compareModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Performance Comparison</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Period 1</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Date Range</label>
+                            <input type="text" class="form-control" id="period1Range" placeholder="Select date range">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Period 2</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Date Range</label>
+                            <input type="text" class="form-control" id="period2Range" placeholder="Select date range">
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <canvas id="comparisonChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="runComparison">Compare</button>
             </div>
         </div>
     </div>
@@ -200,14 +317,70 @@
             exportData('json');
         });
         
+        document.getElementById('exportPDF').addEventListener('click', function() {
+            exportData('pdf');
+        });
+        
+        document.getElementById('exportExcel').addEventListener('click', function() {
+            exportData('excel');
+        });
+        
         // Set up filter button
         document.getElementById('applyFilters').addEventListener('click', function() {
             applyFilters();
         });
         
+        // Set up comparison button
+        document.getElementById('comparePeriods').addEventListener('click', function() {
+            const modal = new bootstrap.Modal(document.getElementById('compareModal'));
+            modal.show();
+        });
+        
+        // Set up chart type buttons
+        document.getElementById('chartTypeLine').addEventListener('click', function() {
+            updateChartType('line');
+        });
+        
+        document.getElementById('chartTypeBar').addEventListener('click', function() {
+            updateChartType('bar');
+        });
+        
+        document.getElementById('chartTypeArea').addEventListener('click', function() {
+            updateChartType('area');
+        });
+        
+        // Set up pagination
+        document.getElementById('prevPage').addEventListener('click', function() {
+            changePage(-1);
+        });
+        
+        document.getElementById('nextPage').addEventListener('click', function() {
+            changePage(1);
+        });
+        
+        document.getElementById('rowsPerPage').addEventListener('change', function() {
+            currentPage = 1;
+            displayTableData();
+        });
+        
+        // Set up comparison button
+        document.getElementById('runComparison').addEventListener('click', function() {
+            runComparison();
+        });
+        
         // Load initial data
         loadData('24h');
     });
+    
+    // Global variables
+    let currentData = [];
+    let filteredData = [];
+    let currentPage = 1;
+    let rowsPerPage = 25;
+    let currentChartType = 'line';
+    let trendChart = null;
+    let distributionChart = null;
+    let comparisonChart = null;
     
     async function loadData(timeRange) {
         try {
@@ -219,9 +392,11 @@
             const data = response.data.data;
             
             if (data && data.length > 0) {
+                currentData = data;
+                filteredData = [...data];
                 updateCharts(data);
                 updateStats(data);
-                updateTable(data);
+                displayTableData();
             }
         } catch (error) {
             console.error('Error loading data:', error);
@@ -240,41 +415,45 @@
         const packetLoss = data.map(item => item.packet_loss_percent);
         
         // Clear existing chart if it exists
-        if (window.trendChart) {
-            window.trendChart.destroy();
+        if (trendChart) {
+            trendChart.destroy();
         }
         
         // Create new chart
-        window.trendChart = new Chart(ctx1, {
-            type: 'line',
+        const chartConfig = {
+            type: currentChartType === 'bar' ? 'bar' : currentChartType === 'area' ? 'line' : 'line',
             data: {
                 labels: timestamps,
                 datasets: [{
                     label: 'Download Speed (Mbps)',
                     data: downloadSpeeds,
                     borderColor: 'rgb(54, 162, 235)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    tension: 0.1
+                    backgroundColor: currentChartType === 'area' ? 'rgba(54, 162, 235, 0.2)' : 'transparent',
+                    tension: 0.1,
+                    fill: currentChartType === 'area'
                 }, {
                     label: 'Upload Speed (Mbps)',
                     data: uploadSpeeds,
                     borderColor: 'rgb(75, 192, 192)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    tension: 0.1
+                    backgroundColor: currentChartType === 'area' ? 'rgba(75, 192, 192, 0.2)' : 'transparent',
+                    tension: 0.1,
+                    fill: currentChartType === 'area'
                 }, {
                     label: 'Ping (ms)',
                     data: pingTimes,
                     borderColor: 'rgb(255, 99, 132)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    backgroundColor: currentChartType === 'area' ? 'rgba(255, 99, 132, 0.2)' : 'transparent',
                     tension: 0.1,
-                    yAxisID: 'y1'
+                    yAxisID: 'y1',
+                    fill: currentChartType === 'area'
                 }, {
                     label: 'Packet Loss (%)',
                     data: packetLoss,
                     borderColor: 'rgb(255, 159, 64)',
-                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    backgroundColor: currentChartType === 'area' ? 'rgba(255, 159, 64, 0.2)' : 'transparent',
                     tension: 0.1,
-                    yAxisID: 'y2'
+                    yAxisID: 'y2',
+                    fill: currentChartType === 'area'
                 }]
             },
             options: {
@@ -314,9 +493,20 @@
                             drawOnChartArea: false
                         }
                     }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
                 }
             }
-        });
+        };
+        
+        trendChart = new Chart(ctx1, chartConfig);
     }
     
     function updateStats(data) {
@@ -328,11 +518,13 @@
         
         // Helper function to calculate stats
         function calculateStats(values) {
-            const min = Math.min(...values);
-            const max = Math.max(...values);
-            const avg = values.reduce((a, b) => a + b, 0) / values.length;
-            const std = Math.sqrt(values.reduce((sq, n) => sq + Math.pow(n - avg, 2), 0) / values.length);
-            return { min, max, avg, std };
+            const sorted = [...values].sort((a, b) => a - b);
+            const min = Math.min(...sorted);
+            const max = Math.max(...sorted);
+            const avg = sorted.reduce((a, b) => a + b, 0) / sorted.length;
+            const std = Math.sqrt(sorted.reduce((sq, n) => sq + Math.pow(n - avg, 2), 0) / sorted.length);
+            const p95 = sorted[Math.floor(sorted.length * 0.95)];
+            return { min, max, avg, std, p95 };
         }
         
         // Update download stats
@@ -341,6 +533,7 @@
         document.getElementById('downloadAvg').textContent = downloadStats.avg.toFixed(2);
         document.getElementById('downloadMax').textContent = downloadStats.max.toFixed(2);
         document.getElementById('downloadStd').textContent = downloadStats.std.toFixed(2);
+        document.getElementById('download95').textContent = downloadStats.p95.toFixed(2);
         
         // Update upload stats
         const uploadStats = calculateStats(uploadSpeeds);
@@ -348,6 +541,7 @@
         document.getElementById('uploadAvg').textContent = uploadStats.avg.toFixed(2);
         document.getElementById('uploadMax').textContent = uploadStats.max.toFixed(2);
         document.getElementById('uploadStd').textContent = uploadStats.std.toFixed(2);
+        document.getElementById('upload95').textContent = uploadStats.p95.toFixed(2);
         
         // Update ping stats
         const pingStats = calculateStats(pingTimes);
@@ -355,6 +549,7 @@
         document.getElementById('pingAvg').textContent = pingStats.avg.toFixed(2);
         document.getElementById('pingMax').textContent = pingStats.max.toFixed(2);
         document.getElementById('pingStd').textContent = pingStats.std.toFixed(2);
+        document.getElementById('ping95').textContent = pingStats.p95.toFixed(2);
         
         // Update packet loss stats
         const packetLossStats = calculateStats(packetLoss);
@@ -362,13 +557,32 @@
         document.getElementById('packetLossAvg').textContent = packetLossStats.avg.toFixed(2);
         document.getElementById('packetLossMax').textContent = packetLossStats.max.toFixed(2);
         document.getElementById('packetLossStd').textContent = packetLossStats.std.toFixed(2);
+        document.getElementById('packetLoss95').textContent = packetLossStats.p95.toFixed(2);
     }
     
-    function updateTable(data) {
+    function displayTableData() {
         const tbody = document.getElementById('dataBody');
         tbody.innerHTML = '';
         
-        data.slice(0, 50).forEach(item => {
+        // Calculate pagination
+        const totalRows = filteredData.length;
+        rowsPerPage = parseInt(document.getElementById('rowsPerPage').value);
+        const startRow = (currentPage - 1) * rowsPerPage;
+        const endRow = Math.min(startRow + rowsPerPage, totalRows);
+        
+        // Update pagination info
+        document.getElementById('startRow').textContent = startRow + 1;
+        document.getElementById('endRow').textContent = endRow;
+        document.getElementById('totalRows').textContent = totalRows;
+        
+        // Display data for current page
+        const pageData = filteredData.slice(startRow, endRow);
+        
+        pageData.forEach(item => {
+            // Calculate a simple performance index (higher is better)
+            const perfIndex = (item.download_mbps / 100) + (item.upload_mbps / 20) - (item.ping_ms / 100) - (item.packet_loss_percent / 5);
+            const perfIndexClass = perfIndex > 0.5 ? 'text-success' : perfIndex > 0 ? 'text-warning' : 'text-danger';
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${new Date(item.timestamp).toLocaleString()}</td>
@@ -377,19 +591,118 @@
                 <td>${item.ping_ms.toFixed(2)}</td>
                 <td>${item.packet_loss_percent.toFixed(2)}</td>
                 <td>${item.server_name}</td>
+                <td class="${perfIndexClass}">${perfIndex.toFixed(2)}</td>
             `;
             tbody.appendChild(row);
         });
     }
     
+    function changePage(direction) {
+        const totalPages = Math.ceil(filteredData.length / rowsPerPage);
+        const newPage = currentPage + direction;
+        
+        if (newPage >= 1 && newPage <= totalPages) {
+            currentPage = newPage;
+            displayTableData();
+        }
+    }
+    
     function applyFilters() {
-        // Apply filters to data
-        // Implementation would go here
+        // Get filter values
+        const metricType = document.getElementById('metricType').value;
+        const serverFilter = document.getElementById('serverFilter').value;
+        const minDownload = parseFloat(document.getElementById('minDownload').value) || 0;
+        const maxPing = parseFloat(document.getElementById('maxPing').value) || Infinity;
+        const maxPacketLoss = parseFloat(document.getElementById('maxPacketLoss').value) || Infinity;
+        const threshold = document.getElementById('performanceThreshold').value;
+        
+        // Apply filters
+        filteredData = currentData.filter(item => {
+            // Server filter
+            if (serverFilter !== 'all' && item.server_name.toLowerCase() !== serverFilter) {
+                return false;
+            }
+            
+            // Download speed filter
+            if (item.download_mbps < minDownload) {
+                return false;
+            }
+            
+            // Ping filter
+            if (item.ping_ms > maxPing) {
+                return false;
+            }
+            
+            // Packet loss filter
+            if (item.packet_loss_percent > maxPacketLoss) {
+                return false;
+            }
+            
+            // Threshold filter
+            if (threshold !== 'all') {
+                // In a real implementation, you would calculate percentiles
+                // For now, we'll use simple thresholds
+                switch(threshold) {
+                    case 'poor':
+                        if (item.download_mbps > 50 || item.ping_ms < 50) return false;
+                        break;
+                    case 'good':
+                        if (item.download_mbps < 80 || item.ping_ms > 30) return false;
+                        break;
+                    case 'outlier':
+                        if (item.download_mbps < 150 && item.ping_ms > 20) return false;
+                        break;
+                }
+            }
+            
+            // Metric type filter
+            if (metricType !== 'all') {
+                // This would be used for more specific filtering
+            }
+            
+            return true;
+        });
+        
+        // Reset to first page and display
+        currentPage = 1;
+        displayTableData();
+        updateCharts(filteredData);
+        updateStats(filteredData);
+    }
+    
+    function updateChartType(type) {
+        currentChartType = type;
+        
+        // Update button states
+        document.getElementById('chartTypeLine').classList.remove('active');
+        document.getElementById('chartTypeBar').classList.remove('active');
+        document.getElementById('chartTypeArea').classList.remove('active');
+        
+        switch(type) {
+            case 'line':
+                document.getElementById('chartTypeLine').classList.add('active');
+                break;
+            case 'bar':
+                document.getElementById('chartTypeBar').classList.add('active');
+                break;
+            case 'area':
+                document.getElementById('chartTypeArea').classList.add('active');
+                break;
+        }
+        
+        // Update charts
+        updateCharts(filteredData);
     }
     
     function exportData(format) {
-        // Export data in specified format
-        // Implementation would go here
+        // In a real implementation, this would export the data
+        alert(`Exporting data as ${format.toUpperCase()}. In a real implementation, this would download the file.`);
+    }
+    
+    function runComparison() {
+        // In a real implementation, this would compare two periods
+        alert('Comparing periods. In a real implementation, this would show a comparison chart.');
+        bootstrap.Modal.getInstance(document.getElementById('compareModal')).hide();
     }
 </script>
 {% endblock %}
