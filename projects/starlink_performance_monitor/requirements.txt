@@ -1,29 +1,42 @@
-# ISS Telemetry Analyzer - Requirements
+# Starlink Performance Monitor - Requirements
 # Python 3.8+
 
-# Core dependencies
-requests
-numpy
-matplotlib
-pandas
+# Core dependencies for performance monitoring
+speedtest-cli==2.3.0
+ping3==4.0.4
+pandas==2.0.1
+numpy==1.24.3
+matplotlib==3.7.1
+plotly==5.15.0
+dash==2.11.1
+sqlalchemy==2.0.15
+requests==2.29.0
+schedule==1.2.0
 
-# Orbital calculations
-skyfield
+# Database support
+psycopg2-binary==3.1.8  # For PostgreSQL
 
-# Web framework
-flask
+# Notification support
+python-telegram-bot==20.4
 
-# Optional: for enhanced functionality
-scipy
+# Machine Learning for anomaly detection and forecasting
+scikit-learn==1.3.0
+statsmodels==0.14.0
+
+# Weather data integration
+openmeteo_requests==1.0.0
+
+# Web framework for dashboard
+flask==2.3.2
 
 # Development and testing
-pytest
-pytest-cov
+pytest==7.4.0
+pytest-cov==4.1.0
 
 # Code quality
-pylint
-black
+pylint==2.17.4
+black==23.3.0
 
 # Documentation
-sphinx
-sphinx-rtd-theme
+sphinx==7.0.1
+sphinx-rtd-theme==1.2.2

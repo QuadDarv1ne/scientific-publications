@@ -1,0 +1,91 @@
+{
+  "database": {
+    "type": "sqlite",
+    "host": "localhost",
+    "port": 5432,
+    "name": "starlink_monitor",
+    "user": "monitor_user",
+    "password": "secure_password"
+  },
+  "monitoring": {
+    "starlink": {
+      "enabled": true,
+      "interval_minutes": 15,
+      "servers": [
+        {
+          "name": "Google DNS",
+          "host": "8.8.8.8",
+          "port": 53
+        },
+        {
+          "name": "Cloudflare",
+          "host": "1.1.1.1",
+          "port": 53
+        }
+      ],
+      "speedtest": {
+        "enabled": true,
+        "servers": [23456, 12345],
+        "threads": 4
+      }
+    },
+    "comparison_providers": [
+      {
+        "name": "Local ISP",
+        "interface": "eth0",
+        "enabled": false
+      },
+      {
+        "name": "Mobile 4G",
+        "interface": "wwan0",
+        "enabled": false
+      }
+    ]
+  },
+  "notifications": {
+    "telegram": {
+      "enabled": true,
+      "bot_token": "your_telegram_bot_token",
+      "chat_id": "your_chat_id",
+      "thresholds": {
+        "download_mbps": 50,
+        "upload_mbps": 10,
+        "ping_ms": 100,
+        "packet_loss_percent": 5
+      }
+    },
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "port": 587,
+      "username": "your.email@gmail.com",
+      "password": "your_app_password",
+      "recipients": ["admin@example.com"],
+      "daily_report_hour": 8
+    }
+  },
+  "weather": {
+    "enabled": true,
+    "api_key": "openmeteo_api_key",
+    "location": {
+      "latitude": 55.7558,
+      "longitude": 37.6173
+    },
+    "parameters": ["temperature_2m", "precipitation", "wind_speed_10m", "cloud_cover"]
+  },
+  "web": {
+    "host": "0.0.0.0",
+    "port": 8050,
+    "debug": false,
+    "auth": {
+      "enabled": true,
+      "users": [
+        {
+          "username": "admin",
+          "password_hash": "hashed_password_here",
+          "role": "admin"
+        }
+      ]
+    }
+  }
+}

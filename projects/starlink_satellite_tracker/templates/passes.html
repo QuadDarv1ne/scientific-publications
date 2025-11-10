@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Upcoming Satellite Passes</h1>
+        <p>Predicted passes over your location</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Satellite</th>
+                    <th>Date & Time</th>
+                    <th>Altitude</th>
+                    <th>Azimuth</th>
+                    <th>Distance (km)</th>
+                </tr>
+            </thead>
+            <tbody id="passes-table">
+                <tr><td colspan="5">Loading passes...</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Fetch passes data
+fetch('/api/passes?hours=48')
+    .then(response => response.json())
+    .then(data => {
+        const tableBody = document.getElementById('passes-table');
+        tableBody.innerHTML = '';
+        
+        if (data.passes && data.passes.length > 0) {
+            data.passes.forEach(pass => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${pass.satellite}</td>
+                    <td>${new Date(pass.time).toLocaleString()}</td>
+                    <td>${pass.altitude}°</td>
+                    <td>${pass.azimuth}°</td>
+                    <td>${pass.distance}</td>
+                `;
+                tableBody.appendChild(row);
+            });
+        } else {
+            tableBody.innerHTML = '<tr><td colspan="5">No passes found</td></tr>';
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching passes data:', error);
+        document.getElementById('passes-table').innerHTML = 
+            '<tr><td colspan="5">Error loading passes</td></tr>';
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,41 @@
+{
+  "data_sources": {
+    "celestrak_url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle",
+    "tle_cache_path": "data/tle_cache/",
+    "max_cache_days": 7
+  },
+  "visualization": {
+    "orbit_points": 100,
+    "earth_texture": "data/earth_texture.jpg",
+    "show_ground_track": true,
+    "color_scheme": "dark"
+  },
+  "schedule": {
+    "tle_update_cron": "0 0 */6 * *",
+    "prediction_update_cron": "*/30 * * * *",
+    "notification_check_cron": "*/15 * * * *"
+  },
+  "observer": {
+    "default_latitude": 55.7558,
+    "default_longitude": 37.6173,
+    "default_altitude": 0,
+    "timezone": "Europe/Moscow"
+  },
+  "notifications": {
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "",
+      "password": ""
+    },
+    "telegram": {
+      "enabled": false,
+      "bot_token": "",
+      "chat_id": ""
+    },
+    "min_elevation": 10,
+    "min_brightness": -1,
+    "advance_notice_minutes": 30
+  }
+}

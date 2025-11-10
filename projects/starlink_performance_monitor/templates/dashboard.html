@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Current Metrics -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card metric-card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-download"></i> Download Speed</h5>
+                <h2 class="card-text" id="downloadSpeed">-- Mbps</h2>
+                <small>Last updated: <span id="downloadTime">--</span></small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card metric-card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-upload"></i> Upload Speed</h5>
+                <h2 class="card-text" id="uploadSpeed">-- Mbps</h2>
+                <small>Last updated: <span id="uploadTime">--</span></small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card metric-card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-stopwatch"></i> Ping</h5>
+                <h2 class="card-text" id="pingTime">-- ms</h2>
+                <small>Last updated: <span id="pingTimeTime">--</span></small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Performance History (24h)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Download Speed Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="downloadDistribution" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Ping Performance</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="pingChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Function to update current metrics
+    async function updateCurrentMetrics() {
+        try {
+            const response = await axios.get('/api/current');
+            const data = response.data.metrics;
+            
+            if (data) {
+                document.getElementById('downloadSpeed').textContent = data.download_mbps.toFixed(2) + ' Mbps';
+                document.getElementById('uploadSpeed').textContent = data.upload_mbps.toFixed(2) + ' Mbps';
+                document.getElementById('pingTime').textContent = data.ping_ms.toFixed(2) + ' ms';
+                
+                const timestamp = new Date(data.timestamp).toLocaleTimeString();
+                document.getElementById('downloadTime').textContent = timestamp;
+                document.getElementById('uploadTime').textContent = timestamp;
+                document.getElementById('pingTimeTime').textContent = timestamp;
+            }
+        } catch (error) {
+            console.error('Error fetching current metrics:', error);
+        }
+    }
+    
+    // Function to update charts
+    async function updateCharts() {
+        try {
+            const response = await axios.get('/api/metrics?hours=24');
+            const data = response.data.data;
+            
+            if (data && data.length > 0) {
+                // Convert data for Chart.js
+                const timestamps = data.map(item => new Date(item.timestamp).toLocaleTimeString());
+                const downloadSpeeds = data.map(item => item.download_mbps);
+                const uploadSpeeds = data.map(item => item.upload_mbps);
+                const pingTimes = data.map(item => item.ping_ms);
+                
+                // Performance chart
+                const ctx1 = document.getElementById('performanceChart').getContext('2d');
+                new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: timestamps,
+                        datasets: [{
+                            label: 'Download Speed (Mbps)',
+                            data: downloadSpeeds,
+                            borderColor: 'rgb(54, 162, 235)',
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            tension: 0.1
+                        }, {
+                            label: 'Upload Speed (Mbps)',
+                            data: uploadSpeeds,
+                            borderColor: 'rgb(75, 192, 192)',
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                // Ping chart
+                const ctx2 = document.getElementById('pingChart').getContext('2d');
+                new Chart(ctx2, {
+                    type: 'line',
+                    data: {
+                        labels: timestamps,
+                        datasets: [{
+                            label: 'Ping (ms)',
+                            data: pingTimes,
+                            borderColor: 'rgb(255, 99, 132)',
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                // Download distribution (histogram)
+                const ctx3 = document.getElementById('downloadDistribution').getContext('2d');
+                const downloadBins = Array(10).fill(0);
+                const maxDownload = Math.max(...downloadSpeeds);
+                const binSize = maxDownload / 10;
+                
+                downloadSpeeds.forEach(speed => {
+                    const binIndex = Math.min(Math.floor(speed / binSize), 9);
+                    downloadBins[binIndex]++;
+                });
+                
+                const binLabels = Array.from({length: 10}, (_, i) => `${(i * binSize).toFixed(0)}-${((i + 1) * binSize).toFixed(0)} Mbps`);
+                
+                new Chart(ctx3, {
+                    type: 'bar',
+                    data: {
+                        labels: binLabels,
+                        datasets: [{
+                            label: 'Frequency',
+                            data: downloadBins,
+                            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                            borderColor: 'rgb(54, 162, 235)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error fetching chart data:', error);
+        }
+    }
+    
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        updateCurrentMetrics();
+        updateCharts();
+        
+        // Set up refresh button
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            updateCurrentMetrics();
+            updateCharts();
+        });
+        
+        // Auto-refresh every 30 seconds
+        setInterval(updateCurrentMetrics, 30000);
+    });
+</script>
+{% endblock %}

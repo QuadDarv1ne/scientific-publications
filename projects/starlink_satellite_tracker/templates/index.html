@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Starlink Satellite Tracker Dashboard</h1>
+        <p class="lead">Real-time tracking of SpaceX Starlink satellites</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Current Status
+            </div>
+            <div class="card-body">
+                <p>Loading satellite data...</p>
+                <div id="satellite-count">-</div>
+                <div id="last-update">-</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Next Pass
+            </div>
+            <div class="card-body">
+                <p>Calculating next satellite pass...</p>
+                <div id="next-pass">-</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Fetch satellite data
+fetch('/api/satellites')
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('satellite-count').innerHTML = 
+            `<strong>Satellites Tracked:</strong> ${data.count}`;
+        document.getElementById('last-update').innerHTML = 
+            `<strong>Last Updated:</strong> ${new Date(data.updated).toLocaleString()}`;
+    })
+    .catch(error => {
+        console.error('Error fetching satellite data:', error);
+    });
+
+// Fetch next pass
+fetch('/api/passes?hours=24')
+    .then(response => response.json())
+    .then(data => {
+        if (data.passes && data.passes.length > 0) {
+            const nextPass = data.passes[0];
+            document.getElementById('next-pass').innerHTML = 
+                `<strong>${nextPass.satellite}</strong><br>
+                ${new Date(nextPass.time).toLocaleString()}<br>
+                Altitude: ${nextPass.altitude}°`;
+        } else {
+            document.getElementById('next-pass').innerHTML = 'No passes found';
+        }
+    })
+    .catch(error => {
+        console.error('Error fetching pass data:', error);
+    });
+</script>
+{% endblock %}

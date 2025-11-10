@@ -1,0 +1,14 @@
+[Unit]
+Description=Starlink Performance Monitor
+After=network.target
+
+[Service]
+Type=simple
+User=starlink
+WorkingDirectory=/opt/starlink-monitor
+ExecStart=/opt/starlink-monitor/venv/bin/python monitor.py --config /opt/starlink-monitor/config.json
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
