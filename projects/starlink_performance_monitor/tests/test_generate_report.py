@@ -12,7 +12,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 import pandas as pd
 
-from generate_report import ReportGenerator, PerformanceMetric
+from src.reports.generate_report import ReportGenerator, PerformanceMetric
 
 
 class TestReportGenerator(unittest.TestCase):
@@ -37,28 +37,28 @@ class TestReportGenerator(unittest.TestCase):
         
     def test_init(self):
         """Test initialization of ReportGenerator."""
-        with patch('generate_report.create_engine') as mock_create_engine:
+        with patch('src.reports.generate_report.create_engine') as mock_create_engine:
             generator = ReportGenerator(self.temp_config.name)
             self.assertIsNotNone(generator)
             self.assertEqual(generator.config, self.test_config)
             
     def test_load_config(self):
         """Test loading configuration."""
-        with patch('generate_report.create_engine') as mock_create_engine:
+        with patch('src.reports.generate_report.create_engine') as mock_create_engine:
             generator = ReportGenerator(self.temp_config.name)
             config = generator._load_config(self.temp_config.name)
             self.assertEqual(config, self.test_config)
             
     def test_load_config_missing(self):
         """Test loading missing configuration."""
-        with patch('generate_report.create_engine') as mock_create_engine:
+        with patch('src.reports.generate_report.create_engine') as mock_create_engine:
             generator = ReportGenerator("nonexistent.json")
             config = generator._load_config("nonexistent.json")
             self.assertEqual(config, {})
             
     def test_generate_daily_report(self):
         """Test generating a daily report."""
-        with patch('generate_report.create_engine') as mock_create_engine, \
+        with patch('src.reports.generate_report.create_engine') as mock_create_engine, \
              patch.object(ReportGenerator, 'get_metrics_for_period') as mock_get_metrics:
             
             # Mock metrics data
@@ -102,7 +102,7 @@ class TestReportGenerator(unittest.TestCase):
             
     def test_generate_weekly_report(self):
         """Test generating a weekly report."""
-        with patch('generate_report.create_engine') as mock_create_engine, \
+        with patch('src.reports.generate_report.create_engine') as mock_create_engine, \
              patch.object(ReportGenerator, 'get_metrics_for_period') as mock_get_metrics:
             
             # Mock metrics data
@@ -138,7 +138,7 @@ class TestReportGenerator(unittest.TestCase):
             
     def test_generate_custom_report(self):
         """Test generating a custom report."""
-        with patch('generate_report.create_engine') as mock_create_engine, \
+        with patch('src.reports.generate_report.create_engine') as mock_create_engine, \
              patch.object(ReportGenerator, 'get_metrics_for_period') as mock_get_metrics:
             
             # Mock metrics data
@@ -175,7 +175,7 @@ class TestReportGenerator(unittest.TestCase):
             
     def test_save_report_as_json(self):
         """Test saving report as JSON."""
-        with patch('generate_report.create_engine') as mock_create_engine:
+        with patch('src.reports.generate_report.create_engine') as mock_create_engine:
             generator = ReportGenerator(self.temp_config.name)
             
             # Create a temporary output file
@@ -204,7 +204,7 @@ class TestReportGenerator(unittest.TestCase):
                     
     def test_save_report_as_csv(self):
         """Test saving report as CSV."""
-        with patch('generate_report.create_engine') as mock_create_engine:
+        with patch('src.reports.generate_report.create_engine') as mock_create_engine:
             generator = ReportGenerator(self.temp_config.name)
             
             # Create a temporary output file
@@ -233,29 +233,31 @@ class TestReportGenerator(unittest.TestCase):
                 # Clean up
                 if os.path.exists(temp_output.name):
                     os.unlink(temp_output.name)
-                    
-    def test_save_report_as_csv_empty(self):
-        """Test saving empty report as CSV."""
-        with patch('generate_report.create_engine') as mock_create_engine:
+
+    def test_generate_performance_chart(self):
+        """Test generating performance chart."""
+        with patch('src.reports.generate_report.create_engine') as mock_create_engine:
             generator = ReportGenerator(self.temp_config.name)
             
-            # Create a temporary output file
-            temp_output = tempfile.NamedTemporaryFile(suffix='.csv', delete=False)
-            temp_output.close()
+            # Test with empty data
+            report_data = {'metrics': []}
+            generator.generate_performance_chart(report_data, 'test.png')
             
-            try:
-                report_data = {
-                    'metrics': []
-                }
-                
-                generator.save_report_as_csv(report_data, temp_output.name)
-                
-                # Verify the file was created
-                self.assertTrue(os.path.exists(temp_output.name))
-            finally:
-                # Clean up
-                if os.path.exists(temp_output.name):
-                    os.unlink(temp_output.name)
+            # Test with sample data
+            report_data = {
+                'metrics': [
+                    {
+                        'timestamp': '2025-11-10T10:00:00',
+                        'download_mbps': 100.0,
+                        'upload_mbps': 50.0,
+                        'ping_ms': 25.0,
+                        'packet_loss_percent': 2.0
+                    }
+                ]
+            }
+            
+            # This should not raise an exception
+            generator.generate_performance_chart(report_data, 'test.png')
 
 
 if __name__ == '__main__':

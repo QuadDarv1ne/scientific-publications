@@ -8,7 +8,9 @@ import argparse
 import logging
 import os
 import sys
+import time
 from datetime import datetime, timedelta
+from typing import List, Optional, Dict, Any
 
 # Import required libraries
 try:
@@ -21,203 +23,273 @@ except ImportError as e:
     print("Please install dependencies with: pip install -r requirements.txt")
     sys.exit(1)
 
+# Import our configuration manager
+sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+from utils.config_manager import get_config
+
 
 class StarlinkTracker:
     def __init__(self, config=None):
         """Initialize the Starlink tracker with optional configuration."""
-        self.config = config or self._default_config()
+        self.config = config or get_config()
         self.satellites = []
-        self.ts = load.timescale()
+        self.ts = load.timescale()  # Initialize time scale
+        self.earth = None
+        
+        # Setup logging
+        self.logger = logging.getLogger(__name__)
+        
+        # Load Earth data
         try:
             self.earth = load('earth.bsp')
+            self.logger.info("Earth data loaded successfully")
         except Exception as e:
-            logging.warning(f"Could not load earth.bsp: {e}")
+            self.logger.warning(f"Could not load earth.bsp: {e}")
             self.earth = None
         
         # Create data directory if it doesn't exist
-        os.makedirs(self.config['data_sources']['tle_cache_path'], exist_ok=True)
-        
-    def _default_config(self):
-        """Return default configuration."""
-        # Try to load configuration from file
         try:
-            import json
-            import os
-            # Try to find config.json in the project root
-            config_path = 'config.json'
-            if not os.path.exists(config_path):
-                # Try parent directory
-                config_path = os.path.join('..', 'config.json')
-            with open(config_path, 'r') as f:
-                config = json.load(f)
-            return config
+            os.makedirs(self.config['data_sources']['tle_cache_path'], exist_ok=True)
+            self.logger.info(f"Data directory ensured: {self.config['data_sources']['tle_cache_path']}")
         except Exception as e:
-            logging.warning(f"Could not load config.json: {e}. Using default configuration.")
-            
-        # Default configuration
-        return {
-            "data_sources": {
-                "celestrak_url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle",
-                "tle_cache_path": "data/tle_cache/",
-                "max_cache_days": 7
-            },
-            "visualization": {
-                "orbit_points": 100,
-                "show_ground_track": True,
-                "color_scheme": "dark"
-            },
-            "schedule": {
-                "tle_update_cron": "0 0 */6 * *",
-                "prediction_update_cron": "*/30 * * * *",
-                "notification_check_cron": "*/15 * * * *"
-            }
-        }
-    
-    def update_tle_data(self, force=False):
+            self.logger.error(f"Failed to create data directory: {e}")
+            raise
+        
+        # Initialize scheduler
+        self.scheduler = None
+        
+    def update_tle_data(self, force=False) -> List[EarthSatellite]:
         """Download latest TLE data from Celestrak."""
-        cache_file = os.path.join(
-            self.config['data_sources']['tle_cache_path'], 
-            f"starlink_tle_{datetime.now().strftime('%Y%m%d')}.txt"
-        )
-        
-        # Check if we have recent cached data
-        if not force and os.path.exists(cache_file):
-            file_time = datetime.fromtimestamp(os.path.getmtime(cache_file))
-            if datetime.now() - file_time < timedelta(days=1):
-                logging.info("Using cached TLE data")
-                return self._load_tle_from_file(cache_file)
-        
-        # Try primary source first
-        urls_to_try = [self.config['data_sources']['celestrak_url']]
-        
-        # Add backup URLs if available
-        if 'backup_urls' in self.config['data_sources']:
-            urls_to_try.extend(self.config['data_sources']['backup_urls'])
-        
-        # Try each URL until one works
-        for url in urls_to_try:
-            try:
-                logging.info(f"Downloading latest TLE data from {url}")
-                response = requests.get(url, timeout=30)
-                response.raise_for_status()
-                
-                with open(cache_file, 'w') as f:
-                    f.write(response.text)
-                
-                return self._load_tle_from_file(cache_file)
-            except Exception as e:
-                logging.warning(f"Failed to download TLE data from {url}: {e}")
-                continue
-        
-        # If all sources failed, try to use cached data if available
-        if os.path.exists(cache_file):
-            logging.info("Using cached TLE data due to download failure")
-            return self._load_tle_from_file(cache_file)
-        else:
-            raise Exception("Failed to download TLE data from all sources and no cached data available")
-    
-    def _load_tle_from_file(self, filename):
-        """Load TLE data from file and create satellite objects."""
-        self.satellites = []
-        with open(filename, 'r') as f:
-            lines = f.readlines()
-        
-        # Process TLE data in groups of 3 lines
-        for i in range(0, len(lines), 3):
-            if i + 2 < len(lines):
-                name = lines[i].strip()
-                line1 = lines[i+1].strip()
-                line2 = lines[i+2].strip()
-                
+        try:
+            cache_file = os.path.join(
+                self.config['data_sources']['tle_cache_path'], 
+                f"starlink_tle_{datetime.now().strftime('%Y%m%d')}.txt"
+            )
+            
+            # Check if we have recent cached data
+            if not force and os.path.exists(cache_file):
                 try:
-                    satellite = EarthSatellite(line1, line2, name, self.ts)
-                    self.satellites.append(satellite)
+                    file_time = datetime.fromtimestamp(os.path.getmtime(cache_file))
+                    if datetime.now() - file_time < timedelta(days=1):
+                        self.logger.info("Using cached TLE data")
+                        return self._load_tle_from_file(cache_file)
                 except Exception as e:
-                    logging.warning(f"Failed to load satellite {name}: {e}")
-        
-        logging.info(f"Loaded {len(self.satellites)} satellites")
-        return self.satellites
-    
-    def predict_passes(self, latitude, longitude, altitude=0, 
-                      hours_ahead=24, min_elevation=10):
-        """Predict satellite passes over a location."""
-        if not self.satellites:
-            raise ValueError("No satellites loaded. Call update_tle_data() first.")
-        
-        if self.earth is None:
-            raise ValueError("Earth data not loaded. Check internet connection.")
-        
-        # Set observer location
-        observer = self.earth + Topos(latitude, longitude, elevation_m=altitude)
-        
-        # Time range for predictions
-        t0 = self.ts.now()
-        t1 = self.ts.from_datetime(datetime.now() + timedelta(hours=hours_ahead))
-        
-        passes = []
-        
-        for satellite in self.satellites[:10]:  # Limit for performance
-            try:
-                # Find events (rise, culmination, set)
-                times, events = satellite.find_events(observer, t0, t1, 
-                                                    altitude_degrees=min_elevation)
+                    self.logger.warning(f"Error checking cache file timestamp: {e}")
+            
+            # Try primary source first
+            urls_to_try = [self.config['data_sources']['celestrak_url']]
+            
+            # Add backup URLs if available
+            if 'backup_urls' in self.config['data_sources']:
+                urls_to_try.extend(self.config['data_sources']['backup_urls'])
+            
+            # Try each URL until one works
+            for url in urls_to_try:
+                try:
+                    self.logger.info(f"Downloading latest TLE data from {url}")
+                    response = requests.get(url, timeout=30)
+                    response.raise_for_status()
+                    
+                    with open(cache_file, 'w', encoding='utf-8') as f:
+                        f.write(response.text)
+                    
+                    return self._load_tle_from_file(cache_file)
+                except Exception as e:
+                    self.logger.warning(f"Failed to download TLE data from {url}: {e}")
+                    continue
+            
+            # If all sources failed, try to use cached data if available
+            if os.path.exists(cache_file):
+                self.logger.info("Using cached TLE data due to download failure")
+                return self._load_tle_from_file(cache_file)
+            else:
+                raise Exception("Failed to download TLE data from all sources and no cached data available")
                 
-                for ti, event in zip(times, events):
-                    if event == 0:  # Rise
-                        # Get satellite position at rise time
-                        difference = satellite - observer
-                        topocentric = difference.at(ti)
-                        alt, az, distance = topocentric.altaz()
-                        
-                        passes.append({
-                            'satellite': satellite.name,
-                            'time': ti.utc_datetime(),
-                            'altitude': alt.degrees,
-                            'azimuth': az.degrees,
-                            'distance': distance.km
-                        })
-            except Exception as e:
-                logging.warning(f"Error predicting passes for {satellite.name}: {e}")
-        
-        return passes
+        except Exception as e:
+            self.logger.error(f"Error updating TLE data: {e}")
+            raise
     
-    def visualize_orbits(self, hours=2):
+    def _load_tle_from_file(self, filename) -> List[EarthSatellite]:
+        """Load TLE data from file and create satellite objects."""
+        try:
+            self.satellites = []
+            with open(filename, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            # Process TLE data in groups of 3 lines
+            loaded_count = 0
+            error_count = 0
+            
+            for i in range(0, len(lines), 3):
+                if i + 2 < len(lines):
+                    name = lines[i].strip()
+                    line1 = lines[i+1].strip()
+                    line2 = lines[i+2].strip()
+                    
+                    try:
+                        satellite = EarthSatellite(line1, line2, name, self.ts)
+                        self.satellites.append(satellite)
+                        loaded_count += 1
+                    except Exception as e:
+                        self.logger.warning(f"Failed to load satellite {name}: {e}")
+                        error_count += 1
+            
+            self.logger.info(f"Loaded {loaded_count} satellites, {error_count} errors")
+            return self.satellites
+            
+        except Exception as e:
+            self.logger.error(f"Error loading TLE from file {filename}: {e}")
+            raise
+    
+    def start_scheduler(self) -> bool:
+        """Start the automated scheduler for background tasks."""
+        try:
+            # Import scheduler here to avoid circular imports
+            from utils.scheduler import StarlinkScheduler
+            
+            self.scheduler = StarlinkScheduler(self.config, self)
+            success = self.scheduler.start_scheduler()
+            if success:
+                self.logger.info("Scheduler started successfully")
+            else:
+                self.logger.warning("Failed to start scheduler")
+            return success if success is not None else True
+        except Exception as e:
+            self.logger.error(f"Failed to start scheduler: {e}")
+            return False
+    
+    def stop_scheduler(self) -> bool:
+        """Stop the automated scheduler."""
+        try:
+            if self.scheduler:
+                success = self.scheduler.stop_scheduler()
+                if success:
+                    self.logger.info("Scheduler stopped successfully")
+                else:
+                    self.logger.warning("Failed to stop scheduler")
+                return success if success is not None else True
+            else:
+                self.logger.warning("No scheduler to stop")
+                return True
+        except Exception as e:
+            self.logger.error(f"Error stopping scheduler: {e}")
+            return False
+    
+    def predict_passes(self, latitude: float, longitude: float, altitude: float = 0, 
+                      hours_ahead: int = 24, min_elevation: float = 10) -> List[Dict[str, Any]]:
+        """Predict satellite passes over a location."""
+        try:
+            if not self.satellites:
+                raise ValueError("No satellites loaded. Call update_tle_data() first.")
+            
+            if self.earth is None:
+                raise ValueError("Earth data not loaded. Check internet connection.")
+            
+            if self.ts is None:
+                raise ValueError("Time scale not initialized.")
+            
+            # Validate input parameters
+            if not (-90 <= latitude <= 90):
+                raise ValueError(f"Invalid latitude: {latitude}. Must be between -90 and 90.")
+            if not (-180 <= longitude <= 180):
+                raise ValueError(f"Invalid longitude: {longitude}. Must be between -180 and 180.")
+            if hours_ahead <= 0:
+                raise ValueError(f"Invalid hours_ahead: {hours_ahead}. Must be positive.")
+            if min_elevation < 0:
+                raise ValueError(f"Invalid min_elevation: {min_elevation}. Must be non-negative.")
+            
+            # Set observer location
+            observer = self.earth + Topos(latitude, longitude, elevation_m=altitude)
+            
+            # Time range for predictions
+            t0 = self.ts.now()
+            t1 = self.ts.from_datetime(datetime.now() + timedelta(hours=hours_ahead))
+            
+            passes = []
+            
+            # Limit satellites for performance
+            satellites_to_process = self.satellites[:10]
+            
+            for satellite in satellites_to_process:
+                try:
+                    # Find events (rise, culmination, set)
+                    times, events = satellite.find_events(observer, t0, t1, 
+                                                        altitude_degrees=min_elevation)
+                    
+                    for ti, event in zip(times, events):
+                        if event == 0:  # Rise
+                            # Get satellite position at rise time
+                            difference = satellite - observer
+                            topocentric = difference.at(ti)
+                            alt, az, distance = topocentric.altaz()
+                            
+                            passes.append({
+                                'satellite': satellite.name,
+                                'time': ti.utc_datetime(),
+                                'altitude': alt.degrees,
+                                'azimuth': az.degrees,
+                                'distance': distance.km
+                            })
+                except Exception as e:
+                    self.logger.warning(f"Error predicting passes for {satellite.name}: {e}")
+                    continue
+            
+            self.logger.info(f"Predicted {len(passes)} passes for {len(satellites_to_process)} satellites")
+            return passes
+            
+        except Exception as e:
+            self.logger.error(f"Error predicting passes: {e}")
+            raise
+    
+    def visualize_orbits(self, hours: float = 2):
         """Create 3D visualization of satellite orbits."""
         try:
             import matplotlib.pyplot as plt
             from mpl_toolkits.mplot3d import Axes3D
         except ImportError:
-            logging.error("Matplotlib not installed. Cannot create visualization.")
-            return
+            self.logger.error("Matplotlib not installed. Cannot create visualization.")
+            raise ImportError("Matplotlib not installed. Cannot create visualization.")
         
-        if not self.satellites:
-            raise ValueError("No satellites loaded. Call update_tle_data() first.")
-        
-        fig = plt.figure(figsize=(12, 10))
-        ax = fig.add_subplot(111, projection='3d')
-        
-        # Time range for orbit calculation
-        t0 = self.ts.now()
-        t1 = self.ts.from_datetime(datetime.now() + timedelta(hours=hours))
-        times = self.ts.linspace(t0, t1, self.config['visualization']['orbit_points'])
-        
-        # Plot orbits for first 5 satellites
-        for satellite in self.satellites[:5]:
-            try:
-                geocentric = satellite.at(times)
-                x, y, z = geocentric.position.km
-                
-                ax.plot(x, y, z, label=satellite.name.split()[0])
-            except Exception as e:
-                logging.warning(f"Error plotting orbit for {satellite.name}: {e}")
-        
-        ax.set_xlabel('X (km)')
-        ax.set_ylabel('Y (km)')
-        ax.set_zlabel('Z (km)')
-        ax.set_title('Starlink Satellite Orbits')
-        ax.legend()
-        
-        plt.show()
+        try:
+            if not self.satellites:
+                raise ValueError("No satellites loaded. Call update_tle_data() first.")
+            
+            if self.ts is None:
+                raise ValueError("Time scale not initialized.")
+            
+            fig = plt.figure(figsize=(12, 10))
+            ax = fig.add_subplot(111, projection='3d')
+            
+            # Time range for orbit calculation
+            t0 = self.ts.now()
+            t1 = self.ts.from_datetime(datetime.now() + timedelta(hours=hours))
+            times = self.ts.linspace(t0, t1, self.config['visualization']['orbit_points'])
+            
+            # Plot orbits for first 5 satellites
+            satellites_to_plot = self.satellites[:5]
+            
+            for satellite in satellites_to_plot:
+                try:
+                    geocentric = satellite.at(times)
+                    x, y, z = geocentric.position.km
+                    
+                    ax.plot(x, y, z, label=satellite.name.split()[0])
+                except Exception as e:
+                    self.logger.warning(f"Error plotting orbit for {satellite.name}: {e}")
+                    continue
+            
+            ax.set_xlabel('X (km)')
+            ax.set_ylabel('Y (km)')
+            ax.set_zlabel('Z (km)')
+            ax.set_title('Starlink Satellite Orbits')
+            ax.legend()
+            
+            self.logger.info(f"Visualized orbits for {len(satellites_to_plot)} satellites")
+            plt.show()
+            
+        except Exception as e:
+            self.logger.error(f"Error visualizing orbits: {e}")
+            raise
 
 
 def main():
@@ -229,6 +301,8 @@ def main():
                        help='Show 3D visualization (default: False)')
     parser.add_argument('--notify', action='store_true', 
                        help='Send notifications for upcoming passes')
+    parser.add_argument('--schedule', action='store_true', 
+                       help='Start scheduler for automated tasks')
     parser.add_argument('--debug', action='store_true', 
                        help='Enable debug logging')
     
@@ -237,12 +311,14 @@ def main():
     # Setup logging
     level = logging.DEBUG if args.debug else logging.INFO
     logging.basicConfig(level=level, 
-                       format='%(asctime)s - %(levelname)s - %(message)s')
-    
-    # Initialize tracker
-    tracker = StarlinkTracker()
+                       format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     
     try:
+        # Initialize tracker
+        tracker = StarlinkTracker()
+        logger = logging.getLogger(__name__)
+        logger.info("Starlink Tracker initialized successfully")
+        
         # Update TLE data
         tracker.update_tle_data(force=args.update)
         
@@ -250,8 +326,23 @@ def main():
         if args.visualize:
             tracker.visualize_orbits()
         
+        # Start scheduler if requested
+        if args.schedule:
+            if tracker.start_scheduler():
+                print("Scheduler started. Press Ctrl+C to stop.")
+                try:
+                    # Keep running
+                    while True:
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    print("\nStopping scheduler...")
+                    tracker.stop_scheduler()
+            else:
+                print("Failed to start scheduler")
+                sys.exit(1)
+        
         # Example: Predict passes for a location (Moscow in this example)
-        if args.notify or not any([args.visualize, args.update]):
+        if args.notify or not any([args.visualize, args.update, args.schedule]):
             passes = tracker.predict_passes(latitude=55.7558, longitude=37.6173)
             print(f"Found {len(passes)} upcoming passes:")
             for p in passes[:10]:  # Show first 10

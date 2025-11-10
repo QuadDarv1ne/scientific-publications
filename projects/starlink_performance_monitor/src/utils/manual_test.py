@@ -6,6 +6,7 @@ Manual testing script for running individual tests.
 
 import argparse
 import json
+import logging
 from datetime import datetime
 import sys
 import os
@@ -14,6 +15,10 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.monitor.monitor import StarlinkMonitor
+from src.utils.logging_config import setup_logging, get_logger
+# Configure logging
+setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
+logger = get_logger(__name__)
 
 def run_manual_test(config_path: str = "config.json", test_type: str = "all"):
     """
@@ -23,24 +28,24 @@ def run_manual_test(config_path: str = "config.json", test_type: str = "all"):
         config_path: Path to configuration file
         test_type: Type of test to run (all, speed, ping)
     """
-    print(f"Running manual test: {test_type}")
-    print(f"Using configuration: {config_path}")
-    print("-" * 50)
+    logger.info(f"Running manual test: {test_type}")
+    logger.info(f"Using configuration: {config_path}")
+    logger.info("-" * 50)
     
     # Initialize monitor
     monitor = StarlinkMonitor(config_path)
     
     if test_type == "speed" or test_type == "all":
-        print("Running speed test...")
+        logger.info("Running speed test...")
         results = monitor.run_speedtest()
-        print(f"Download: {results['download_mbps']:.2f} Mbps")
-        print(f"Upload: {results['upload_mbps']:.2f} Mbps")
-        print(f"Ping: {results['ping_ms']:.2f} ms")
-        print(f"Server: {results['server_name']}")
-        print()
+        logger.info(f"Download: {results['download_mbps']:.2f} Mbps")
+        logger.info(f"Upload: {results['upload_mbps']:.2f} Mbps")
+        logger.info(f"Ping: {results['ping_ms']:.2f} ms")
+        logger.info(f"Server: {results['server_name']}")
+        logger.info("")
     
     if test_type == "ping" or test_type == "all":
-        print("Running ping tests...")
+        logger.info("Running ping tests...")
         # Get ping servers from config
         config = monitor._load_config(config_path)
         ping_servers = config.get('monitoring', {}).get('starlink', {}).get('servers', [
@@ -51,13 +56,13 @@ def run_manual_test(config_path: str = "config.json", test_type: str = "all"):
         for server in ping_servers:
             host = server['host']
             name = server['name']
-            print(f"Ping test to {name} ({host}):")
+            logger.info(f"Ping test to {name} ({host}):")
             results = monitor.run_ping_test(host, count=5)
-            print(f"  Average ping: {results['avg_ping_ms']:.2f} ms")
-            print(f"  Packet loss: {results['packet_loss_percent']:.2f}%")
-            print(f"  Min ping: {results['min_ping_ms']:.2f} ms")
-            print(f"  Max ping: {results['max_ping_ms']:.2f} ms")
-            print()
+            logger.info(f"  Average ping: {results['avg_ping_ms']:.2f} ms")
+            logger.info(f"  Packet loss: {results['packet_loss_percent']:.2f}%")
+            logger.info(f"  Min ping: {results['min_ping_ms']:.2f} ms")
+            logger.info(f"  Max ping: {results['max_ping_ms']:.2f} ms")
+            logger.info("")
 
 def main():
     """Main entry point for the manual test script."""

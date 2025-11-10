@@ -3,7 +3,13 @@
 Test configuration loading for Starlink Satellite Tracker
 """
 
-from main import StarlinkTracker
+import sys
+import os
+
+# Add the src directory to the path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from core.main import StarlinkTracker
 
 def test_config_loading():
     """Test that configuration is loaded correctly."""

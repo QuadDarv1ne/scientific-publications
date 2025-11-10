@@ -15,6 +15,7 @@ flask
 
 # Optional: for enhanced functionality
 scipy
+schedule
 
 # Development and testing
 pytest

@@ -11,6 +11,8 @@ from typing import Dict, Any, List, Optional
 import sys
 import os
 
+from src.utils.logging_config import setup_logging, get_logger
+
 # Add the src directory to the path so we can import from monitor
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
@@ -28,11 +30,8 @@ from sqlalchemy.orm import sessionmaker
 from src.monitor.monitor import PerformanceMetric, Base
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
+logger = get_logger(__name__)
 
 
 class AlertSystem:

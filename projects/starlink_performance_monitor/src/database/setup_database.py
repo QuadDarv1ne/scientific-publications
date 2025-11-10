@@ -6,6 +6,7 @@ Database setup script.
 
 import json
 import argparse
+import logging
 import sys
 import os
 
@@ -16,6 +17,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from src.monitor.monitor import Base, PerformanceMetric
+from src.utils.logging_config import setup_logging, get_logger
+# Configure logging
+setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
+logger = get_logger(__name__)
 
 def setup_database(config_path: str = "config.json"):
     """
@@ -29,7 +34,7 @@ def setup_database(config_path: str = "config.json"):
         with open(config_path, 'r') as f:
             config = json.load(f)
     except FileNotFoundError:
-        print(f"Config file {config_path} not found, using SQLite defaults")
+        logger.warning(f"Config file {config_path} not found, using SQLite defaults")
         config = {}
     
     # Get database configuration
@@ -43,13 +48,13 @@ def setup_database(config_path: str = "config.json"):
     else:
         db_url = "sqlite:///starlink_monitor.db"
     
-    print(f"Setting up database: {db_url}")
+    logger.info(f"Setting up database: {db_url}")
     
     # Create engine and initialize tables
     engine = create_engine(db_url)
     Base.metadata.create_all(engine)
     
-    print("Database setup completed successfully!")
+    logger.info("Database setup completed successfully!")
 
 def main():
     """Main entry point for the setup script."""

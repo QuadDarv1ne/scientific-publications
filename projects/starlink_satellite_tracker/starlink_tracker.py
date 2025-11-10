@@ -6,6 +6,9 @@ Main entry point for Starlink Satellite Tracker
 import sys
 import os
 
+import sys
+import os
+
 # Add src directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
@@ -15,6 +18,7 @@ def main():
     print("=" * 30)
     print("Available commands:")
     print("  python starlink_tracker.py track     - Track satellites")
+    print("  python starlink_tracker.py track --schedule - Start tracking with scheduler")
     print("  python starlink_tracker.py web       - Start web interface")
     print("  python starlink_tracker.py help      - Show this help")
     
@@ -24,9 +28,14 @@ def main():
     command = sys.argv[1]
     
     if command == "track":
+        # Pass all arguments to the track command
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
         from core.main import main as track_main
+        # Remove the first argument (script name) and 'track' command
+        sys.argv = [sys.argv[0]] + sys.argv[2:]
         track_main()
     elif command == "web":
+        sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
         from web.web_app import app
         app.run(debug=True, host='0.0.0.0', port=5000)
     elif command == "help":

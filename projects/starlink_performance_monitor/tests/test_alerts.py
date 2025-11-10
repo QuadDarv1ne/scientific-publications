@@ -12,7 +12,7 @@ from datetime import datetime
 from typing import Dict, Any
 from unittest.mock import patch, MagicMock
 
-from alerts import AlertSystem, PerformanceMetric
+from src.alerts.alerts import AlertSystem, PerformanceMetric
 
 
 class TestAlertSystem(unittest.TestCase):
@@ -140,7 +140,7 @@ class TestAlertSystem(unittest.TestCase):
         # This should not raise an exception
         alert_system.send_email_alert(alert)
         
-    @patch('alerts.TELEGRAM_AVAILABLE', False)
+    @patch('src.alerts.alerts.TELEGRAM_AVAILABLE', False)
     def test_send_telegram_alert_telegram_unavailable(self):
         """Test sending Telegram alerts when Telegram is not available."""
         alert_system = AlertSystem(self.temp_config.name)

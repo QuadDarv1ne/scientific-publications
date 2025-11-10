@@ -11,7 +11,8 @@ import os
 from unittest.mock import patch, MagicMock
 from datetime import datetime
 
-from monitor import StarlinkMonitor, PerformanceMetric
+# Fix import paths to use src directory
+from src.monitor.monitor import StarlinkMonitor, PerformanceMetric
 
 
 class TestStarlinkMonitor(unittest.TestCase):
@@ -60,7 +61,7 @@ class TestStarlinkMonitor(unittest.TestCase):
         config = monitor._load_config("nonexistent.json")
         self.assertEqual(config, {})
         
-    @patch('monitor.speedtest.Speedtest')
+    @patch('src.monitor.monitor.speedtest.Speedtest')
     def test_run_speedtest(self, mock_speedtest):
         """Test running speedtest."""
         # Mock the speedtest results
@@ -79,7 +80,7 @@ class TestStarlinkMonitor(unittest.TestCase):
         self.assertEqual(results['ping_ms'], 25.0)
         self.assertEqual(results['server_name'], 'Test Server')
         
-    @patch('monitor.ping3.ping')
+    @patch('src.monitor.monitor.ping3.ping')
     def test_run_ping_test(self, mock_ping):
         """Test running ping test."""
         # Mock successful pings
@@ -93,7 +94,7 @@ class TestStarlinkMonitor(unittest.TestCase):
         self.assertEqual(results['min_ping_ms'], 25.0)
         self.assertEqual(results['max_ping_ms'], 25.0)
         
-    @patch('monitor.ping3.ping')
+    @patch('src.monitor.monitor.ping3.ping')
     def test_run_ping_test_with_loss(self, mock_ping):
         """Test running ping test with packet loss."""
         # Mock some failed pings
@@ -138,8 +139,8 @@ class TestStarlinkMonitor(unittest.TestCase):
             self.assertEqual(metrics['speedtest']['upload_mbps'], 50.0)
             self.assertEqual(metrics['speedtest']['ping_ms'], 25.0)
             
-    @patch('monitor.sessionmaker')
-    @patch('monitor.create_engine')
+    @patch('src.monitor.monitor.sessionmaker')
+    @patch('src.monitor.monitor.create_engine')
     def test_store_metrics(self, mock_create_engine, mock_sessionmaker):
         """Test storing metrics in the database."""
         # Mock database session

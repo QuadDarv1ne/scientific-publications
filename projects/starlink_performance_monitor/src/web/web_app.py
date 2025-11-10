@@ -20,6 +20,12 @@ from flask import Flask, render_template, jsonify, request, session, redirect, u
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
+# Add project root to path for imports
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from src.utils.logging_config import setup_logging, get_logger
+
 # Add the src directory to the path so we can import from monitor
 import sys
 import os
@@ -28,11 +34,8 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from src.monitor.monitor import PerformanceMetric, Base
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
+logger = get_logger(__name__)
 
 # Create Flask app with template folder specified
 template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')

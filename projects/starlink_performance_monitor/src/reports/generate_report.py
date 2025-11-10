@@ -6,6 +6,7 @@ Report generation script.
 
 import argparse
 import json
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
 import sys
@@ -21,6 +22,9 @@ from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 
 from src.monitor.monitor import PerformanceMetric, Base
+from src.utils.logging_config import setup_logging, get_logger# Configure logging
+setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
+logger = get_logger(__name__)
 
 class ReportGenerator:
     """Generate performance reports in various formats."""

@@ -96,7 +96,7 @@ pip install -r requirements.txt
 ### Аргументы командной строки
 
 ```
-usage: main.py [-h] [--update] [--visualize] [--notify] [--debug]
+usage: main.py [-h] [--update] [--visualize] [--notify] [--schedule] [--debug]
 
 Starlink Satellite Tracker
 
@@ -105,6 +105,7 @@ optional arguments:
   --update        Force update TLE data
   --visualize     Show 3D visualization (default: False)
   --notify        Send notifications for upcoming passes
+  --schedule      Start scheduler for automated tasks
   --debug         Enable debug logging
 ```
 
@@ -116,6 +117,9 @@ python starlink_tracker.py track --update
 
 # Показать 3D визуализацию орбит
 python starlink_tracker.py track --visualize
+
+# Запустить планировщик для автоматических задач
+python starlink_tracker.py track --schedule
 
 # Включить отладочный режим
 python starlink_tracker.py track --debug

@@ -3,14 +3,21 @@
 Test data processor with configuration
 """
 
-from data_processor import DataProcessor
+import sys
+import os
 import json
+
+# Add the src directory to the path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from utils.data_processor import DataProcessor
 
 def test_data_processor():
     """Test the data processor with configuration."""
     # Load configuration
     try:
-        with open('config.json') as f:
+        config_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config.json')
+        with open(config_path) as f:
             config = json.load(f)
         print("Config loaded successfully")
     except Exception as e:

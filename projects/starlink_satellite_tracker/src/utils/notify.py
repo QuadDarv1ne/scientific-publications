@@ -12,6 +12,9 @@ import requests
 import logging
 from datetime import datetime, timedelta
 
+# Import our configuration manager
+from utils.config_manager import get_config
+
 # Try to import telegram bot, but handle if not available
 try:
     from telegram import Bot
@@ -21,12 +24,13 @@ except ImportError:
     Bot = None  # Define Bot as None to avoid undefined variable
     logging.warning("python-telegram-bot not installed. Telegram notifications disabled.")
 
+
 class NotificationSystem:
-    def __init__(self, config):
+    def __init__(self, config=None):
         """Initialize notification system with configuration."""
-        self.config = config
-        self.email_config = config.get('notifications', {}).get('email', {})
-        self.telegram_config = config.get('notifications', {}).get('telegram', {})
+        self.config = config or get_config()
+        self.email_config = self.config.get('notifications', {}).get('email', {})
+        self.telegram_config = self.config.get('notifications', {}).get('telegram', {})
         
     def send_email_notification(self, subject, message, recipient):
         """Send email notification about satellite pass."""
@@ -113,28 +117,11 @@ Look up and enjoy the show! 🌌
         
         return success
 
+
 def create_notification_example():
     """Create an example of how to use the notification system."""
-    # Sample configuration
-    config = {
-        "notifications": {
-            "email": {
-                "enabled": False,
-                "smtp_server": "smtp.gmail.com",
-                "smtp_port": 587,
-                "username": "your_email@gmail.com",
-                "password": "your_password"
-            },
-            "telegram": {
-                "enabled": True,
-                "bot_token": "YOUR_BOT_TOKEN",
-                "chat_id": "YOUR_CHAT_ID"
-            }
-        }
-    }
-    
-    # Initialize notification system
-    notifier = NotificationSystem(config)
+    # Initialize notification system with config
+    notifier = NotificationSystem()
     
     # Example notification
     notifier.notify_upcoming_pass(
@@ -143,6 +130,7 @@ def create_notification_example():
         65.5,
         42.3
     )
+
 
 if __name__ == "__main__":
     # Setup logging

@@ -6,22 +6,23 @@ Provides a dashboard for visualizing satellite positions, passes, and coverage.
 
 import json
 import os
+import sys
 from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request
 
-# Import our tracker module
+# Add the src directory to the path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+# Import our configuration manager
+from utils.config_manager import get_config
+
+# Import tracker module
 try:
-    import sys
-    import os
-    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
     from core.main import StarlinkTracker
-    # Load configuration
-    try:
-        with open('config.json', 'r') as f:
-            config = json.load(f)
-    except:
-        config = {}
+    tracker = StarlinkTracker()
+    TRACKER_AVAILABLE = True
 except ImportError:
+    TRACKER_AVAILABLE = False
     # If main.py doesn't exist, create a minimal version
     class StarlinkTracker:
         def __init__(self):
@@ -48,19 +49,13 @@ except ImportError:
                     'distance': 420.7
                 }
             ]
-    config = {}
+    
+    tracker = StarlinkTracker()
 
 app = Flask(__name__)
 
-# Global tracker instance
-tracker = StarlinkTracker()
-
-# Load configuration settings
-try:
-    with open('config.json', 'r') as f:
-        config = json.load(f)
-except:
-    config = {}
+# Load configuration
+config = get_config()
 
 # Set default observer location from config
 if 'observer' in config:
@@ -69,10 +64,6 @@ if 'observer' in config:
 else:
     DEFAULT_LATITUDE = 55.7558  # Moscow
     DEFAULT_LONGITUDE = 37.6173
-
-# Default observer location (can be configured)
-DEFAULT_LATITUDE = 55.7558  # Moscow
-DEFAULT_LONGITUDE = 37.6173
 
 @app.route('/')
 def index():
@@ -190,21 +181,10 @@ def export():
 def api_export(format):
     """API endpoint for exporting data in various formats."""
     try:
-        # Import data processor
-        import sys
-        import os
-        sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
         from utils.data_processor import DataProcessor
         
-        # Load configuration
-        try:
-            with open('config.json', 'r') as f:
-                config = json.load(f)
-        except:
-            config = {}
-        
-        # Initialize processor
-        processor = DataProcessor(config)
+        # Initialize processor with config
+        processor = DataProcessor()
         
         # Load satellite data
         satellites = processor.load_satellite_data()
