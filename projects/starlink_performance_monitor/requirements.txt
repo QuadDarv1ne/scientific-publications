@@ -28,6 +28,9 @@ openmeteo_requests==1.0.0
 
 # Web framework for dashboard
 flask==2.3.2
+flask-socketio==5.3.6
+python-socketio==5.8.0
+eventlet==0.33.3
 
 # Development and testing
 pytest==7.4.0

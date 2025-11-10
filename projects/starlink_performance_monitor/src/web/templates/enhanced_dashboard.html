@@ -1,0 +1,688 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Enhanced Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="autoRefreshBtn" data-active="true">
+                <i class="fas fa-pause"></i> Auto Refresh
+            </button>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="timeRangeDropdown" data-bs-toggle="dropdown">
+                Last 24 Hours
+            </button>
+            <ul class="dropdown-menu" id="timeRangeMenu">
+                <li><a class="dropdown-item" href="#" data-hours="1">Last 1 Hour</a></li>
+                <li><a class="dropdown-item" href="#" data-hours="6">Last 6 Hours</a></li>
+                <li><a class="dropdown-item" href="#" data-hours="12">Last 12 Hours</a></li>
+                <li><a class="dropdown-item active" href="#" data-hours="24">Last 24 Hours</a></li>
+                <li><a class="dropdown-item" href="#" data-hours="168">Last 7 Days</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Status Indicator -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-info d-flex align-items-center" role="alert" id="statusIndicator">
+            <i class="fas fa-info-circle me-2"></i>
+            <div id="statusMessage">Connecting to real-time data stream...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Current Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card metric-card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-download"></i> Download Speed</h5>
+                <h2 class="card-text" id="downloadSpeed">-- Mbps</h2>
+                <small>Last updated: <span id="downloadTime">--</span></small>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar" id="downloadProgress" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-upload"></i> Upload Speed</h5>
+                <h2 class="card-text" id="uploadSpeed">-- Mbps</h2>
+                <small>Last updated: <span id="uploadTime">--</span></small>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar" id="uploadProgress" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-stopwatch"></i> Ping</h5>
+                <h2 class="card-text" id="pingTime">-- ms</h2>
+                <small>Last updated: <span id="pingTimeTime">--</span></small>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar" id="pingProgress" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-exclamation-triangle"></i> Packet Loss</h5>
+                <h2 class="card-text" id="packetLoss">-- %</h2>
+                <small>Last updated: <span id="packetLossTime">--</span></small>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar" id="packetLossProgress" role="progressbar" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Performance History</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeLine">Line</button>
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeBar">Bar</button>
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeArea">Area</button>
+                </div>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Download Speed Distribution</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="downloadDistribution" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Ping Performance</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="pingChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Packet Loss Over Time</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="packetLossChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Performance Summary</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="summaryChart" height="250"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alerts Section -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Recent Alerts</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th>Message</th>
+                                <th>Value</th>
+                                <th>Threshold</th>
+                            </tr>
+                        </thead>
+                        <tbody id="alertsTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center">No recent alerts</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script>
+    // Global variables
+    let socket = null;
+    let autoRefreshInterval = null;
+    let currentHours = 24;
+    let chartType = 'line';
+    let performanceChart = null;
+    let pingChart = null;
+    let packetLossChart = null;
+    let downloadDistributionChart = null;
+    let summaryChart = null;
+    
+    // Initialize WebSocket connection
+    function initWebSocket() {
+        try {
+            // In a real implementation, you would connect to a WebSocket server
+            // socket = io();
+            // socket.on('connect', function() {
+            //     updateStatus('Connected to real-time data stream', 'success');
+            // });
+            // socket.on('disconnect', function() {
+            //     updateStatus('Disconnected from real-time data stream', 'warning');
+            // });
+            // socket.on('metrics_update', function(data) {
+            //     updateCurrentMetrics(data);
+            // });
+            
+            // For now, simulate connection
+            updateStatus('Real-time data stream simulation active', 'success');
+        } catch (error) {
+            console.error('WebSocket connection error:', error);
+            updateStatus('Failed to connect to real-time data stream', 'danger');
+        }
+    }
+    
+    // Update status indicator
+    function updateStatus(message, type = 'info') {
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        // Remove existing classes
+        statusIndicator.className = 'alert d-flex align-items-center';
+        
+        // Add appropriate class based on type
+        switch(type) {
+            case 'success':
+                statusIndicator.classList.add('alert-success');
+                statusIndicator.innerHTML = '<i class="fas fa-check-circle me-2"></i><div id="statusMessage">' + message + '</div>';
+                break;
+            case 'warning':
+                statusIndicator.classList.add('alert-warning');
+                statusIndicator.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><div id="statusMessage">' + message + '</div>';
+                break;
+            case 'danger':
+                statusIndicator.classList.add('alert-danger');
+                statusIndicator.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i><div id="statusMessage">' + message + '</div>';
+                break;
+            default:
+                statusIndicator.classList.add('alert-info');
+                statusIndicator.innerHTML = '<i class="fas fa-info-circle me-2"></i><div id="statusMessage">' + message + '</div>';
+        }
+    }
+    
+    // Function to update current metrics
+    async function updateCurrentMetrics(data = null) {
+        try {
+            // If no data provided, fetch from API
+            if (!data) {
+                const response = await axios.get('/api/current');
+                data = response.data.metrics;
+            }
+            
+            if (data) {
+                // Update metric values
+                document.getElementById('downloadSpeed').textContent = data.download_mbps.toFixed(2) + ' Mbps';
+                document.getElementById('uploadSpeed').textContent = data.upload_mbps.toFixed(2) + ' Mbps';
+                document.getElementById('pingTime').textContent = data.ping_ms.toFixed(2) + ' ms';
+                document.getElementById('packetLoss').textContent = data.packet_loss_percent.toFixed(2) + ' %';
+                
+                // Update timestamps
+                const timestamp = new Date(data.timestamp).toLocaleTimeString();
+                document.getElementById('downloadTime').textContent = timestamp;
+                document.getElementById('uploadTime').textContent = timestamp;
+                document.getElementById('pingTimeTime').textContent = timestamp;
+                document.getElementById('packetLossTime').textContent = timestamp;
+                
+                // Update progress bars (simulated)
+                updateProgressBars(data);
+                
+                // Update status
+                updateStatus('Data updated successfully', 'success');
+            }
+        } catch (error) {
+            console.error('Error fetching current metrics:', error);
+            updateStatus('Error fetching current metrics', 'danger');
+        }
+    }
+    
+    // Update progress bars based on thresholds
+    function updateProgressBars(data) {
+        // Simulated thresholds - in a real app these would come from config
+        const downloadThreshold = 100; // Mbps
+        const uploadThreshold = 20;    // Mbps
+        const pingThreshold = 50;      // ms
+        const packetLossThreshold = 5; // %
+        
+        // Calculate percentages
+        const downloadPercent = Math.min(100, (data.download_mbps / downloadThreshold) * 100);
+        const uploadPercent = Math.min(100, (data.upload_mbps / uploadThreshold) * 100);
+        const pingPercent = Math.min(100, (data.ping_ms / pingThreshold) * 100);
+        const packetLossPercent = Math.min(100, (data.packet_loss_percent / packetLossThreshold) * 100);
+        
+        // Update progress bars
+        document.getElementById('downloadProgress').style.width = downloadPercent + '%';
+        document.getElementById('uploadProgress').style.width = uploadPercent + '%';
+        document.getElementById('pingProgress').style.width = pingPercent + '%';
+        document.getElementById('packetLossProgress').style.width = packetLossPercent + '%';
+        
+        // Update colors based on performance
+        updateProgressBarColor('downloadProgress', downloadPercent);
+        updateProgressBarColor('uploadProgress', uploadPercent);
+        updateProgressBarColor('pingProgress', pingPercent);
+        updateProgressBarColor('packetLossProgress', packetLossPercent);
+    }
+    
+    // Update progress bar color based on percentage
+    function updateProgressBarColor(elementId, percent) {
+        const progressBar = document.getElementById(elementId);
+        progressBar.classList.remove('bg-success', 'bg-warning', 'bg-danger');
+        
+        if (percent < 50) {
+            progressBar.classList.add('bg-success');
+        } else if (percent < 80) {
+            progressBar.classList.add('bg-warning');
+        } else {
+            progressBar.classList.add('bg-danger');
+        }
+    }
+    
+    // Function to update charts
+    async function updateCharts() {
+        try {
+            const response = await axios.get(`/api/metrics?hours=${currentHours}`);
+            const data = response.data.data;
+            
+            if (data && data.length > 0) {
+                // Convert data for Chart.js
+                const timestamps = data.map(item => new Date(item.timestamp).toLocaleTimeString());
+                const downloadSpeeds = data.map(item => item.download_mbps);
+                const uploadSpeeds = data.map(item => item.upload_mbps);
+                const pingTimes = data.map(item => item.ping_ms);
+                const packetLoss = data.map(item => item.packet_loss_percent);
+                
+                // Destroy existing charts if they exist
+                if (performanceChart) performanceChart.destroy();
+                if (pingChart) pingChart.destroy();
+                if (packetLossChart) packetLossChart.destroy();
+                if (downloadDistributionChart) downloadDistributionChart.destroy();
+                if (summaryChart) summaryChart.destroy();
+                
+                // Create new charts
+                createPerformanceChart(timestamps, downloadSpeeds, uploadSpeeds);
+                createPingChart(timestamps, pingTimes);
+                createPacketLossChart(timestamps, packetLoss);
+                createDownloadDistributionChart(downloadSpeeds);
+                createSummaryChart(downloadSpeeds, uploadSpeeds, pingTimes, packetLoss);
+                
+                updateStatus('Charts updated successfully', 'success');
+            } else {
+                updateStatus('No data available for the selected time range', 'warning');
+            }
+        } catch (error) {
+            console.error('Error fetching chart data:', error);
+            updateStatus('Error fetching chart data', 'danger');
+        }
+    }
+    
+    // Create performance chart
+    function createPerformanceChart(timestamps, downloadSpeeds, uploadSpeeds) {
+        const ctx = document.getElementById('performanceChart').getContext('2d');
+        
+        const chartConfig = {
+            type: chartType === 'bar' ? 'bar' : chartType === 'area' ? 'line' : 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'Download Speed (Mbps)',
+                    data: downloadSpeeds,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: chartType === 'area' ? 'rgba(54, 162, 235, 0.2)' : 'transparent',
+                    tension: chartType === 'line' || chartType === 'area' ? 0.1 : 0,
+                    fill: chartType === 'area'
+                }, {
+                    label: 'Upload Speed (Mbps)',
+                    data: uploadSpeeds,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: chartType === 'area' ? 'rgba(75, 192, 192, 0.2)' : 'transparent',
+                    tension: chartType === 'line' || chartType === 'area' ? 0.1 : 0,
+                    fill: chartType === 'area'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                }
+            }
+        };
+        
+        performanceChart = new Chart(ctx, chartConfig);
+    }
+    
+    // Create ping chart
+    function createPingChart(timestamps, pingTimes) {
+        const ctx = document.getElementById('pingChart').getContext('2d');
+        
+        const chartConfig = {
+            type: chartType === 'bar' ? 'bar' : chartType === 'area' ? 'line' : 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'Ping (ms)',
+                    data: pingTimes,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: chartType === 'area' ? 'rgba(255, 99, 132, 0.2)' : 'transparent',
+                    tension: chartType === 'line' || chartType === 'area' ? 0.1 : 0,
+                    fill: chartType === 'area'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        };
+        
+        pingChart = new Chart(ctx, chartConfig);
+    }
+    
+    // Create packet loss chart
+    function createPacketLossChart(timestamps, packetLoss) {
+        const ctx = document.getElementById('packetLossChart').getContext('2d');
+        
+        const chartConfig = {
+            type: chartType === 'bar' ? 'bar' : chartType === 'area' ? 'line' : 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'Packet Loss (%)',
+                    data: packetLoss,
+                    borderColor: 'rgb(255, 159, 64)',
+                    backgroundColor: chartType === 'area' ? 'rgba(255, 159, 64, 0.2)' : 'transparent',
+                    tension: chartType === 'line' || chartType === 'area' ? 0.1 : 0,
+                    fill: chartType === 'area'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100
+                    }
+                }
+            }
+        };
+        
+        packetLossChart = new Chart(ctx, chartConfig);
+    }
+    
+    // Create download distribution chart
+    function createDownloadDistributionChart(downloadSpeeds) {
+        const ctx = document.getElementById('downloadDistribution').getContext('2d');
+        const downloadBins = Array(10).fill(0);
+        const maxDownload = Math.max(...downloadSpeeds);
+        const minDownload = Math.min(...downloadSpeeds);
+        const range = maxDownload - minDownload;
+        const binSize = range / 10;
+        
+        downloadSpeeds.forEach(speed => {
+            if (binSize > 0) {
+                const binIndex = Math.min(Math.floor((speed - minDownload) / binSize), 9);
+                downloadBins[binIndex]++;
+            } else {
+                downloadBins[0]++;
+            }
+        });
+        
+        const binLabels = Array.from({length: 10}, (_, i) => {
+            const start = minDownload + (i * binSize);
+            const end = minDownload + ((i + 1) * binSize);
+            return `${start.toFixed(0)}-${end.toFixed(0)} Mbps`;
+        });
+        
+        const chartConfig = {
+            type: 'bar',
+            data: {
+                labels: binLabels,
+                datasets: [{
+                    label: 'Frequency',
+                    data: downloadBins,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgb(54, 162, 235)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        };
+        
+        downloadDistributionChart = new Chart(ctx, chartConfig);
+    }
+    
+    // Create summary chart
+    function createSummaryChart(downloadSpeeds, uploadSpeeds, pingTimes, packetLoss) {
+        const ctx = document.getElementById('summaryChart').getContext('2d');
+        
+        // Calculate averages
+        const avgDownload = downloadSpeeds.reduce((a, b) => a + b, 0) / downloadSpeeds.length;
+        const avgUpload = uploadSpeeds.reduce((a, b) => a + b, 0) / uploadSpeeds.length;
+        const avgPing = pingTimes.reduce((a, b) => a + b, 0) / pingTimes.length;
+        const avgPacketLoss = packetLoss.reduce((a, b) => a + b, 0) / packetLoss.length;
+        
+        const chartConfig = {
+            type: 'radar',
+            data: {
+                labels: ['Download (Mbps)', 'Upload (Mbps)', 'Ping (ms)', 'Packet Loss (%)'],
+                datasets: [{
+                    label: 'Performance Metrics',
+                    data: [avgDownload, avgUpload, avgPing, avgPacketLoss],
+                    fill: true,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgb(255, 99, 132)',
+                    pointBackgroundColor: 'rgb(255, 99, 132)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgb(255, 99, 132)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: {
+                            display: true
+                        },
+                        suggestedMin: 0,
+                        suggestedMax: 100
+                    }
+                }
+            }
+        };
+        
+        summaryChart = new Chart(ctx, chartConfig);
+    }
+    
+    // Update time range
+    function updateTimeRange(hours, label) {
+        currentHours = hours;
+        document.getElementById('timeRangeDropdown').textContent = label;
+        updateCharts();
+    }
+    
+    // Toggle auto refresh
+    function toggleAutoRefresh() {
+        const btn = document.getElementById('autoRefreshBtn');
+        const isActive = btn.getAttribute('data-active') === 'true';
+        
+        if (isActive) {
+            // Disable auto refresh
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            btn.innerHTML = '<i class="fas fa-play"></i> Auto Refresh';
+            btn.setAttribute('data-active', 'false');
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-outline-secondary');
+        } else {
+            // Enable auto refresh
+            autoRefreshInterval = setInterval(() => {
+                updateCurrentMetrics();
+                updateCharts();
+            }, 30000); // Refresh every 30 seconds
+            btn.innerHTML = '<i class="fas fa-pause"></i> Auto Refresh';
+            btn.setAttribute('data-active', 'true');
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-outline-primary');
+        }
+    }
+    
+    // Change chart type
+    function changeChartType(type) {
+        chartType = type;
+        
+        // Update button states
+        document.getElementById('chartTypeLine').classList.remove('active');
+        document.getElementById('chartTypeBar').classList.remove('active');
+        document.getElementById('chartTypeArea').classList.remove('active');
+        
+        switch(type) {
+            case 'line':
+                document.getElementById('chartTypeLine').classList.add('active');
+                break;
+            case 'bar':
+                document.getElementById('chartTypeBar').classList.add('active');
+                break;
+            case 'area':
+                document.getElementById('chartTypeArea').classList.add('active');
+                break;
+        }
+        
+        // Update charts
+        updateCharts();
+    }
+    
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize WebSocket
+        initWebSocket();
+        
+        // Initial data load
+        updateCurrentMetrics();
+        updateCharts();
+        
+        // Set up refresh button
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            updateCurrentMetrics();
+            updateCharts();
+        });
+        
+        // Set up auto refresh button
+        document.getElementById('autoRefreshBtn').addEventListener('click', function() {
+            toggleAutoRefresh();
+        });
+        
+        // Set up time range menu
+        document.querySelectorAll('#timeRangeMenu .dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                const hours = parseInt(this.getAttribute('data-hours'));
+                const label = this.textContent;
+                updateTimeRange(hours, label);
+                
+                // Update active state
+                document.querySelectorAll('#timeRangeMenu .dropdown-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                this.classList.add('active');
+            });
+        });
+        
+        // Set up chart type buttons
+        document.getElementById('chartTypeLine').addEventListener('click', function() {
+            changeChartType('line');
+        });
+        document.getElementById('chartTypeBar').addEventListener('click', function() {
+            changeChartType('bar');
+        });
+        document.getElementById('chartTypeArea').addEventListener('click', function() {
+            changeChartType('area');
+        });
+        
+        // Set initial chart type button state
+        document.getElementById('chartTypeLine').classList.add('active');
+        
+        // Start auto refresh
+        autoRefreshInterval = setInterval(() => {
+            updateCurrentMetrics();
+        }, 30000); // Refresh every 30 seconds
+    });
+</script>
+{% endblock %}

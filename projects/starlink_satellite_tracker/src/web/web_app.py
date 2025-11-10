@@ -16,15 +16,18 @@ import hashlib
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-# Import our configuration manager and tracker module
+# Import our configuration manager
 from utils.config_manager import get_config
+
+# Import tracker module with error handling
 try:
     from core.main import StarlinkTracker
+    tracker_instance = StarlinkTracker()
     TRACKER_AVAILABLE = True
 except ImportError:
     TRACKER_AVAILABLE = False
-    # If main.py doesn't exist, create a minimal version
-    class StarlinkTracker:
+    # Create a minimal version
+    class MinimalTracker:
         def __init__(self):
             pass
         
@@ -49,6 +52,8 @@ except ImportError:
                     'distance': 420.7
                 }
             ]
+    
+    tracker_instance = MinimalTracker()
 
 # Simple in-memory cache for API responses
 class APICache:
@@ -124,9 +129,6 @@ def handle_api_errors(f):
 
 app = Flask(__name__)
 
-# Global tracker instance
-tracker = StarlinkTracker()
-
 # Load configuration
 config = get_config()
 
@@ -145,9 +147,12 @@ logging.basicConfig(level=logging.INFO,
 # Start scheduler for automated tasks (if available)
 if TRACKER_AVAILABLE:
     try:
-        # Only start scheduler if the method exists
-        if hasattr(tracker, 'start_scheduler') and callable(getattr(tracker, 'start_scheduler', None)):
-            tracker.start_scheduler()
+        # Try to start scheduler if method exists
+        if hasattr(tracker_instance, 'start_scheduler'):
+            try:
+                tracker_instance.start_scheduler()
+            except:
+                pass  # Ignore scheduler errors
     except Exception as e:
         app.logger.warning(f"Could not start scheduler: {e}")
 
@@ -162,7 +167,7 @@ def index():
 def api_satellites():
     """API endpoint returning current satellite positions."""
     # Update TLE data if needed
-    satellites = tracker.update_tle_data()
+    satellites = tracker_instance.update_tle_data()
     
     # Return simplified satellite data
     sat_data = []
@@ -205,7 +210,7 @@ def api_passes():
         return jsonify({'error': 'Invalid parameter format.'}), 400
     
     # Predict passes
-    passes = tracker.predict_passes(lat, lon, hours_ahead=hours)
+    passes = tracker_instance.predict_passes(lat, lon, hours_ahead=hours)
     
     # Format for JSON serialization
     formatted_passes = []
@@ -313,10 +318,12 @@ def api_export(format):
 def clear_cache():
     """API endpoint to clear the cache."""
     api_cache.clear()
-    if TRACKER_AVAILABLE:
-        # Try to clear tracker caches if method exists
-        if hasattr(tracker, 'clear_caches') and callable(getattr(tracker, 'clear_caches', None)):
-            tracker.clear_caches()
+    # Try to clear tracker caches if method exists
+    if hasattr(tracker_instance, 'clear_caches'):
+        try:
+            tracker_instance.clear_caches()
+        except:
+            pass  # Ignore errors when clearing tracker caches
     return jsonify({'message': 'Cache cleared successfully'})
 
 @app.errorhandler(404)

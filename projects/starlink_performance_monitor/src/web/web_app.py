@@ -17,6 +17,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for
+from flask_socketio import SocketIO, emit
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
@@ -46,6 +47,7 @@ logger = get_logger(__name__)
 # Create Flask app with template folder specified
 template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=template_dir)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Add secret key for sessions
 app.secret_key = os.urandom(24)
@@ -89,7 +91,7 @@ def logout():
 @require_auth
 def dashboard():
     """Main dashboard page."""
-    return render_template('dashboard.html')
+    return render_template('enhanced_dashboard.html')
 
 @app.route('/api/metrics')
 @require_auth
@@ -267,8 +269,37 @@ def main():
     # Update app configuration
     app.config['CONFIG_PATH'] = args.config
     
-    # Run the application
-    app.run(host=args.host, port=args.port, debug=args.debug)
+    # Run the application with SocketIO
+    socketio.run(app, host=args.host, port=args.port, debug=args.debug)
+
+@socketio.on('connect')
+def handle_connect():
+    logger.info('Client connected')
+    emit('status', {'msg': 'Connected to server'})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    logger.info('Client disconnected')
+
+@socketio.on('request_metrics')
+def handle_metrics_request():
+    """Handle real-time metrics request from client."""
+    try:
+        web_app = WebApp()
+        df = web_app.get_recent_metrics(1)  # Last hour
+        
+        if not df.empty:
+            latest = df.iloc[0]
+            metrics = {
+                'download_mbps': latest['download_mbps'],
+                'upload_mbps': latest['upload_mbps'],
+                'ping_ms': latest['ping_ms'],
+                'packet_loss_percent': latest['packet_loss_percent'],
+                'timestamp': latest['timestamp']
+            }
+            emit('metrics_update', metrics)
+    except Exception as e:
+        logger.error(f"Error handling metrics request: {e}")
 
 if __name__ == "__main__":
     main()
