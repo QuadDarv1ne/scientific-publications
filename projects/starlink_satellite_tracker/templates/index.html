@@ -2,44 +2,84 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-12">
-        <h1>Starlink Satellite Tracker Dashboard</h1>
-        <p class="lead">Real-time tracking of SpaceX Starlink satellites</p>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-2">Starlink Satellite Tracker Dashboard</h1>
+                <p class="lead mb-0">Real-time tracking of SpaceX Starlink satellites</p>
+            </div>
+            <div class="d-flex">
+                <button class="btn btn-outline-primary me-2" type="button" id="refresh-btn">
+                    <i class="fas fa-sync-alt me-1"></i> Refresh Data
+                </button>
+                <button class="btn btn-primary" type="button" id="clear-cache-btn">
+                    <i class="fas fa-broom me-1"></i> Clear Cache
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0">Current Status</h5>
             </div>
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <div>
-                        <h6 class="text-muted">Satellites Tracked</h6>
-                        <h3 id="satellite-count" class="mb-0">-</h3>
-                    </div>
-                    <div class="icon-circle bg-primary text-white">
-                        <i class="fas fa-satellite"></i>
-                    </div>
+            <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                <div class="icon-circle bg-primary text-white mb-3">
+                    <i class="fas fa-satellite"></i>
                 </div>
-                <div class="mt-3">
+                <h2 id="satellite-count" class="display-4 mb-2">-</h2>
+                <p class="text-muted mb-3">Tracked Satellites</p>
+                <div class="mt-2 text-center">
                     <small class="text-muted">Last Updated: <span id="last-update">-</span></small>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
-        <div class="card">
+    <div class="col-lg-4 col-md-6">
+        <div class="card h-100">
             <div class="card-header">
                 <h5 class="mb-0">Next Visible Pass</h5>
             </div>
             <div class="card-body">
-                <div id="next-pass-content">
-                    <p class="text-muted">Calculating next satellite pass...</p>
-                    <div id="next-pass">-</div>
+                <div id="next-pass-content" class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-hourglass-half fa-2x text-muted"></i>
+                    </div>
+                    <p class="text-muted mb-0">Calculating next satellite pass...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 col-md-12">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="mb-0">System Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-3">
+                    <div>
+                        <p class="mb-1"><i class="fas fa-map-marker-alt text-primary me-2"></i> Location</p>
+                        <p class="mb-0 text-muted">Moscow, Russia</p>
+                    </div>
+                    <div>
+                        <p class="mb-1"><i class="fas fa-clock text-primary me-2"></i> Timezone</p>
+                        <p class="mb-0 text-muted">GMT+3</p>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <p class="mb-1"><i class="fas fa-signal text-primary me-2"></i> Data Source</p>
+                        <p class="mb-0 text-muted">Celestrak</p>
+                    </div>
+                    <div>
+                        <p class="mb-1"><i class="fas fa-database text-primary me-2"></i> Cache</p>
+                        <p class="mb-0 text-muted">Active</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -47,26 +87,33 @@
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-12">
+    <div class="col-lg-8">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Recent Activity</h5>
+                <span class="badge bg-primary" id="pass-count">0 passes</span>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-hover">
                         <thead>
                             <tr>
                                 <th>Satellite</th>
-                                <th>Time</th>
+                                <th>Date & Time</th>
                                 <th>Max Elevation</th>
                                 <th>Azimuth</th>
                                 <th>Distance</th>
+                                <th>Brightness</th>
                             </tr>
                         </thead>
                         <tbody id="recent-passes">
                             <tr>
-                                <td colspan="5" class="text-center">Loading recent passes...</td>
+                                <td colspan="6" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0">Loading recent passes...</p>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -74,91 +121,528 @@
             </div>
         </div>
     </div>
+    
+    <div class="col-lg-4 mt-4 mt-lg-0">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Search</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="satellite-search" class="form-label">Search Satellites</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="satellite-search" placeholder="Enter satellite name or ID">
+                        <button class="btn btn-outline-secondary" type="button" id="search-btn">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="search-results" class="mt-3"></div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5 class="mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/passes" class="btn btn-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>All Passes
+                    </a>
+                    <a href="/coverage" class="btn btn-success">
+                        <i class="fas fa-globe-americas me-2"></i>Coverage
+                    </a>
+                    <a href="/settings" class="btn btn-info">
+                        <i class="fas fa-cog me-2"></i>Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New section for displaying all satellites -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">All Starlink Satellites</h5>
+                <div class="d-flex">
+                    <input type="text" class="form-control form-control-sm me-2" id="satellite-filter" placeholder="Filter satellites">
+                    <button class="btn btn-sm btn-outline-primary" id="refresh-satellites-btn">
+                        <i class="fas fa-sync-alt"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Satellite Name</th>
+                                <th>NORAD ID</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-satellites">
+                            <tr>
+                                <td colspan="4" class="text-center">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 mb-0">Loading satellite list...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <small class="text-muted">Total satellites: <span id="total-satellites">-</span></small>
+                    </div>
+                    <div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination pagination-sm mb-0" id="pagination">
+                                <!-- Pages will be added dynamically -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-// Function to show pass details
-function showPassDetails(satelliteName) {
-    alert(`Pass details for satellite ${satelliteName}:\n\nThis function will open a page with detailed information about the satellite pass.`);
-    // In a real implementation, this could open a modal or redirect to a details page
-    // window.location.href = `/passes?satellite=${encodeURIComponent(satelliteName)}&details=true`;
+// Fetch satellite data
+function fetchSatelliteData() {
+    // Show loading indicators
+    document.getElementById('satellite-count').textContent = '...';
+    document.getElementById('last-update').textContent = 'Loading...';
+    
+    fetch('/api/satellites')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            document.getElementById('satellite-count').textContent = data.count;
+            document.getElementById('last-update').textContent = new Date(data.updated).toLocaleString();
+        })
+        .catch(error => {
+            console.error('Error fetching satellite data:', error);
+            document.getElementById('satellite-count').textContent = 'Error';
+            document.getElementById('last-update').textContent = 'Error loading data';
+        });
 }
 
-// Fetch satellite data
-// Show loading indicators
-document.getElementById('satellite-count').textContent = '...';
-document.getElementById('last-update').textContent = 'Loading...';
-
-fetch('/api/satellites')
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        document.getElementById('satellite-count').textContent = data.count;
-        document.getElementById('last-update').textContent = new Date(data.updated).toLocaleString();
-    })
-    .catch(error => {
-        console.error('Error fetching satellite data:', error);
-        document.getElementById('satellite-count').textContent = 'Error';
-        document.getElementById('last-update').textContent = 'Error loading data';
-    });
-
 // Fetch next pass and recent passes
-fetch('/api/passes?hours=48')
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        const nextPassContent = document.getElementById('next-pass-content');
-        const recentPasses = document.getElementById('recent-passes');
-        
-        if (data.passes && data.passes.length > 0) {
-            // Next pass
-            const nextPass = data.passes[0];
-            nextPassContent.innerHTML = `
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h5>${nextPass.satellite}</h5>
-                        <p class="mb-1"><strong>Time:</strong> ${new Date(nextPass.time).toLocaleString()}</p>
-                        <p class="mb-1"><strong>Max Elevation:</strong> ${nextPass.altitude}°</p>
-                        <p class="mb-0"><strong>Azimuth:</strong> ${nextPass.azimuth}°</p>
+function fetchPassesData() {
+    const tableBody = document.getElementById('recent-passes');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 mb-0">Loading passes...</p>
+            </td>
+        </tr>
+    `;
+    
+    fetch('/api/passes?hours=48')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            const nextPassContent = document.getElementById('next-pass-content');
+            const recentPasses = document.getElementById('recent-passes');
+            
+            document.getElementById('pass-count').textContent = `${data.passes.length} passes`;
+            
+            if (data.passes && data.passes.length > 0) {
+                // Next pass
+                const nextPass = data.passes[0];
+                nextPassContent.innerHTML = `
+                    <div class="text-center">
+                        <h4 class="mb-3">${nextPass.satellite}</h4>
+                        <div class="row mb-3">
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-calendar-alt text-primary me-1"></i> <strong>Time</strong></p>
+                                <p class="mb-0">${new Date(nextPass.time).toLocaleString()}</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-arrow-up text-primary me-1"></i> <strong>Max Elevation</strong></p>
+                                <p class="mb-0">${nextPass.altitude}°</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-compass text-primary me-1"></i> <strong>Azimuth</strong></p>
+                                <p class="mb-0">${nextPass.azimuth}°</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="mb-1"><i class="fas fa-star text-primary me-1"></i> <strong>Brightness</strong></p>
+                                <p class="mb-0">${nextPass.brightness}</p>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <span class="badge bg-success" style="cursor: pointer;" onclick="showPassDetails('${nextPass.satellite}')"><i class="fas fa-eye me-1"></i> Visible</span>
+                        </div>
                     </div>
-                    <div>
-                        <span class="badge bg-success" style="cursor: pointer;" onclick="showPassDetails('${nextPass.satellite}')">Visible</span>
+                `;
+                
+                // Recent passes (show first 10)
+                recentPasses.innerHTML = '';
+                const passesToShow = Math.min(10, data.passes.length);
+                for (let i = 0; i < passesToShow; i++) {
+                    const pass = data.passes[i];
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>${pass.satellite}</strong></td>
+                        <td>${new Date(pass.time).toLocaleString()}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span>${pass.altitude}°</span>
+                                <div class="progress ms-2" style="width: 100px; height: 8px;">
+                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                         style="width: ${Math.min(100, pass.altitude)}%" 
+                                         aria-valuenow="${pass.altitude}" aria-valuemin="0" aria-valuemax="90"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${pass.azimuth}°</td>
+                        <td>${pass.distance} km</td>
+                        <td>
+                            <span class="badge ${pass.brightness < 3 ? 'bg-warning text-dark' : pass.brightness < 5 ? 'bg-info' : 'bg-secondary'}">
+                                ${pass.brightness}
+                            </span>
+                        </td>
+                    `;
+                    recentPasses.appendChild(row);
+                }
+            } else {
+                nextPassContent.innerHTML = `
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
+                        </div>
+                        <p class="text-muted mb-0">No upcoming passes found</p>
                     </div>
+                `;
+                recentPasses.innerHTML = '<tr><td colspan="6" class="text-center">No passes found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching pass data:', error);
+            document.getElementById('next-pass-content').innerHTML = `
+                <div class="text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                    </div>
+                    <p class="text-danger mb-0">Error loading pass data</p>
+                    <p class="small text-muted">${error.message}</p>
                 </div>
             `;
+            document.getElementById('recent-passes').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading passes</td></tr>';
+        });
+}
+
+// Fetch all satellites with pagination
+let currentPage = 1;
+const itemsPerPage = 20;
+
+function fetchAllSatellites(page = 1, filter = '') {
+    currentPage = page;
+    const tableBody = document.getElementById('all-satellites');
+    tableBody.innerHTML = `
+        <tr>
+            <td colspan="4" class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2 mb-0">Loading satellite list...</p>
+            </td>
+        </tr>
+    `;
+    
+    let url = '/api/satellites';
+    if (filter) {
+        url += `?search=${encodeURIComponent(filter)}`;
+    }
+    
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const satellites = data.satellites || [];
+            document.getElementById('total-satellites').textContent = data.total_count || satellites.length;
             
-            // Recent passes (show first 5)
-            recentPasses.innerHTML = '';
-            const passesToShow = Math.min(5, data.passes.length);
-            for (let i = 0; i < passesToShow; i++) {
-                const pass = data.passes[i];
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${pass.satellite}</td>
-                    <td>${new Date(pass.time).toLocaleString()}</td>
-                    <td>${pass.altitude}°</td>
-                    <td>${pass.azimuth}°</td>
-                    <td>${pass.distance} km</td>
-                `;
-                recentPasses.appendChild(row);
+            // Client-side filtering if server doesn't support filtering
+            let filteredSatellites = satellites;
+            if (filter) {
+                filteredSatellites = satellites.filter(sat => 
+                    sat.name.toLowerCase().includes(filter.toLowerCase()) || 
+                    (sat.id && sat.id.toString().includes(filter))
+                );
             }
-        } else {
-            nextPassContent.innerHTML = '<p class="text-muted">No upcoming passes found</p>';
-            recentPasses.innerHTML = '<tr><td colspan="5" class="text-center">No passes found</td></tr>';
+            
+            // Pagination
+            const startIndex = (page - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const paginatedSatellites = filteredSatellites.slice(startIndex, endIndex);
+            
+            if (paginatedSatellites.length > 0) {
+                tableBody.innerHTML = '';
+                paginatedSatellites.forEach(satellite => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td><strong>${satellite.name}</strong></td>
+                        <td>${satellite.id || 'N/A'}</td>
+                        <td><span class="badge bg-success">Active</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="showSatelliteDetails('${satellite.name}')">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="trackSatellite('${satellite.name}')">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+                
+                // Update pagination
+                updatePagination(filteredSatellites.length, page);
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No satellites found</td></tr>';
+                updatePagination(0, 1);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching satellite list:', error);
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading satellite list</td></tr>';
+            updatePagination(0, 1);
+        });
+}
+
+// Update pagination
+function updatePagination(totalItems, currentPage) {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const pagination = document.getElementById('pagination');
+    pagination.innerHTML = '';
+    
+    if (totalPages <= 1) return;
+    
+    // Previous page
+    const prevItem = document.createElement('li');
+    prevItem.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
+    prevItem.innerHTML = `<a class="page-link" href="#" ${currentPage !== 1 ? `onclick="fetchAllSatellites(${currentPage - 1}); return false;"` : ''}>Previous</a>`;
+    pagination.appendChild(prevItem);
+    
+    // Pages
+    for (let i = 1; i <= totalPages; i++) {
+        if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+            const pageItem = document.createElement('li');
+            pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
+            pageItem.innerHTML = `<a class="page-link" href="#" onclick="fetchAllSatellites(${i}); return false;">${i}</a>`;
+            pagination.appendChild(pageItem);
+        } else if (i === currentPage - 3 || i === currentPage + 3) {
+            const ellipsisItem = document.createElement('li');
+            ellipsisItem.className = 'page-item disabled';
+            ellipsisItem.innerHTML = '<span class="page-link">...</span>';
+            pagination.appendChild(ellipsisItem);
         }
-    })
-    .catch(error => {
-        console.error('Error fetching pass data:', error);
-        document.getElementById('next-pass-content').innerHTML = `<p class="text-danger">Error loading pass data</p><p class="small text-muted">${error.message}</p>`;
-        document.getElementById('recent-passes').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading passes</td></tr>';
-    });
+    }
+    
+    // Next page
+    const nextItem = document.createElement('li');
+    nextItem.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
+    nextItem.innerHTML = `<a class="page-link" href="#" ${currentPage !== totalPages ? `onclick="fetchAllSatellites(${currentPage + 1}); return false;"` : ''}>Next</a>`;
+    pagination.appendChild(nextItem);
+}
+
+// Search satellites
+function searchSatellites(query) {
+    if (!query) return;
+    
+    const searchResults = document.getElementById('search-results');
+    searchResults.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Searching...</span>
+            </div>
+        </div>
+    `;
+    
+    fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.results && data.results.length > 0) {
+                let html = '<div class="list-group">';
+                data.results.forEach(sat => {
+                    html += `
+                        <a href="#" class="list-group-item list-group-item-action" onclick="showSatelliteInfo('${sat.name}')">
+                            <div class="d-flex justify-content-between">
+                                <h6 class="mb-1">${sat.name}</h6>
+                                <small class="text-muted">ID: ${sat.id}</small>
+                            </div>
+                        </a>
+                    `;
+                });
+                html += '</div>';
+                searchResults.innerHTML = html;
+            } else {
+                searchResults.innerHTML = '<p class="text-muted text-center">No satellites found</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error searching satellites:', error);
+            searchResults.innerHTML = '<p class="text-danger text-center">Error searching satellites</p>';
+        });
+}
+
+// Show satellite info (placeholder)
+function showSatelliteInfo(satelliteName) {
+    alert(`Information about satellite ${satelliteName} will be displayed here in a modal window.`);
+}
+
+// Show satellite details
+function showSatelliteDetails(satelliteName) {
+    alert(`Detailed information about satellite ${satelliteName}:\n\nThis function will open a page with detailed information about the satellite.`);
+}
+
+// Track satellite
+function trackSatellite(satelliteName) {
+    alert(`Tracking satellite ${satelliteName}:\n\nThis function will open a page to track the satellite on the map.`);
+}
+
+// Show pass details
+function showPassDetails(satelliteName) {
+    alert(`Pass details for satellite ${satelliteName}:\n\nThis function will open a page with detailed information about the satellite pass.`);
+}
+
+// Clear cache function
+document.getElementById('clear-cache-btn').addEventListener('click', function() {
+    if (confirm('Are you sure you want to clear all cached data?')) {
+        fetch('/api/cache/clear', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || 'Cache cleared successfully!');
+                // Refresh data after clearing cache
+                fetchSatelliteData();
+                fetchPassesData();
+                fetchAllSatellites(currentPage);
+            })
+            .catch(error => {
+                console.error('Error clearing cache:', error);
+                alert('Error clearing cache');
+            });
+    }
+});
+
+// Refresh data function
+document.getElementById('refresh-btn').addEventListener('click', function() {
+    const btn = this;
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Refreshing...';
+    btn.disabled = true;
+    
+    // Add a small delay for better UX
+    setTimeout(() => {
+        Promise.all([
+            fetchSatelliteData(),
+            fetchPassesData(),
+            fetchAllSatellites(currentPage)
+        ]).then(() => {
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                // Show notification as toast instead of alert for better UX
+                showToast('Data refreshed successfully!', 'success');
+            }, 500);
+        }).catch(() => {
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+            showToast('Error refreshing data', 'error');
+        });
+    }, 300);
+});
+
+// Refresh satellites function
+document.getElementById('refresh-satellites-btn').addEventListener('click', function() {
+    const btn = this;
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    btn.disabled = true;
+    
+    fetchAllSatellites(currentPage, document.getElementById('satellite-filter').value);
+    
+    setTimeout(() => {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        showToast('Satellite list refreshed!', 'success');
+    }, 500);
+});
+
+// Show notification function
+function showToast(message, type) {
+    // Create temporary notification element
+    const toast = document.createElement('div');
+    toast.className = `position-fixed top-0 end-0 m-3 p-3 bg-${type === 'success' ? 'success' : 'danger'} text-white rounded shadow`;
+    toast.style.zIndex = '1050';
+    toast.innerHTML = message;
+    toast.style.transition = 'opacity 0.3s';
+    
+    document.body.appendChild(toast);
+    
+    // Remove notification after 3 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
+
+// Search button click handler
+document.getElementById('search-btn').addEventListener('click', function() {
+    const query = document.getElementById('satellite-search').value.trim();
+    if (query) {
+        searchSatellites(query);
+    }
+});
+
+// Enter key press handler in search field
+document.getElementById('satellite-search').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        const query = this.value.trim();
+        if (query) {
+            searchSatellites(query);
+        }
+    }
+});
+
+// Satellite filter input handler
+document.getElementById('satellite-filter').addEventListener('input', function() {
+    const filter = this.value.trim();
+    fetchAllSatellites(1, filter);
+});
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    // Add a small delay to improve performance
+    setTimeout(() => {
+        fetchSatelliteData();
+        fetchPassesData();
+        fetchAllSatellites(1);
+    }, 100);
+});
 </script>
 {% endblock %}
