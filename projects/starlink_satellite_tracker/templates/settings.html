@@ -2,23 +2,14 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="mb-2">Settings</h1>
-                <p class="lead mb-0">Configure your observation location and notification preferences</p>
-            </div>
-            <div>
-                <button class="btn btn-primary" type="button" id="save-all-btn">
-                    <i class="fas fa-save me-1"></i> Save All Settings
-                </button>
-            </div>
-        </div>
+    <div class="col-md-12">
+        <h1>Settings</h1>
+        <p class="lead">Configure your observation location and notification preferences</p>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-lg-6">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Observer Location</h5>
@@ -27,49 +18,35 @@
                 <form id="location-form">
                     <div class="mb-3">
                         <label for="latitude" class="form-label">Latitude</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-globe-americas"></i></span>
-                            <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
-                        </div>
+                        <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
                         <div class="form-text">Range: -90 to 90 degrees</div>
                     </div>
                     <div class="mb-3">
                         <label for="longitude" class="form-label">Longitude</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                            <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
-                        </div>
+                        <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
                         <div class="form-text">Range: -180 to 180 degrees</div>
                     </div>
                     <div class="mb-3">
                         <label for="altitude" class="form-label">Altitude (meters)</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-mountain"></i></span>
-                            <input type="number" class="form-control" id="altitude" step="1" placeholder="0" value="0">
-                        </div>
+                        <input type="number" class="form-control" id="altitude" step="1" placeholder="0" value="0">
                     </div>
                     <div class="mb-3">
                         <label for="timezone" class="form-label">Timezone</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-clock"></i></span>
-                            <select class="form-select" id="timezone">
-                                <option value="Europe/Moscow" selected>Moscow (GMT+3)</option>
-                                <option value="UTC">UTC</option>
-                                <option value="America/New_York">New York (GMT-5)</option>
-                                <option value="America/Los_Angeles">Los Angeles (GMT-8)</option>
-                                <option value="Asia/Tokyo">Tokyo (GMT+9)</option>
-                            </select>
-                        </div>
+                        <select class="form-select" id="timezone">
+                            <option value="Europe/Moscow" selected>Moscow (GMT+3)</option>
+                            <option value="UTC">UTC</option>
+                            <option value="America/New_York">New York (GMT-5)</option>
+                            <option value="America/Los_Angeles">Los Angeles (GMT-8)</option>
+                            <option value="Asia/Tokyo">Tokyo (GMT+9)</option>
+                        </select>
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i> Save Location
-                    </button>
+                    <button type="submit" class="btn btn-primary">Save Location</button>
                 </form>
             </div>
         </div>
     </div>
     
-    <div class="col-lg-6">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Notification Settings</h5>
@@ -78,43 +55,32 @@
                 <form id="notification-form">
                     <div class="mb-3">
                         <label class="form-label">Email Notifications</label>
-                        <div class="form-check form-switch form-switch-lg">
+                        <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="email-enabled">
                             <label class="form-check-label" for="email-enabled">Enable Email Notifications</label>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="email-address" class="form-label">Email Address</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                            <input type="email" class="form-control" id="email-address" placeholder="your@email.com">
-                        </div>
+                        <input type="email" class="form-control" id="email-address" placeholder="your@email.com">
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Telegram Notifications</label>
-                        <div class="form-check form-switch form-switch-lg">
+                        <div class="form-check form-switch">
                             <input class="form-check-input" type="checkbox" id="telegram-enabled">
                             <label class="form-check-label" for="telegram-enabled">Enable Telegram Notifications</label>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="telegram-chat-id" class="form-label">Telegram Chat ID</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fab fa-telegram"></i></span>
-                            <input type="text" class="form-control" id="telegram-chat-id" placeholder="Chat ID">
-                        </div>
+                        <input type="text" class="form-control" id="telegram-chat-id" placeholder="Chat ID">
                     </div>
                     <div class="mb-3">
                         <label for="min-elevation" class="form-label">Minimum Elevation (degrees)</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-arrow-up"></i></span>
-                            <input type="number" class="form-control" id="min-elevation" min="0" max="90" value="10">
-                        </div>
+                        <input type="number" class="form-control" id="min-elevation" min="0" max="90" value="10">
                         <div class="form-text">Only notify for passes above this elevation</div>
                     </div>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-1"></i> Save Notification Settings
-                    </button>
+                    <button type="submit" class="btn btn-primary">Save Notification Settings</button>
                 </form>
             </div>
         </div>
@@ -122,58 +88,40 @@
 </div>
 
 <div class="row mt-4">
-    <div class="col-12">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">System Configuration</h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-lg-6">
-                        <h6 class="mb-3">Data Sources</h6>
+                    <div class="col-md-6">
+                        <h6>Data Sources</h6>
                         <div class="mb-3">
                             <label for="celestrak-url" class="form-label">Celestrak URL</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-link"></i></span>
-                                <input type="url" class="form-control" id="celestrak-url" value="https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle">
-                            </div>
+                            <input type="url" class="form-control" id="celestrak-url" value="https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle">
                         </div>
                         <div class="mb-3">
                             <label for="cache-days" class="form-label">Cache Duration (days)</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-history"></i></span>
-                                <input type="number" class="form-control" id="cache-days" min="1" max="30" value="7">
-                            </div>
+                            <input type="number" class="form-control" id="cache-days" min="1" max="30" value="7">
                         </div>
                     </div>
-                    <div class="col-lg-6">
-                        <h6 class="mb-3">Scheduler Settings</h6>
+                    <div class="col-md-6">
+                        <h6>Scheduler Settings</h6>
                         <div class="mb-3">
                             <label for="tle-update-cron" class="form-label">TLE Update Schedule</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-sync"></i></span>
-                                <input type="text" class="form-control" id="tle-update-cron" value="0 0 */6 * *">
-                            </div>
+                            <input type="text" class="form-control" id="tle-update-cron" value="0 0 */6 * *">
                             <div class="form-text">Cron expression for TLE updates</div>
                         </div>
                         <div class="mb-3">
                             <label for="prediction-cron" class="form-label">Prediction Update Schedule</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="fas fa-calculator"></i></span>
-                                <input type="text" class="form-control" id="prediction-cron" value="*/30 * * * *">
-                            </div>
+                            <input type="text" class="form-control" id="prediction-cron" value="*/30 * * * *">
                             <div class="form-text">Cron expression for prediction updates</div>
                         </div>
                     </div>
                 </div>
-                <div class="d-flex mt-4">
-                    <button type="button" class="btn btn-success me-2" id="save-config">
-                        <i class="fas fa-save me-1"></i> Save Configuration
-                    </button>
-                    <button type="button" class="btn btn-warning" id="clear-cache">
-                        <i class="fas fa-broom me-1"></i> Clear Cache
-                    </button>
-                </div>
+                <button type="button" class="btn btn-success" id="save-config">Save Configuration</button>
+                <button type="button" class="btn btn-warning" id="clear-cache">Clear Cache</button>
             </div>
         </div>
     </div>
@@ -207,22 +155,6 @@ document.getElementById('clear-cache').addEventListener('click', function() {
                 alert('Error clearing cache');
             });
     }
-});
-
-document.getElementById('save-all-btn').addEventListener('click', function() {
-    alert('All settings saved successfully!');
-});
-
-// Initialize form values from localStorage if available
-document.addEventListener('DOMContentLoaded', function() {
-    // Load saved values from localStorage if they exist
-    const savedLat = localStorage.getItem('observerLatitude');
-    const savedLon = localStorage.getItem('observerLongitude');
-    const savedAlt = localStorage.getItem('observerAltitude');
-    
-    if (savedLat) document.getElementById('latitude').value = savedLat;
-    if (savedLon) document.getElementById('longitude').value = savedLon;
-    if (savedAlt) document.getElementById('altitude').value = savedAlt;
 });
 </script>
 {% endblock %}

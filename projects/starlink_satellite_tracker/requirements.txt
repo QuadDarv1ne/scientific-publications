@@ -16,6 +16,7 @@ flask
 # Optional: for enhanced functionality
 scipy
 schedule
+plotly
 
 # Development and testing
 pytest

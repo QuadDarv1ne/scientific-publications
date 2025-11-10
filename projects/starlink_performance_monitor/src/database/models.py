@@ -22,6 +22,13 @@ class PerformanceMetric(Base):
     ping_ms = Column(Float)
     packet_loss_percent = Column(Float)
     
+    # Enhanced Starlink-specific metrics
+    snr = Column(Float)  # Signal to noise ratio
+    obstruction_fraction = Column(Float)  # Obstruction fraction
+    downlink_throughput_mbps = Column(Float)  # Direct dish downlink throughput
+    uplink_throughput_mbps = Column(Float)  # Direct dish uplink throughput
+    location = Column(String(100), default='Starlink')  # Location identifier
+    
     def __repr__(self):
         return f"<PerformanceMetric(server='{self.server_name}', timestamp='{self.timestamp}')>"
 

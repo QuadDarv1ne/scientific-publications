@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Enhanced Dashboard - {{ t.site_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 page-heading">{{ t.enhanced_dashboard }}</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> {{ t.refresh }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="autoRefreshBtn" data-active="true">
+                <i class="fas fa-pause"></i> {{ t.auto_refresh }}
+            </button>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                <i class="fas fa-history"></i> {{ t.time_range }}
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#" data-range="1h">{{ t.last_1_hour }}</a></li>
+                <li><a class="dropdown-item" href="#" data-range="6h">{{ t.last_6_hours }}</a></li>
+                <li><a class="dropdown-item" href="#" data-range="12h">{{ t.last_12_hours }}</a></li>
+                <li><a class="dropdown-item" href="#" data-range="24h">{{ t.last_24_hours }}</a></li>
+                <li><a class="dropdown-item" href="#" data-range="7d">{{ t.last_7_days }}</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced Metrics Grid -->
+<div class="row">
+    <!-- Internet Performance Cards -->
+    <div class="col-md-3">
+        <div class="card mb-4 shadow-sm metric-card">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-download text-primary"></i> {{ t.download_speed }}</h5>
+                <h2 class="display-6"><span id="downloadSpeed">0</span> <small class="text-muted">Mbps</small></h2>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: 0%" id="downloadProgress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card mb-4 shadow-sm metric-card">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-upload text-success"></i> {{ t.upload_speed }}</h5>
+                <h2 class="display-6"><span id="uploadSpeed">0</span> <small class="text-muted">Mbps</small></h2>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 0%" id="uploadProgress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card mb-4 shadow-sm metric-card">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-exchange-alt text-warning"></i> {{ t.ping }}</h5>
+                <h2 class="display-6"><span id="ping">0</span> <small class="text-muted">ms</small></h2>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: 0%" id="pingProgress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card mb-4 shadow-sm metric-card">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-network-wired text-danger"></i> {{ t.packet_loss }}</h5>
+                <h2 class="display-6"><span id="packetLoss">0</span> <small class="text-muted">%</small></h2>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: 0%" id="packetLossProgress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Starlink Dish Metrics -->
+    <div class="col-md-3">
+        <div class="card mb-4 shadow-sm metric-card">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-satellite text-info"></i> SNR</h5>
+                <h2 class="display-6"><span id="snr">0</span> <small class="text-muted">dB</small></h2>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 0%" id="snrProgress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card mb-4 shadow-sm metric-card">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-eye-slash text-secondary"></i> Obstruction</h5>
+                <h2 class="display-6"><span id="obstruction">0</span> <small class="text-muted">%</small></h2>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar bg-secondary" role="progressbar" style="width: 0%" id="obstructionProgress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card mb-4 shadow-sm metric-card">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-arrow-down text-primary"></i> Dish Downlink</h5>
+                <h2 class="display-6"><span id="dishDownlink">0</span> <small class="text-muted">Mbps</small></h2>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar bg-primary" role="progressbar" style="width: 0%" id="dishDownlinkProgress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card mb-4 shadow-sm metric-card">
+            <div class="card-body text-center">
+                <h5 class="card-title"><i class="fas fa-arrow-up text-success"></i> Dish Uplink</h5>
+                <h2 class="display-6"><span id="dishUplink">0</span> <small class="text-muted">Mbps</small></h2>
+                <div class="progress mt-2" style="height: 5px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 0%" id="dishUplinkProgress"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-chart-line"></i> {{ t.performance_history_chart }}</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-satellite"></i> Starlink Dish Metrics</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="dishChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="fas fa-bell"></i> {{ t.alerts_notifications }}</h5>
+            </div>
+            <div class="card-body">
+                <div id="alertsContainer">
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle"></i> No alerts at this time
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Enhanced JavaScript for real-time updates -->
+<script>
+    // Initialize charts
+    const ctx1 = document.getElementById('performanceChart').getContext('2d');
+    const performanceChart = new Chart(ctx1, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '{{ t.download_speed }} (Mbps)',
+                data: [],
+                borderColor: 'rgb(54, 162, 235)',
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                tension: 0.1
+            }, {
+                label: '{{ t.upload_speed }} (Mbps)',
+                data: [],
+                borderColor: 'rgb(75, 192, 192)',
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                tension: 0.1
+            }, {
+                label: '{{ t.ping }} (ms)',
+                data: [],
+                borderColor: 'rgb(255, 99, 132)',
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                tension: 0.1,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                }
+            }
+        }
+    });
+    
+    const ctx2 = document.getElementById('dishChart').getContext('2d');
+    const dishChart = new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: 'SNR (dB)',
+                data: [],
+                borderColor: 'rgb(255, 159, 64)',
+                backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                tension: 0.1
+            }, {
+                label: 'Obstruction (%)',
+                data: [],
+                borderColor: 'rgb(153, 102, 255)',
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                tension: 0.1
+            }]
+        },
+        options: {
+            responsive: true
+        }
+    });
+
+    // Function to update metrics
+    function updateMetrics() {
+        fetch('/api/metrics/latest')
+            .then(response => response.json())
+            .then(data => {
+                // Update internet performance metrics
+                document.getElementById('downloadSpeed').textContent = data.download_mbps.toFixed(2);
+                document.getElementById('uploadSpeed').textContent = data.upload_mbps.toFixed(2);
+                document.getElementById('ping').textContent = data.ping_ms.toFixed(2);
+                document.getElementById('packetLoss').textContent = data.packet_loss_percent.toFixed(2);
+                
+                // Update Starlink dish metrics
+                document.getElementById('snr').textContent = (data.snr || 0).toFixed(2);
+                document.getElementById('obstruction').textContent = (data.obstruction_fraction * 100 || 0).toFixed(2);
+                document.getElementById('dishDownlink').textContent = (data.downlink_throughput_mbps || 0).toFixed(2);
+                document.getElementById('dishUplink').textContent = (data.uplink_throughput_mbps || 0).toFixed(2);
+                
+                // Update progress bars
+                document.getElementById('downloadProgress').style.width = Math.min(100, data.download_mbps / 200 * 100) + '%';
+                document.getElementById('uploadProgress').style.width = Math.min(100, data.upload_mbps / 50 * 100) + '%';
+                document.getElementById('pingProgress').style.width = Math.min(100, data.ping_ms / 50 * 100) + '%';
+                document.getElementById('packetLossProgress').style.width = Math.min(100, data.packet_loss_percent * 10) + '%';
+                document.getElementById('snrProgress').style.width = Math.min(100, (data.snr || 0) / 20 * 100) + '%';
+                document.getElementById('obstructionProgress').style.width = Math.min(100, (data.obstruction_fraction || 0) * 1000) + '%';
+                document.getElementById('dishDownlinkProgress').style.width = Math.min(100, (data.downlink_throughput_mbps || 0) / 200 * 100) + '%';
+                document.getElementById('dishUplinkProgress').style.width = Math.min(100, (data.uplink_throughput_mbps || 0) / 50 * 100) + '%';
+                
+                // Update charts with new data point
+                const now = new Date().toLocaleTimeString();
+                performanceChart.data.labels.push(now);
+                performanceChart.data.datasets[0].data.push(data.download_mbps);
+                performanceChart.data.datasets[1].data.push(data.upload_mbps);
+                performanceChart.data.datasets[2].data.push(data.ping_ms);
+                
+                dishChart.data.labels.push(now);
+                dishChart.data.datasets[0].data.push(data.snr || 0);
+                dishChart.data.datasets[1].data.push((data.obstruction_fraction || 0) * 100);
+                
+                // Keep only last 20 data points
+                if (performanceChart.data.labels.length > 20) {
+                    performanceChart.data.labels.shift();
+                    performanceChart.data.datasets[0].data.shift();
+                    performanceChart.data.datasets[1].data.shift();
+                    performanceChart.data.datasets[2].data.shift();
+                    
+                    dishChart.data.labels.shift();
+                    dishChart.data.datasets[0].data.shift();
+                    dishChart.data.datasets[1].data.shift();
+                }
+                
+                performanceChart.update();
+                dishChart.update();
+                
+                // Update alerts
+                updateAlerts(data);
+            })
+            .catch(error => {
+                console.error('Error fetching metrics:', error);
+            });
+    }
+    
+    // Function to update alerts
+    function updateAlerts(data) {
+        const alertsContainer = document.getElementById('alertsContainer');
+        let alertsHtml = '';
+        
+        // Check for performance issues
+        if (data.download_mbps < 50) {
+            alertsHtml += `
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> Low download speed detected: ${data.download_mbps.toFixed(2)} Mbps
+                </div>
+            `;
+        }
+        
+        if (data.ping_ms > 50) {
+            alertsHtml += `
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> High latency detected: ${data.ping_ms.toFixed(2)} ms
+                </div>
+            `;
+        }
+        
+        if (data.packet_loss_percent > 5) {
+            alertsHtml += `
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-circle"></i> High packet loss detected: ${data.packet_loss_percent.toFixed(2)}%
+                </div>
+            `;
+        }
+        
+        if (data.obstruction_fraction > 0.1) {
+            alertsHtml += `
+                <div class="alert alert-warning" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i> High obstruction detected: ${(data.obstruction_fraction * 100).toFixed(2)}%
+                </div>
+            `;
+        }
+        
+        // If no alerts, show info message
+        if (!alertsHtml) {
+            alertsHtml = `
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle"></i> {{ t.no_alerts }}
+                </div>
+            `;
+        }
+        
+        alertsContainer.innerHTML = alertsHtml;
+    }
+
+    // Initialize metrics update
+    updateMetrics();
+    
+    // Set up auto-refresh
+    let autoRefreshInterval = setInterval(updateMetrics, 5000);
+    
+    // Button event handlers
+    document.getElementById('refreshBtn').addEventListener('click', updateMetrics);
+    
+    document.getElementById('autoRefreshBtn').addEventListener('click', function() {
+        const isActive = this.getAttribute('data-active') === 'true';
+        if (isActive) {
+            clearInterval(autoRefreshInterval);
+            this.innerHTML = '<i class="fas fa-play"></i> {{ t.auto_refresh }}';
+            this.setAttribute('data-active', 'false');
+        } else {
+            autoRefreshInterval = setInterval(updateMetrics, 5000);
+            this.innerHTML = '<i class="fas fa-pause"></i> {{ t.auto_refresh }}';
+            this.setAttribute('data-active', 'true');
+        }
+    });
+    
+    // Time range selector
+    document.querySelectorAll('.dropdown-item').forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const range = this.getAttribute('data-range');
+            // In a real implementation, this would fetch data for the selected time range
+            console.log('Time range selected:', range);
+        });
+    });
+</script>
+{% endblock %}

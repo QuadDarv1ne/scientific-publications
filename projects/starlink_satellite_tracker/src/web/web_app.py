@@ -12,6 +12,8 @@ from flask import Flask, render_template, jsonify, request
 import logging
 from functools import wraps
 import hashlib
+import base64
+from io import BytesIO
 
 # Add the src directory to the path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -109,12 +111,17 @@ class APICache:
     def get(self, key):
         """Retrieve cached data from Redis or in-memory cache."""
         # Try to get from Redis first (if available)
-        if self.use_redis:
+        if self.use_redis and self.redis_client:
             try:
                 cached_data = self.redis_client.get(key)
                 if cached_data:
                     self.logger.debug(f"Redis cache hit for key: {key}")
-                    return json.loads(cached_data)
+                    # Handle potential async response
+                    if hasattr(cached_data, '__await__'):
+                        # This is an async response, skip Redis caching
+                        pass
+                    else:
+                        return json.loads(cached_data)
             except Exception as e:
                 self.logger.warning(f"Error retrieving from Redis cache: {e}")
         
@@ -134,7 +141,7 @@ class APICache:
     def set(self, key, value):
         """Store data in both Redis and in-memory cache."""
         # Store in Redis (if available)
-        if self.use_redis:
+        if self.use_redis and self.redis_client:
             try:
                 self.redis_client.setex(key, int(self.default_ttl), json.dumps(value))
                 self.logger.debug(f"Cached data in Redis for key: {key}")
@@ -149,7 +156,7 @@ class APICache:
     def clear(self):
         """Clear all cached data from both Redis and in-memory cache."""
         # Clear Redis cache (if available)
-        if self.use_redis:
+        if self.use_redis and self.redis_client:
             try:
                 self.redis_client.flushdb()
                 self.logger.debug("Redis cache cleared")
