@@ -86,7 +86,7 @@ class RealTimeUpdater:
 
 
 # Global real-time updater instance
-_realtime_updater: RealTimeUpdater = None
+_realtime_updater: RealTimeUpdater | None = None
 
 
 def start_realtime_updater(config_path: str = "config.json"):

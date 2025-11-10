@@ -39,6 +39,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.monitor.monitor import PerformanceMetric, Base
+from src.web.realtime_updater import start_realtime_updater, stop_realtime_updater
 
 # Configure logging
 setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
@@ -154,6 +155,38 @@ def reports():
 def settings():
     """Settings page."""
     return render_template('settings.html')
+
+@app.route('/ml-analysis')
+@require_auth
+def ml_analysis():
+    """ML analysis page."""
+    return render_template('ml_analysis.html')
+
+@app.route('/api/weather-correlations')
+@require_auth
+def api_weather_correlations():
+    """API endpoint for weather correlation data."""
+    try:
+        from src.monitor.weather_integration import WeatherPerformanceAnalyzer
+        analyzer = WeatherPerformanceAnalyzer()
+        correlations = analyzer.generate_correlation_report(7)  # Last 7 days
+        return jsonify(correlations)
+    except Exception as e:
+        logger.error(f"Error fetching weather correlations: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/ml-analysis')
+@require_auth
+def api_ml_analysis():
+    """API endpoint for ML analysis data."""
+    try:
+        from src.ml.ml_analyzer import MLAnalyzer
+        analyzer = MLAnalyzer()
+        analysis = analyzer.generate_report(30, 90, 7)  # Anomaly days, forecast days, prediction days
+        return jsonify(analysis)
+    except Exception as e:
+        logger.error(f"Error fetching ML analysis: {e}")
+        return jsonify({'error': str(e)}), 500
 
 class WebApp:
     """Web application for displaying performance metrics"""
@@ -300,6 +333,16 @@ def handle_metrics_request():
             emit('metrics_update', metrics)
     except Exception as e:
         logger.error(f"Error handling metrics request: {e}")
+
+@app.before_first_request
+def start_realtime_updates():
+    """Start real-time updates when the first request is made."""
+    try:
+        config_path = app.config.get('CONFIG_PATH', 'config.json')
+        start_realtime_updater(config_path)
+        logger.info("Real-time updates started")
+    except Exception as e:
+        logger.error(f"Failed to start real-time updates: {e}")
 
 if __name__ == "__main__":
     main()

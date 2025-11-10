@@ -16,7 +16,7 @@ from sqlalchemy.pool import QueuePool, StaticPool
 import sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-from src.monitor.monitor import Base
+from src.database.models import Base
 from src.utils.logging_config import get_logger
 
 

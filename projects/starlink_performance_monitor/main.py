@@ -42,6 +42,11 @@ def run_tests(args):
     cmd = [sys.executable, '-m', 'pytest', 'tests/'] + args
     subprocess.run(cmd)
 
+def run_ml_analysis(args):
+    """Run ML analysis."""
+    cmd = [sys.executable, 'src/ml/ml_analyzer.py'] + args
+    subprocess.run(cmd)
+
 def main():
     """Main entry point."""
     parser = argparse.ArgumentParser(description='Starlink Performance Monitor')
@@ -71,6 +76,10 @@ def main():
     test_parser = subparsers.add_parser('test', help='Run tests')
     test_parser.add_argument('test_args', nargs=argparse.REMAINDER, help='Arguments to pass to pytest')
     
+    # ML analysis command
+    ml_parser = subparsers.add_parser('ml', help='Run ML analysis (anomaly detection and forecasting)')
+    ml_parser.add_argument('ml_args', nargs=argparse.REMAINDER, help='Arguments to pass to ml_analyzer.py')
+    
     # Show help if no command is given
     if len(sys.argv) == 1:
         parser.print_help()
@@ -91,6 +100,8 @@ def main():
         setup_database(args.db_args)
     elif args.command == 'test':
         run_tests(args.test_args)
+    elif args.command == 'ml':
+        run_ml_analysis(args.ml_args)
     else:
         parser.print_help()
 

@@ -154,6 +154,37 @@
     </div>
 </div>
 
+<!-- Weather Correlation Analysis -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Weather Correlation Analysis</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Weather Parameter</th>
+                                <th>Performance Metric</th>
+                                <th>Correlation</th>
+                                <th>Strength</th>
+                                <th>Interpretation</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weatherCorrelationTableBody">
+                            <tr>
+                                <td colspan="5" class="text-center">No correlation data available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Alerts Section -->
 <div class="row mt-4">
     <div class="col-md-12">
@@ -629,6 +660,60 @@
         updateCharts();
     }
     
+    // Update weather correlation table
+    async function updateWeatherCorrelations() {
+        try {
+            const response = await axios.get('/api/weather-correlations');
+            const data = response.data;
+            
+            const tableBody = document.getElementById('weatherCorrelationTableBody');
+            
+            if (data && data.interpreted_correlations) {
+                // Clear existing rows
+                tableBody.innerHTML = '';
+                
+                // Add new rows
+                for (const [weatherParam, perfCorrelations] of Object.entries(data.interpreted_correlations)) {
+                    for (const [perfParam, details] of Object.entries(perfCorrelations)) {
+                        const row = document.createElement('tr');
+                        
+                        // Determine correlation strength class
+                        let strengthClass = '';
+                        if (details.correlation >= 0.7 || details.correlation <= -0.7) {
+                            strengthClass = 'table-danger';
+                        } else if (details.correlation >= 0.5 || details.correlation <= -0.5) {
+                            strengthClass = 'table-warning';
+                        } else if (details.correlation >= 0.3 || details.correlation <= -0.3) {
+                            strengthClass = 'table-info';
+                        }
+                        
+                        row.className = strengthClass;
+                        
+                        row.innerHTML = `
+                            <td>${weatherParam}</td>
+                            <td>${perfParam}</td>
+                            <td>${details.correlation.toFixed(3)}</td>
+                            <td>${details.strength}</td>
+                            <td>${details.interpretation}</td>
+                        `;
+                        
+                        tableBody.appendChild(row);
+                    }
+                }
+                
+                if (tableBody.children.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No correlation data available</td></tr>';
+                }
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No correlation data available</td></tr>';
+            }
+        } catch (error) {
+            console.error('Error fetching weather correlations:', error);
+            const tableBody = document.getElementById('weatherCorrelationTableBody');
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Error loading correlation data</td></tr>';
+        }
+    }
+    
     // Initialize dashboard
     document.addEventListener('DOMContentLoaded', function() {
         // Initialize WebSocket
@@ -637,11 +722,13 @@
         // Initial data load
         updateCurrentMetrics();
         updateCharts();
+        updateWeatherCorrelations();
         
         // Set up refresh button
         document.getElementById('refreshBtn').addEventListener('click', function() {
             updateCurrentMetrics();
             updateCharts();
+            updateWeatherCorrelations();
         });
         
         // Set up auto refresh button
@@ -682,6 +769,7 @@
         // Start auto refresh
         autoRefreshInterval = setInterval(() => {
             updateCurrentMetrics();
+            updateWeatherCorrelations();
         }, 30000); // Refresh every 30 seconds
     });
 </script>

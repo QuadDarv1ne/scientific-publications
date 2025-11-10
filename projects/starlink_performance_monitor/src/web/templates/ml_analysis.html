@@ -1,0 +1,482 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">ML Analysis</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
+                <i class="fas fa-sync-alt"></i> Refresh
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="autoRefreshBtn" data-active="true">
+                <i class="fas fa-pause"></i> Auto Refresh
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Status Indicator -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="alert alert-info d-flex align-items-center" role="alert" id="statusIndicator">
+            <i class="fas fa-info-circle me-2"></i>
+            <div id="statusMessage">Loading ML analysis data...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Anomaly Detection Results -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Anomaly Detection</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Method</th>
+                                <th>Total Anomalies</th>
+                                <th>Anomaly Percentage</th>
+                                <th>Last Updated</th>
+                            </tr>
+                        </thead>
+                        <tbody id="anomalyDetectionTableBody">
+                            <tr>
+                                <td colspan="4" class="text-center">Loading anomaly detection data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Forecasting -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Performance Forecasting</h5>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="forecastTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="download-tab" data-bs-toggle="tab" data-bs-target="#download" type="button" role="tab">Download Speed</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">Upload Speed</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="ping-tab" data-bs-toggle="tab" data-bs-target="#ping" type="button" role="tab">Ping</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="packetloss-tab" data-bs-toggle="tab" data-bs-target="#packetloss" type="button" role="tab">Packet Loss</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="forecastTabContent">
+                    <div class="tab-pane fade show active" id="download" role="tabpanel">
+                        <canvas id="downloadForecastChart" height="300"></canvas>
+                    </div>
+                    <div class="tab-pane fade" id="upload" role="tabpanel">
+                        <canvas id="uploadForecastChart" height="300"></canvas>
+                    </div>
+                    <div class="tab-pane fade" id="ping" role="tabpanel">
+                        <canvas id="pingForecastChart" height="300"></canvas>
+                    </div>
+                    <div class="tab-pane fade" id="packetloss" role="tabpanel">
+                        <canvas id="packetlossForecastChart" height="300"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detailed Anomaly Results -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Detailed Anomaly Results</h5>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="anomalyTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="isolation-forest-tab" data-bs-toggle="tab" data-bs-target="#isolation-forest" type="button" role="tab">Isolation Forest</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="dbscan-tab" data-bs-toggle="tab" data-bs-target="#dbscan" type="button" role="tab">DBSCAN</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="elliptic-envelope-tab" data-bs-toggle="tab" data-bs-target="#elliptic-envelope" type="button" role="tab">Elliptic Envelope</button>
+                    </li>
+                </ul>
+                <div class="tab-content" id="anomalyTabContent">
+                    <div class="tab-pane fade show active" id="isolation-forest" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Download (Mbps)</th>
+                                        <th>Upload (Mbps)</th>
+                                        <th>Ping (ms)</th>
+                                        <th>Packet Loss (%)</th>
+                                        <th>Anomaly Score</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="isolationForestAnomaliesTableBody">
+                                    <tr>
+                                        <td colspan="6" class="text-center">Loading anomaly data...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="dbscan" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Download (Mbps)</th>
+                                        <th>Upload (Mbps)</th>
+                                        <th>Ping (ms)</th>
+                                        <th>Packet Loss (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dbscanAnomaliesTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center">Loading anomaly data...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="elliptic-envelope" role="tabpanel">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Download (Mbps)</th>
+                                        <th>Upload (Mbps)</th>
+                                        <th>Ping (ms)</th>
+                                        <th>Packet Loss (%)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ellipticEnvelopeAnomaliesTableBody">
+                                    <tr>
+                                        <td colspan="5" class="text-center">Loading anomaly data...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Global variables
+    let autoRefreshInterval = null;
+    let mlAnalysisData = null;
+    let forecastCharts = {};
+
+    // Update status indicator
+    function updateStatus(message, type = 'info') {
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        // Remove existing classes
+        statusIndicator.className = 'alert d-flex align-items-center';
+        
+        // Add appropriate class based on type
+        switch(type) {
+            case 'success':
+                statusIndicator.classList.add('alert-success');
+                statusIndicator.innerHTML = '<i class="fas fa-check-circle me-2"></i><div id="statusMessage">' + message + '</div>';
+                break;
+            case 'warning':
+                statusIndicator.classList.add('alert-warning');
+                statusIndicator.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i><div id="statusMessage">' + message + '</div>';
+                break;
+            case 'danger':
+                statusIndicator.classList.add('alert-danger');
+                statusIndicator.innerHTML = '<i class="fas fa-exclamation-circle me-2"></i><div id="statusMessage">' + message + '</div>';
+                break;
+            default:
+                statusIndicator.classList.add('alert-info');
+                statusIndicator.innerHTML = '<i class="fas fa-info-circle me-2"></i><div id="statusMessage">' + message + '</div>';
+        }
+    }
+
+    // Update anomaly detection table
+    function updateAnomalyDetectionTable() {
+        const tableBody = document.getElementById('anomalyDetectionTableBody');
+        
+        if (!mlAnalysisData || !mlAnalysisData.summary || !mlAnalysisData.summary.anomaly_detection) {
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No anomaly detection data available</td></tr>';
+            return;
+        }
+        
+        const anomalyData = mlAnalysisData.summary.anomaly_detection;
+        tableBody.innerHTML = '';
+        
+        for (const [method, data] of Object.entries(anomalyData)) {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${method.replace('_', ' ')}</td>
+                <td>${data.total_anomalies}</td>
+                <td>${data.anomaly_percentage.toFixed(2)}%</td>
+                <td>${new Date(mlAnalysisData.generated_at).toLocaleString()}</td>
+            `;
+            tableBody.appendChild(row);
+        }
+    }
+
+    // Update anomaly details tables
+    function updateAnomalyDetails() {
+        if (!mlAnalysisData || !mlAnalysisData.full_analysis || !mlAnalysisData.full_analysis.anomaly_detection) {
+            document.getElementById('isolationForestAnomaliesTableBody').innerHTML = '<tr><td colspan="6" class="text-center">No anomaly data available</td></tr>';
+            document.getElementById('dbscanAnomaliesTableBody').innerHTML = '<tr><td colspan="5" class="text-center">No anomaly data available</td></tr>';
+            document.getElementById('ellipticEnvelopeAnomaliesTableBody').innerHTML = '<tr><td colspan="5" class="text-center">No anomaly data available</td></tr>';
+            return;
+        }
+        
+        const anomalyData = mlAnalysisData.full_analysis.anomaly_detection.methods;
+        
+        // Update Isolation Forest anomalies
+        const isoForestBody = document.getElementById('isolationForestAnomaliesTableBody');
+        if (anomalyData.isolation_forest && anomalyData.isolation_forest.anomalies) {
+            isoForestBody.innerHTML = '';
+            anomalyData.isolation_forest.anomalies.forEach(anomaly => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(anomaly.timestamp).toLocaleString()}</td>
+                    <td>${anomaly.download_mbps.toFixed(2)}</td>
+                    <td>${anomaly.upload_mbps.toFixed(2)}</td>
+                    <td>${anomaly.ping_ms.toFixed(2)}</td>
+                    <td>${anomaly.packet_loss_percent.toFixed(2)}</td>
+                    <td>${anomaly.anomaly_score.toFixed(4)}</td>
+                `;
+                isoForestBody.appendChild(row);
+            });
+        } else {
+            isoForestBody.innerHTML = '<tr><td colspan="6" class="text-center">No anomalies detected</td></tr>';
+        }
+        
+        // Update DBSCAN anomalies
+        const dbscanBody = document.getElementById('dbscanAnomaliesTableBody');
+        if (anomalyData.dbscan && anomalyData.dbscan.anomalies) {
+            dbscanBody.innerHTML = '';
+            anomalyData.dbscan.anomalies.forEach(anomaly => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(anomaly.timestamp).toLocaleString()}</td>
+                    <td>${anomaly.download_mbps.toFixed(2)}</td>
+                    <td>${anomaly.upload_mbps.toFixed(2)}</td>
+                    <td>${anomaly.ping_ms.toFixed(2)}</td>
+                    <td>${anomaly.packet_loss_percent.toFixed(2)}</td>
+                `;
+                dbscanBody.appendChild(row);
+            });
+        } else {
+            dbscanBody.innerHTML = '<tr><td colspan="5" class="text-center">No anomalies detected</td></tr>';
+        }
+        
+        // Update Elliptic Envelope anomalies
+        const ellipticBody = document.getElementById('ellipticEnvelopeAnomaliesTableBody');
+        if (anomalyData.elliptic_envelope && anomalyData.elliptic_envelope.anomalies) {
+            ellipticBody.innerHTML = '';
+            anomalyData.elliptic_envelope.anomalies.forEach(anomaly => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${new Date(anomaly.timestamp).toLocaleString()}</td>
+                    <td>${anomaly.download_mbps.toFixed(2)}</td>
+                    <td>${anomaly.upload_mbps.toFixed(2)}</td>
+                    <td>${anomaly.ping_ms.toFixed(2)}</td>
+                    <td>${anomaly.packet_loss_percent.toFixed(2)}</td>
+                `;
+                ellipticBody.appendChild(row);
+            });
+        } else {
+            ellipticBody.innerHTML = '<tr><td colspan="5" class="text-center">No anomalies detected</td></tr>';
+        }
+    }
+
+    // Create or update forecast chart
+    function updateForecastChart(metric, chartId) {
+        if (!mlAnalysisData || !mlAnalysisData.full_analysis || !mlAnalysisData.full_analysis.performance_forecasting) {
+            return;
+        }
+        
+        const forecastData = mlAnalysisData.full_analysis.performance_forecasting.forecasts;
+        
+        if (!forecastData[metric]) {
+            return;
+        }
+        
+        // Get forecast data (use ARIMA as primary method)
+        let forecasts = [];
+        let confidenceLower = [];
+        let confidenceUpper = [];
+        
+        if (forecastData[metric].arima && forecastData[metric].arima.forecasts) {
+            forecasts = forecastData[metric].arima.forecasts;
+            if (forecastData[metric].arima.confidence_intervals) {
+                confidenceLower = forecastData[metric].arima.confidence_intervals.lower;
+                confidenceUpper = forecastData[metric].arima.confidence_intervals.upper;
+            }
+        }
+        
+        if (forecasts.length === 0) {
+            return;
+        }
+        
+        // Generate future dates
+        const startDate = new Date();
+        const dates = [];
+        for (let i = 1; i <= forecasts.length; i++) {
+            const date = new Date(startDate);
+            date.setDate(date.getDate() + i);
+            dates.push(date.toLocaleDateString());
+        }
+        
+        // Destroy existing chart if it exists
+        if (forecastCharts[chartId]) {
+            forecastCharts[chartId].destroy();
+        }
+        
+        // Create new chart
+        const ctx = document.getElementById(chartId).getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,
+                datasets: [{
+                    label: `${metric.replace('_', ' ')} Forecast`,
+                    data: forecasts,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    fill: false,
+                    tension: 0.1
+                }, {
+                    label: 'Lower Confidence',
+                    data: confidenceLower,
+                    borderColor: 'rgba(255, 99, 132, 0.5)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    fill: '+1',
+                    borderDash: [5, 5],
+                    pointRadius: 0
+                }, {
+                    label: 'Upper Confidence',
+                    data: confidenceUpper,
+                    borderColor: 'rgba(255, 99, 132, 0.5)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    fill: false,
+                    borderDash: [5, 5],
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: false
+                    }
+                }
+            }
+        });
+        
+        forecastCharts[chartId] = chart;
+    }
+
+    // Update all forecast charts
+    function updateForecastCharts() {
+        updateForecastChart('download_mbps', 'downloadForecastChart');
+        updateForecastChart('upload_mbps', 'uploadForecastChart');
+        updateForecastChart('ping_ms', 'pingForecastChart');
+        updateForecastChart('packet_loss_percent', 'packetlossForecastChart');
+    }
+
+    // Fetch ML analysis data
+    async function fetchMLAnalysis() {
+        try {
+            updateStatus('Loading ML analysis data...', 'info');
+            const response = await axios.get('/api/ml-analysis');
+            mlAnalysisData = response.data;
+            
+            if (mlAnalysisData) {
+                updateAnomalyDetectionTable();
+                updateAnomalyDetails();
+                updateForecastCharts();
+                updateStatus('ML analysis data loaded successfully', 'success');
+            } else {
+                updateStatus('No ML analysis data available', 'warning');
+            }
+        } catch (error) {
+            console.error('Error fetching ML analysis data:', error);
+            updateStatus('Error loading ML analysis data', 'danger');
+        }
+    }
+
+    // Toggle auto refresh
+    function toggleAutoRefresh() {
+        const btn = document.getElementById('autoRefreshBtn');
+        const isActive = btn.getAttribute('data-active') === 'true';
+        
+        if (isActive) {
+            // Disable auto refresh
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            btn.innerHTML = '<i class="fas fa-play"></i> Auto Refresh';
+            btn.setAttribute('data-active', 'false');
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-outline-secondary');
+        } else {
+            // Enable auto refresh
+            autoRefreshInterval = setInterval(() => {
+                fetchMLAnalysis();
+            }, 60000); // Refresh every minute
+            btn.innerHTML = '<i class="fas fa-pause"></i> Auto Refresh';
+            btn.setAttribute('data-active', 'true');
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-outline-primary');
+        }
+    }
+
+    // Initialize dashboard
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initial data load
+        fetchMLAnalysis();
+        
+        // Set up refresh button
+        document.getElementById('refreshBtn').addEventListener('click', function() {
+            fetchMLAnalysis();
+        });
+        
+        // Set up auto refresh button
+        document.getElementById('autoRefreshBtn').addEventListener('click', function() {
+            toggleAutoRefresh();
+        });
+        
+        // Start auto refresh
+        autoRefreshInterval = setInterval(() => {
+            fetchMLAnalysis();
+        }, 60000); // Refresh every minute
+    });
+</script>
+{% endblock %}

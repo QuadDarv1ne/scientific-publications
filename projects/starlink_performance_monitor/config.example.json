@@ -102,5 +102,34 @@
         }
       ]
     }
+  },
+  "ml": {
+    "anomaly_detection": {
+      "isolation_forest": {
+        "contamination": 0.1,
+        "random_state": 42
+      },
+      "dbscan": {
+        "eps": 0.5,
+        "min_samples": 5
+      },
+      "elliptic_envelope": {
+        "contamination": 0.1,
+        "random_state": 42
+      }
+    },
+    "forecasting": {
+      "linear_regression": {
+        "lookback_days": 7
+      },
+      "random_forest": {
+        "lookback_days": 7,
+        "n_estimators": 100,
+        "random_state": 42
+      },
+      "arima": {
+        "order": [1, 1, 1]
+      }
+    }
   }
 }

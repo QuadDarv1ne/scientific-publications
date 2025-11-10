@@ -16,7 +16,6 @@ import ping3
 import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # Add project root to path for imports
@@ -25,6 +24,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.database.db_manager import get_database_manager, get_db_session
+from src.database.models import Base, PerformanceMetric
 
 # Add project root to path for imports
 import sys
@@ -32,25 +32,13 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.utils.logging_config import setup_logging, get_logger
+from src.utils.weather_data import WeatherDataCollector
 
 # Configure logging
 setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
 logger = get_logger(__name__)
 
-Base = declarative_base()
-
-class PerformanceMetric(Base):
-    """ORM model for performance metrics"""
-    __tablename__ = 'performance_metrics'
-    
-    id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime, default=datetime.utcnow)
-    download_mbps = Column(Float)
-    upload_mbps = Column(Float)
-    ping_ms = Column(Float)
-    packet_loss_percent = Column(Float)  # Added packet loss tracking
-    server_name = Column(String(100))
-    location = Column(String(100))
+# PerformanceMetric class is now imported from src.database.models
 
 class StarlinkMonitor:
     """Main Starlink performance monitoring class"""
@@ -65,6 +53,7 @@ class StarlinkMonitor:
         self.config = self._load_config(config_path)
         self.db_manager = get_database_manager(config_path)
         self.db_engine = self.db_manager.get_engine()
+        self.weather_collector = WeatherDataCollector(config_path)
         
     def _load_config(self, config_path: str) -> Dict[str, Any]:
         """Load configuration from JSON file."""
@@ -266,12 +255,34 @@ class StarlinkMonitor:
             session.rollback()
         finally:
             session.close()
+        
+    def _collect_weather_data(self):
+        """Collect weather data for correlation analysis."""
+        try:
+            logger.info("Collecting weather data")
+            weather_data = self.weather_collector.get_weather_data()
+            if weather_data:
+                logger.info(f"Collected weather data for {len(weather_data['data'])} time points")
+            else:
+                logger.warning("Failed to collect weather data")
+        except Exception as e:
+            logger.error(f"Error collecting weather data: {e}")
             
     def run_monitoring_cycle(self):
         """Run a single monitoring cycle."""
         logger.info("Starting monitoring cycle")
         metrics = self.collect_metrics()
         self.store_metrics(metrics)
+        
+        # Collect weather data periodically (every 6 cycles = every hour if cycle is 10 min)
+        if hasattr(self, '_cycle_count'):
+            self._cycle_count += 1
+        else:
+            self._cycle_count = 1
+            
+        if self._cycle_count % 6 == 0:  # Every 6th cycle
+            self._collect_weather_data()
+        
         logger.info("Monitoring cycle completed")
         
     def run_continuous_monitoring(self, interval_minutes: int = 15):
