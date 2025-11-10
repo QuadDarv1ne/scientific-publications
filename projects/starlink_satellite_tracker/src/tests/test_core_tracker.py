@@ -154,30 +154,35 @@ class TestStarlinkTracker(unittest.TestCase):
         
         self.assertIn("No satellites loaded", str(context.exception))
     
-    def test_predict_passes_invalid_coordinates(self):
+    @patch('core.main.load')
+    def test_predict_passes_invalid_coordinates(self, mock_load):
         """Test pass prediction with invalid coordinates."""
+        # Mock the initialization to bypass earth loading issues
+        mock_ts = MagicMock()
+        mock_earth = MagicMock()
+        mock_load.timescale.return_value = mock_ts
+        mock_load.side_effect = lambda x: mock_earth if x == 'earth.bsp' else mock_load.timescale()
+        
         from core.main import StarlinkTracker
         tracker = StarlinkTracker(self.test_config)
         
-        # We need to load some mock satellites to get past the "no satellites" check
-        # But we'll patch the earth data check to simulate the validation
-        tracker.satellites = [MagicMock()]  # Add a mock satellite
-        tracker.earth = MagicMock()  # Mock earth data
-        tracker.ts = MagicMock()  # Mock time scale
+        # Add a mock satellite to bypass the "no satellites" check
+        mock_satellite = MagicMock()
+        tracker.satellites = [mock_satellite]
+        tracker.earth = mock_earth
+        tracker.ts = mock_ts
         
-        # Test invalid latitude by patching the validation
-        with patch('core.main.StarlinkTracker._validate_coordinates', side_effect=ValueError("Invalid latitude")):
-            with self.assertRaises(ValueError) as context:
-                tracker.predict_passes(100, 37.6173)  # Latitude > 90
-            
-            self.assertIn("Invalid latitude", str(context.exception))
+        # Test invalid latitude
+        with self.assertRaises(ValueError) as context:
+            tracker.predict_passes(100, 37.6173)  # Latitude > 90
         
-        # Test invalid longitude by patching the validation
-        with patch('core.main.StarlinkTracker._validate_coordinates', side_effect=ValueError("Invalid longitude")):
-            with self.assertRaises(ValueError) as context:
-                tracker.predict_passes(55.7558, 200)  # Longitude > 180
-            
-            self.assertIn("Invalid longitude", str(context.exception))
+        self.assertIn("Invalid latitude", str(context.exception))
+        
+        # Test invalid longitude
+        with self.assertRaises(ValueError) as context:
+            tracker.predict_passes(55.7558, 200)  # Longitude > 180
+        
+        self.assertIn("Invalid longitude", str(context.exception))
 
 
 if __name__ == '__main__':

@@ -135,7 +135,7 @@ def handle_api_errors(f):
             }), 500
     return wrapper
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..', 'templates'))
 
 # Load configuration
 config = get_config()

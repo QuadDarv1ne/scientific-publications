@@ -158,7 +158,7 @@ class StarlinkScheduler:
     def setup_scheduled_tasks(self) -> bool:
         """Setup all scheduled tasks based on configuration."""
         try:
-            if not self.schedule_config:
+            if not self.schedule_config or not isinstance(self.schedule_config, dict) or len(self.schedule_config) == 0:
                 self.logger.warning("No schedule configuration found")
                 return False
             
