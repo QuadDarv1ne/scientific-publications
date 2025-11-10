@@ -2,59 +2,36 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="mb-2">Upcoming Satellite Passes</h1>
-                <p class="lead mb-0">Predicted passes over your location</p>
-            </div>
-            <div>
-                <button class="btn btn-primary" type="button" id="refresh-btn">
-                    <i class="fas fa-sync-alt me-1"></i> Refresh Data
-                </button>
-            </div>
-        </div>
+    <div class="col-md-12">
+        <h1>Upcoming Satellite Passes</h1>
+        <p class="lead">Predicted passes over your location</p>
     </div>
 </div>
 
 <div class="row mb-4">
-    <div class="col-12">
+    <div class="col-md-12">
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Filter Parameters</h5>
-            </div>
             <div class="card-body">
                 <form id="pass-filter-form" class="row g-3">
                     <div class="col-md-3">
                         <label for="latitude" class="form-label">Latitude</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-globe-americas"></i></span>
-                            <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
-                        </div>
+                        <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
                     </div>
                     <div class="col-md-3">
                         <label for="longitude" class="form-label">Longitude</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
-                            <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
-                        </div>
+                        <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
                     </div>
                     <div class="col-md-3">
                         <label for="hours" class="form-label">Hours Ahead</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-clock"></i></span>
-                            <select class="form-select" id="hours">
-                                <option value="24">24 hours</option>
-                                <option value="48" selected>48 hours</option>
-                                <option value="72">72 hours</option>
-                                <option value="168">1 week</option>
-                            </select>
-                        </div>
+                        <select class="form-select" id="hours">
+                            <option value="24">24 hours</option>
+                            <option value="48" selected>48 hours</option>
+                            <option value="72">72 hours</option>
+                            <option value="168">1 week</option>
+                        </select>
                     </div>
                     <div class="col-md-3 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
-                            <i class="fas fa-search me-1"></i> Update
-                        </button>
+                        <button type="submit" class="btn btn-primary w-100">Update</button>
                     </div>
                 </form>
             </div>
@@ -63,7 +40,7 @@
 </div>
 
 <div class="row">
-    <div class="col-12">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Predicted Passes</h5>
@@ -71,8 +48,8 @@
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
                             <tr>
                                 <th>Satellite</th>
                                 <th>Date & Time</th>
@@ -80,18 +57,11 @@
                                 <th>Azimuth</th>
                                 <th>Distance</th>
                                 <th>Duration</th>
-                                <th>Brightness</th>
-                                <th>Visibility</th>
                             </tr>
                         </thead>
                         <tbody id="passes-table">
                             <tr>
-                                <td colspan="8" class="text-center">
-                                    <div class="spinner-border text-primary" role="status">
-                                        <span class="visually-hidden">Loading...</span>
-                                    </div>
-                                    <p class="mt-2 mb-0">Loading passes...</p>
-                                </td>
+                                <td colspan="6" class="text-center">Loading passes...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -101,42 +71,11 @@
     </div>
 </div>
 
-<!-- Modal for satellite details -->
-<div class="modal fade" id="satelliteModal" tabindex="-1" aria-labelledby="satelliteModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="satelliteModalLabel">Satellite Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="satellite-modal-body">
-                <div class="text-center">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 // Function to fetch and display passes
 function fetchPasses(lat, lon, hours) {
     const tableBody = document.getElementById('passes-table');
-    tableBody.innerHTML = `
-        <tr>
-            <td colspan="8" class="text-center">
-                <div class="spinner-border text-primary" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="mt-2 mb-0">Loading passes...</p>
-            </td>
-        </tr>
-    `;
+    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Loading passes...</td></tr>';
     
     fetch(`/api/passes?lat=${lat}&lon=${lon}&hours=${hours}`)
         .then(response => response.json())
@@ -147,44 +86,17 @@ function fetchPasses(lat, lon, hours) {
             if (data.passes && data.passes.length > 0) {
                 data.passes.forEach(pass => {
                     const row = document.createElement('tr');
-                    // Calculate approximate duration (simplified calculation)
+                    // Calculate approximate duration (this is a simplified calculation)
                     const duration = Math.max(1, Math.round(pass.altitude / 10)); // In minutes
                     
-                    // Determine visibility based on elevation
-                    let visibilityClass, visibilityText;
-                    if (pass.altitude >= 30) {
-                        visibilityClass = 'bg-success';
-                        visibilityText = 'Excellent';
-                    } else if (pass.altitude >= 15) {
-                        visibilityClass = 'bg-warning text-dark';
-                        visibilityText = 'Good';
-                    } else {
-                        visibilityClass = 'bg-danger';
-                        visibilityText = 'Poor';
-                    }
-                    
-                    // Determine brightness class
-                    let brightnessClass;
-                    if (pass.brightness < 2) {
-                        brightnessClass = 'bg-warning text-dark';
-                    } else if (pass.brightness < 4) {
-                        brightnessClass = 'bg-info';
-                    } else {
-                        brightnessClass = 'bg-secondary';
-                    }
-                    
                     row.innerHTML = `
-                        <td>
-                            <a href="#" onclick="showSatelliteDetails('${pass.satellite}')" class="text-decoration-none">
-                                <strong>${pass.satellite}</strong>
-                            </a>
-                        </td>
+                        <td>${pass.satellite}</td>
                         <td>${new Date(pass.time).toLocaleString()}</td>
                         <td>
                             <div class="d-flex align-items-center">
                                 <span>${pass.altitude}°</span>
-                                <div class="progress ms-2" style="width: 100px; height: 8px;">
-                                    <div class="progress-bar bg-primary" role="progressbar" 
+                                <div class="progress ms-2" style="width: 100px; height: 5px;">
+                                    <div class="progress-bar" role="progressbar" 
                                          style="width: ${Math.min(100, pass.altitude)}%" 
                                          aria-valuenow="${pass.altitude}" aria-valuemin="0" aria-valuemax="90"></div>
                                 </div>
@@ -193,58 +105,18 @@ function fetchPasses(lat, lon, hours) {
                         <td>${pass.azimuth}°</td>
                         <td>${pass.distance} km</td>
                         <td>~${duration} min</td>
-                        <td>
-                            <span class="badge ${brightnessClass}">
-                                ${pass.brightness}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge ${visibilityClass}">
-                                ${visibilityText}
-                            </span>
-                        </td>
                     `;
                     tableBody.appendChild(row);
                 });
             } else {
-                tableBody.innerHTML = '<tr><td colspan="8" class="text-center">No passes found for the specified location and time period</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No passes found for the specified location and time period</td></tr>';
             }
         })
         .catch(error => {
             console.error('Error fetching passes data:', error);
-            tableBody.innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading passes data</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading passes data</td></tr>';
         });
 }
-
-// Show satellite details
-function showSatelliteDetails(satelliteName) {
-    // In a real implementation, this would fetch satellite details from the API
-    alert(`Detailed information about satellite ${satelliteName}:\n\nThis function will open a modal with detailed information about the satellite.`);
-}
-
-// Refresh data function
-document.getElementById('refresh-btn').addEventListener('click', function() {
-    const btn = this;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Refreshing...';
-    btn.disabled = true;
-    
-    // Get current filter values
-    const lat = document.getElementById('latitude').value;
-    const lon = document.getElementById('longitude').value;
-    const hours = document.getElementById('hours').value;
-    
-    // Add a small delay for better UX
-    setTimeout(() => {
-        fetchPasses(lat, lon, hours);
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.disabled = false;
-            // Show notification as toast instead of alert for better UX
-            showToast('Data refreshed successfully!', 'success');
-        }, 500);
-    }, 300);
-});
 
 // Handle form submission
 document.getElementById('pass-filter-form').addEventListener('submit', function(e) {
@@ -256,26 +128,6 @@ document.getElementById('pass-filter-form').addEventListener('submit', function(
     
     fetchPasses(lat, lon, hours);
 });
-
-// Show notification function
-function showToast(message, type) {
-    // Create temporary notification element
-    const toast = document.createElement('div');
-    toast.className = `position-fixed top-0 end-0 m-3 p-3 bg-${type === 'success' ? 'success' : 'danger'} text-white rounded shadow`;
-    toast.style.zIndex = '1050';
-    toast.innerHTML = message;
-    toast.style.transition = 'opacity 0.3s';
-    
-    document.body.appendChild(toast);
-    
-    // Remove notification after 3 seconds
-    setTimeout(() => {
-        toast.style.opacity = '0';
-        setTimeout(() => {
-            document.body.removeChild(toast);
-        }, 300);
-    }, 3000);
-}
 
 // Load initial data
 document.addEventListener('DOMContentLoaded', function() {

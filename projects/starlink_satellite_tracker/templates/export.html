@@ -2,23 +2,14 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-12">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <div>
-                <h1 class="mb-2">Data Export</h1>
-                <p class="lead mb-0">Export satellite data in various formats for analysis</p>
-            </div>
-            <div>
-                <button class="btn btn-primary" type="button" id="refresh-btn">
-                    <i class="fas fa-sync-alt me-1"></i> Refresh Data
-                </button>
-            </div>
-        </div>
+    <div class="col-md-12">
+        <h1>Data Export</h1>
+        <p class="lead">Export satellite data in various formats for analysis</p>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-lg-6">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Export Satellite Data</h5>
@@ -27,7 +18,7 @@
                 <form id="export-form">
                     <div class="mb-3">
                         <label class="form-label">Data to Export</label>
-                        <div class="form-check mb-2">
+                        <div class="form-check">
                             <input class="form-check-input" type="checkbox" id="include-tle" checked>
                             <label class="form-check-label" for="include-tle">Include TLE Data</label>
                         </div>
@@ -38,43 +29,37 @@
                     </div>
                     <div class="mb-3">
                         <label for="export-format" class="form-label">Export Format</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-file-export"></i></span>
-                            <select class="form-select" id="export-format">
-                                <option value="json" selected>JSON</option>
-                                <option value="csv">CSV</option>
-                            </select>
-                        </div>
+                        <select class="form-select" id="export-format">
+                            <option value="json" selected>JSON</option>
+                            <option value="csv">CSV</option>
+                        </select>
                     </div>
                     <div class="mb-3">
                         <label for="date-range" class="form-label">Date Range</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-calendar-alt"></i></span>
-                            <select class="form-select" id="date-range">
-                                <option value="all" selected>All Available Data</option>
-                                <option value="today">Today</option>
-                                <option value="week">Last 7 Days</option>
-                                <option value="month">Last 30 Days</option>
-                            </select>
-                        </div>
+                        <select class="form-select" id="date-range">
+                            <option value="all" selected>All Available Data</option>
+                            <option value="today">Today</option>
+                            <option value="week">Last 7 Days</option>
+                            <option value="month">Last 30 Days</option>
+                        </select>
                     </div>
-                    <button type="submit" class="btn btn-primary w-100">
-                        <i class="fas fa-download me-1"></i> Export Data
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Export Data
                     </button>
                 </form>
             </div>
         </div>
     </div>
     
-    <div class="col-lg-6">
+    <div class="col-md-6">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Export History</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
+                    <table class="table table-striped">
+                        <thead>
                             <tr>
                                 <th>File</th>
                                 <th>Format</th>
@@ -89,8 +74,8 @@
                         </tbody>
                     </table>
                 </div>
-                <button type="button" class="btn btn-sm btn-outline-secondary mt-3">
-                    <i class="fas fa-trash me-1"></i> Clear History
+                <button type="button" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-trash"></i> Clear History
                 </button>
             </div>
         </div>
@@ -98,7 +83,7 @@
 </div>
 
 <div class="row mt-4">
-    <div class="col-12">
+    <div class="col-md-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">API Access</h5>
@@ -106,7 +91,7 @@
             <div class="card-body">
                 <p>Access satellite data programmatically using our RESTful API:</p>
                 <div class="alert alert-info">
-                    <h6 class="alert-heading"><i class="fas fa-info-circle me-1"></i> API Endpoints</h6>
+                    <h6 class="alert-heading">API Endpoints</h6>
                     <ul class="mb-0">
                         <li><code>GET /api/satellites</code> - Get current satellite positions</li>
                         <li><code>GET /api/passes?lat=:lat&lon=:lon&hours=:hours</code> - Get predicted passes</li>
@@ -116,7 +101,7 @@
                     </ul>
                 </div>
                 <button type="button" class="btn btn-outline-primary">
-                    <i class="fas fa-book me-1"></i> View Full API Documentation
+                    <i class="fas fa-book"></i> View Full API Documentation
                 </button>
             </div>
         </div>
@@ -135,20 +120,6 @@ document.getElementById('export-form').addEventListener('submit', function(e) {
     
     // Example of how to trigger an actual download:
     // window.location.href = `/api/export/${format}`;
-});
-
-// Refresh data function
-document.getElementById('refresh-btn').addEventListener('click', function() {
-    const btn = this;
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Refreshing...';
-    btn.disabled = true;
-    
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-        alert('Export data refreshed successfully!');
-    }, 1000);
 });
 </script>
 {% endblock %}
