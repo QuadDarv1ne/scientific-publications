@@ -6,14 +6,18 @@ Tests the interaction between different components of the system
 
 import json
 import os
+import sys
 from datetime import datetime
+
+# Add the project directory to the path so we can import our modules
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 def test_configuration_loading():
     """Test that configuration is loaded correctly."""
     print("Testing configuration loading...")
     
     # Test main tracker
-    from main import StarlinkTracker
+    from core.main import StarlinkTracker
     tracker = StarlinkTracker()
     
     # Check that config is loaded
@@ -34,8 +38,8 @@ def test_data_processor_with_config():
         config = json.load(f)
     
     # Test data processor
-    from data_processor import DataProcessor
-    processor = DataProcessor(config)
+    from utils import data_processor
+    processor = data_processor.DataProcessor(config)
     
     # Check that export config is loaded
     assert hasattr(processor, 'export_config')
@@ -57,8 +61,8 @@ def test_export_functionality():
         config = json.load(f)
     
     # Test data processor
-    from data_processor import DataProcessor
-    processor = DataProcessor(config)
+    from utils import data_processor
+    processor = data_processor.DataProcessor(config)
     
     # Load satellite data
     satellites = processor.load_satellite_data()
@@ -99,7 +103,7 @@ def test_web_app_config():
     print("Testing web application configuration...")
     
     # Import web app components
-    import web_app
+    from web import web_app
     
     # Check that configuration is loaded
     assert hasattr(web_app, 'DEFAULT_LATITUDE')
