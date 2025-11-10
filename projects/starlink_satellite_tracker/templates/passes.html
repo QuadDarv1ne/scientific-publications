@@ -4,57 +4,134 @@
 <div class="row">
     <div class="col-md-12">
         <h1>Upcoming Satellite Passes</h1>
-        <p>Predicted passes over your location</p>
+        <p class="lead">Predicted passes over your location</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form id="pass-filter-form" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="latitude" class="form-label">Latitude</label>
+                        <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="longitude" class="form-label">Longitude</label>
+                        <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="hours" class="form-label">Hours Ahead</label>
+                        <select class="form-select" id="hours">
+                            <option value="24">24 hours</option>
+                            <option value="48" selected>48 hours</option>
+                            <option value="72">72 hours</option>
+                            <option value="168">1 week</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row">
     <div class="col-md-12">
-        <table class="table table-striped">
-            <thead>
-                <tr>
-                    <th>Satellite</th>
-                    <th>Date & Time</th>
-                    <th>Altitude</th>
-                    <th>Azimuth</th>
-                    <th>Distance (km)</th>
-                </tr>
-            </thead>
-            <tbody id="passes-table">
-                <tr><td colspan="5">Loading passes...</td></tr>
-            </tbody>
-        </table>
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Predicted Passes</h5>
+                <span class="badge bg-secondary" id="pass-count">0 passes</span>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Satellite</th>
+                                <th>Date & Time</th>
+                                <th>Max Elevation</th>
+                                <th>Azimuth</th>
+                                <th>Distance</th>
+                                <th>Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody id="passes-table">
+                            <tr>
+                                <td colspan="6" class="text-center">Loading passes...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 
 <script>
-// Fetch passes data
-fetch('/api/passes?hours=48')
-    .then(response => response.json())
-    .then(data => {
-        const tableBody = document.getElementById('passes-table');
-        tableBody.innerHTML = '';
-        
-        if (data.passes && data.passes.length > 0) {
-            data.passes.forEach(pass => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>${pass.satellite}</td>
-                    <td>${new Date(pass.time).toLocaleString()}</td>
-                    <td>${pass.altitude}°</td>
-                    <td>${pass.azimuth}°</td>
-                    <td>${pass.distance}</td>
-                `;
-                tableBody.appendChild(row);
-            });
-        } else {
-            tableBody.innerHTML = '<tr><td colspan="5">No passes found</td></tr>';
-        }
-    })
-    .catch(error => {
-        console.error('Error fetching passes data:', error);
-        document.getElementById('passes-table').innerHTML = 
-            '<tr><td colspan="5">Error loading passes</td></tr>';
-    });
+// Function to fetch and display passes
+function fetchPasses(lat, lon, hours) {
+    const tableBody = document.getElementById('passes-table');
+    tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Loading passes...</td></tr>';
+    
+    fetch(`/api/passes?lat=${lat}&lon=${lon}&hours=${hours}`)
+        .then(response => response.json())
+        .then(data => {
+            tableBody.innerHTML = '';
+            document.getElementById('pass-count').textContent = `${data.passes.length} passes`;
+            
+            if (data.passes && data.passes.length > 0) {
+                data.passes.forEach(pass => {
+                    const row = document.createElement('tr');
+                    // Calculate approximate duration (this is a simplified calculation)
+                    const duration = Math.max(1, Math.round(pass.altitude / 10)); // In minutes
+                    
+                    row.innerHTML = `
+                        <td>${pass.satellite}</td>
+                        <td>${new Date(pass.time).toLocaleString()}</td>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <span>${pass.altitude}°</span>
+                                <div class="progress ms-2" style="width: 100px; height: 5px;">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: ${Math.min(100, pass.altitude)}%" 
+                                         aria-valuenow="${pass.altitude}" aria-valuemin="0" aria-valuemax="90"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${pass.azimuth}°</td>
+                        <td>${pass.distance} km</td>
+                        <td>~${duration} min</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No passes found for the specified location and time period</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching passes data:', error);
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Error loading passes data</td></tr>';
+        });
+}
+
+// Handle form submission
+document.getElementById('pass-filter-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const lat = document.getElementById('latitude').value;
+    const lon = document.getElementById('longitude').value;
+    const hours = document.getElementById('hours').value;
+    
+    fetchPasses(lat, lon, hours);
+});
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    fetchPasses(55.7558, 37.6173, 48);
+});
 </script>
 {% endblock %}
