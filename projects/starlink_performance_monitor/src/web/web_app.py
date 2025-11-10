@@ -442,6 +442,12 @@ def ml_analysis():
     """ML analysis page."""
     return render_template('ml_analysis.html')
 
+@app.route('/map')
+@require_auth
+def satellite_map():
+    """Satellite map page."""
+    return render_template('map.html')
+
 @app.route('/api/weather-correlations')
 @require_auth
 def api_weather_correlations():

@@ -7,6 +7,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet CSS for map functionality -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         :root {
             --sidebar-width: 250px;
@@ -113,6 +115,35 @@
             vertical-align: 0.155em;
         }
         
+        /* Map container styling */
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 10px;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        /* Custom legend for map */
+        .map-legend {
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+            border-radius: 3px;
+        }
+        
         @media (max-width: 768px) {
             .sidebar {
                 width: 0;
@@ -216,6 +247,11 @@
                             </a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="/map">
+                                <i class="fas fa-map-marked-alt"></i> Satellite Map
+                            </a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="/settings">
                                 <i class="fas fa-cog"></i> {{ t.settings }}
                             </a>
@@ -238,6 +274,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <!-- Leaflet JS for map functionality -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

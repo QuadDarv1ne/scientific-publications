@@ -1,0 +1,454 @@
+{% extends "base.html" %}
+
+{% block title %}Satellite Map - {{ t.site_name }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+    <h1 class="h2 page-heading">Satellite Map</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshMap">
+                <i class="fas fa-sync-alt"></i> {{ t.refresh }}
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-primary" id="autoRefreshMap" data-active="true">
+                <i class="fas fa-pause"></i> {{ t.auto_refresh }}
+            </button>
+        </div>
+        <div class="dropdown">
+            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="mapLayerDropdown" data-bs-toggle="dropdown">
+                Map Layer
+            </button>
+            <ul class="dropdown-menu" id="mapLayerMenu">
+                <li><a class="dropdown-item active" href="#" data-layer="street">Street Map</a></li>
+                <li><a class="dropdown-item" href="#" data-layer="satellite">Satellite</a></li>
+                <li><a class="dropdown-item" href="#" data-layer="terrain">Terrain</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Status Indicator -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info d-flex align-items-center rounded-pill" role="alert" id="statusIndicator">
+            <i class="fas fa-info-circle me-2 ms-3"></i>
+            <div id="statusMessage">Loading satellite data...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Map Container -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Starlink Satellite Positions</h5>
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-primary" id="view2D">2D Map</button>
+                    <button type="button" class="btn btn-outline-primary" id="view3D">3D Globe</button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div id="map"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Satellite Information Panel -->
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Satellite Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Satellite ID</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th>Altitude (km)</th>
+                                <th>Speed (km/s)</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="satelliteTableBody">
+                            <tr>
+                                <td colspan="6" class="text-center">Loading satellite data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Network Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="text-center">
+                            <div class="display-6 text-primary" id="totalSatellites">--</div>
+                            <div class="text-muted">Total Satellites</div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-center">
+                            <div class="display-6 text-success" id="activeSatellites">--</div>
+                            <div class="text-muted">Active</div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-center">
+                            <div class="display-6 text-warning" id="movingSatellites">--</div>
+                            <div class="text-muted">Moving</div>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-center">
+                            <div class="display-6 text-info" id="inCoverage">--</div>
+                            <div class="text-muted">In Coverage</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <h6>Constellation Health</h6>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-success" role="progressbar" id="healthProgress" style="width: 0%">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Global variables
+    let map = null;
+    let satelliteMarkers = {};
+    let autoRefreshInterval = null;
+    let currentLayer = 'street';
+    let is3DView = false;
+    
+    // Initialize the map when the page loads
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeMap();
+        loadSatelliteData();
+        
+        // Set up event listeners
+        document.getElementById('refreshMap').addEventListener('click', loadSatelliteData);
+        document.getElementById('autoRefreshMap').addEventListener('click', toggleAutoRefresh);
+        document.getElementById('view2D').addEventListener('click', switchTo2D);
+        document.getElementById('view3D').addEventListener('click', switchTo3D);
+        
+        // Set up layer menu
+        document.querySelectorAll('#mapLayerMenu .dropdown-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                switchMapLayer(this.dataset.layer);
+                
+                // Update active state
+                document.querySelectorAll('#mapLayerMenu .dropdown-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                this.classList.add('active');
+                document.getElementById('mapLayerDropdown').textContent = this.textContent;
+            });
+        });
+        
+        // Start auto refresh
+        autoRefreshInterval = setInterval(loadSatelliteData, 30000); // Refresh every 30 seconds
+    });
+    
+    // Initialize the map
+    function initializeMap() {
+        // Create the map centered on a default location
+        map = L.map('map').setView([0, 0], 2);
+        
+        // Add the default tile layer (street map)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+        
+        // Add a legend
+        const legend = L.control({position: 'bottomright'});
+        legend.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'map-legend');
+            div.innerHTML = `
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #007bff;"></div>
+                    <span>Active Satellite</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #dc3545;"></div>
+                    <span>Inactive Satellite</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #28a745;"></div>
+                    <span>Moving Satellite</span>
+                </div>
+            `;
+            return div;
+        };
+        legend.addTo(map);
+        
+        updateStatus('Map initialized successfully', 'success');
+    }
+    
+    // Load satellite data
+    async function loadSatelliteData() {
+        try {
+            updateStatus('Loading satellite data...', 'info');
+            
+            // In a real implementation, this would fetch actual satellite data
+            // For now, we'll generate sample data
+            const satelliteData = generateSampleSatelliteData();
+            
+            // Update the map with satellite positions
+            updateMap(satelliteData);
+            
+            // Update the satellite table
+            updateSatelliteTable(satelliteData);
+            
+            // Update network statistics
+            updateNetworkStats(satelliteData);
+            
+            updateStatus('Satellite data loaded successfully', 'success');
+        } catch (error) {
+            console.error('Error loading satellite data:', error);
+            updateStatus('Error loading satellite data', 'danger');
+        }
+    }
+    
+    // Generate sample satellite data
+    function generateSampleSatelliteData() {
+        const satellites = [];
+        const count = 50; // Number of satellites to generate
+        
+        for (let i = 0; i < count; i++) {
+            // Generate random positions
+            const lat = (Math.random() * 180) - 90; // -90 to 90
+            const lng = (Math.random() * 360) - 180; // -180 to 180
+            const alt = 550 + (Math.random() * 50); // 550-600 km altitude
+            const speed = 7.5 + (Math.random() * 0.5); // 7.5-8.0 km/s
+            const status = Math.random() > 0.1 ? 'active' : 'inactive'; // 90% active
+            const moving = Math.random() > 0.2; // 80% moving
+            
+            satellites.push({
+                id: `STARLINK-${1000 + i}`,
+                lat: lat,
+                lng: lng,
+                altitude: alt,
+                speed: speed,
+                status: status,
+                moving: moving
+            });
+        }
+        
+        return satellites;
+    }
+    
+    // Update the map with satellite positions
+    function updateMap(satelliteData) {
+        // Clear existing markers
+        Object.values(satelliteMarkers).forEach(marker => map.removeLayer(marker));
+        satelliteMarkers = {};
+        
+        // Add new markers
+        satelliteData.forEach(satellite => {
+            // Choose marker color based on status
+            let color = '#007bff'; // Blue for active
+            if (satellite.status === 'inactive') {
+                color = '#dc3545'; // Red for inactive
+            } else if (satellite.moving) {
+                color = '#28a745'; // Green for moving
+            }
+            
+            // Create a custom icon
+            const icon = L.divIcon({
+                className: 'satellite-marker',
+                html: `<div style="background-color: ${color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 5px rgba(0,0,0,0.5);"></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+            
+            // Create marker
+            const marker = L.marker([satellite.lat, satellite.lng], {icon: icon})
+                .addTo(map)
+                .bindPopup(`
+                    <b>${satellite.id}</b><br>
+                    Latitude: ${satellite.lat.toFixed(4)}<br>
+                    Longitude: ${satellite.lng.toFixed(4)}<br>
+                    Altitude: ${satellite.altitude.toFixed(0)} km<br>
+                    Speed: ${satellite.speed.toFixed(2)} km/s<br>
+                    Status: ${satellite.status}
+                `);
+            
+            // Store reference to marker
+            satelliteMarkers[satellite.id] = marker;
+        });
+    }
+    
+    // Update the satellite table
+    function updateSatelliteTable(satelliteData) {
+        const tbody = document.getElementById('satelliteTableBody');
+        tbody.innerHTML = '';
+        
+        if (satelliteData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No satellite data available</td></tr>';
+            return;
+        }
+        
+        // Sort by satellite ID
+        satelliteData.sort((a, b) => a.id.localeCompare(b.id));
+        
+        // Add rows for each satellite
+        satelliteData.forEach(satellite => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${satellite.id}</td>
+                <td>${satellite.lat.toFixed(4)}</td>
+                <td>${satellite.lng.toFixed(4)}</td>
+                <td>${satellite.altitude.toFixed(0)}</td>
+                <td>${satellite.speed.toFixed(2)}</td>
+                <td>
+                    <span class="badge ${satellite.status === 'active' ? 'bg-success' : 'bg-danger'}">
+                        ${satellite.status}
+                    </span>
+                    ${satellite.moving ? '<span class="badge bg-info ms-1">Moving</span>' : ''}
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+    
+    // Update network statistics
+    function updateNetworkStats(satelliteData) {
+        const total = satelliteData.length;
+        const active = satelliteData.filter(s => s.status === 'active').length;
+        const moving = satelliteData.filter(s => s.moving).length;
+        const inCoverage = satelliteData.filter(s => Math.abs(s.lat) < 60).length; // Roughly in coverage area
+        const health = total > 0 ? Math.round((active / total) * 100) : 0;
+        
+        document.getElementById('totalSatellites').textContent = total;
+        document.getElementById('activeSatellites').textContent = active;
+        document.getElementById('movingSatellites').textContent = moving;
+        document.getElementById('inCoverage').textContent = inCoverage;
+        document.getElementById('healthProgress').style.width = `${health}%`;
+        document.getElementById('healthProgress').textContent = `${health}%`;
+    }
+    
+    // Update status indicator
+    function updateStatus(message, type = 'info') {
+        const statusIndicator = document.getElementById('statusIndicator');
+        const statusMessage = document.getElementById('statusMessage');
+        
+        // Remove existing classes
+        statusIndicator.className = 'alert d-flex align-items-center rounded-pill';
+        
+        // Add appropriate class based on type
+        switch(type) {
+            case 'success':
+                statusIndicator.classList.add('alert-success');
+                statusIndicator.innerHTML = '<i class="fas fa-check-circle me-2 ms-3"></i><div id="statusMessage">' + message + '</div>';
+                break;
+            case 'warning':
+                statusIndicator.classList.add('alert-warning');
+                statusIndicator.innerHTML = '<i class="fas fa-exclamation-triangle me-2 ms-3"></i><div id="statusMessage">' + message + '</div>';
+                break;
+            case 'danger':
+                statusIndicator.classList.add('alert-danger');
+                statusIndicator.innerHTML = '<i class="fas fa-exclamation-circle me-2 ms-3"></i><div id="statusMessage">' + message + '</div>';
+                break;
+            default:
+                statusIndicator.classList.add('alert-info');
+                statusIndicator.innerHTML = '<i class="fas fa-info-circle me-2 ms-3"></i><div id="statusMessage">' + message + '</div>';
+        }
+    }
+    
+    // Toggle auto refresh
+    function toggleAutoRefresh() {
+        const btn = document.getElementById('autoRefreshMap');
+        const isActive = btn.getAttribute('data-active') === 'true';
+        
+        if (isActive) {
+            // Disable auto refresh
+            if (autoRefreshInterval) {
+                clearInterval(autoRefreshInterval);
+                autoRefreshInterval = null;
+            }
+            btn.innerHTML = '<i class="fas fa-play"></i> {{ t.auto_refresh }}';
+            btn.setAttribute('data-active', 'false');
+            btn.classList.remove('btn-outline-primary');
+            btn.classList.add('btn-outline-secondary');
+        } else {
+            // Enable auto refresh
+            autoRefreshInterval = setInterval(loadSatelliteData, 30000); // Refresh every 30 seconds
+            btn.innerHTML = '<i class="fas fa-pause"></i> {{ t.auto_refresh }}';
+            btn.setAttribute('data-active', 'true');
+            btn.classList.remove('btn-outline-secondary');
+            btn.classList.add('btn-outline-primary');
+        }
+    }
+    
+    // Switch map layer
+    function switchMapLayer(layer) {
+        if (map) {
+            // Remove existing tile layer
+            map.eachLayer(function(layer) {
+                if (layer instanceof L.TileLayer) {
+                    map.removeLayer(layer);
+                }
+            });
+            
+            // Add new tile layer based on selection
+            let url, attribution;
+            switch(layer) {
+                case 'satellite':
+                    url = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+                    attribution = 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community';
+                    break;
+                case 'terrain':
+                    url = 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+                    attribution = 'Map data: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)';
+                    break;
+                default: // street
+                    url = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+                    attribution = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+            }
+            
+            L.tileLayer(url, {
+                attribution: attribution
+            }).addTo(map);
+            
+            currentLayer = layer;
+        }
+    }
+    
+    // Switch to 2D view
+    function switchTo2D() {
+        document.getElementById('view2D').classList.add('active');
+        document.getElementById('view3D').classList.remove('active');
+        is3DView = false;
+        // In a real implementation, this would switch to a 2D map view
+        updateStatus('Switched to 2D map view', 'success');
+    }
+    
+    // Switch to 3D view
+    function switchTo3D() {
+        document.getElementById('view3D').classList.add('active');
+        document.getElementById('view2D').classList.remove('active');
+        is3DView = true;
+        // In a real implementation, this would switch to a 3D globe view
+        updateStatus('Switched to 3D globe view', 'success');
+    }
+</script>
+{% endblock %}

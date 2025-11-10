@@ -12,6 +12,7 @@ import time
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 import hashlib
+import math
 
 # Import required libraries
 try:
@@ -286,10 +287,8 @@ class StarlinkTracker:
             
             passes = []
             
-            # Limit satellites for performance
-            satellites_to_process = self.satellites[:10]
-            
-            for satellite in satellites_to_process:
+            # Process all satellites for more comprehensive results
+            for satellite in self.satellites:
                 try:
                     # Find events (rise, culmination, set)
                     times, events = satellite.find_events(observer, t0, t1, 
@@ -302,27 +301,113 @@ class StarlinkTracker:
                             topocentric = difference.at(ti)
                             alt, az, distance = topocentric.altaz()
                             
+                            # Calculate additional information
+                            velocity = self._calculate_velocity(satellite, ti, observer)
+                            brightness = self._estimate_brightness(satellite, alt.degrees, distance.km)
+                            
                             passes.append({
                                 'satellite': satellite.name,
                                 'time': ti.utc_datetime(),
                                 'altitude': alt.degrees,
                                 'azimuth': az.degrees,
-                                'distance': distance.km
+                                'distance': distance.km,
+                                'velocity': velocity,
+                                'brightness': brightness
                             })
                 except Exception as e:
                     self.logger.warning(f"Error predicting passes for {satellite.name}: {e}")
                     continue
             
+            # Sort passes by time
+            passes.sort(key=lambda x: x['time'])
+            
             # Cache the results
             self.prediction_cache[cache_key] = passes
             self.prediction_cache_timestamps[cache_key] = datetime.now()
             
-            self.logger.info(f"Predicted {len(passes)} passes for {len(satellites_to_process)} satellites")
+            self.logger.info(f"Predicted {len(passes)} passes for {len(self.satellites)} satellites")
             return passes
             
         except Exception as e:
             self.logger.error(f"Error predicting passes: {e}")
             raise
+    
+    def _calculate_velocity(self, satellite: EarthSatellite, time, observer) -> float:
+        """Calculate satellite velocity relative to observer."""
+        try:
+            # Get positions at two nearby times
+            t1 = time
+            t2 = self.ts.from_datetime(time.utc_datetime() + timedelta(seconds=1))
+            
+            difference = satellite - observer
+            pos1 = difference.at(t1)
+            pos2 = difference.at(t2)
+            
+            # Calculate distance traveled in 1 second
+            dist1 = pos1.distance().km
+            dist2 = pos2.distance().km
+            velocity = abs(dist2 - dist1)  # km/s
+            
+            return velocity
+        except Exception as e:
+            self.logger.warning(f"Error calculating velocity: {e}")
+            return 0.0
+    
+    def _estimate_brightness(self, satellite: EarthSatellite, altitude: float, distance: float) -> float:
+        """Estimate satellite brightness (magnitude)."""
+        try:
+            # Simplified brightness estimation model
+            # This is a very rough approximation
+            base_magnitude = 2.0  # Typical Starlink brightness
+            
+            # Adjust for altitude (higher = dimmer)
+            altitude_factor = math.cos(math.radians(90 - altitude))
+            
+            # Adjust for distance (further = dimmer)
+            distance_factor = (500 / distance) ** 2  # Assume 500km as reference
+            
+            # Combine factors
+            brightness = base_magnitude - 2.5 * math.log10(altitude_factor * distance_factor)
+            
+            # Clamp to reasonable range
+            return max(-2.0, min(10.0, brightness))
+        except Exception as e:
+            self.logger.warning(f"Error estimating brightness: {e}")
+            return 5.0  # Default magnitude
+    
+    def get_satellite_info(self, satellite_name: str) -> Optional[Dict[str, Any]]:
+        """Get detailed information about a specific satellite."""
+        try:
+            for satellite in self.satellites:
+                if satellite.name == satellite_name:
+                    # Get current position
+                    t = self.ts.now()
+                    geocentric = satellite.at(t)
+                    subpoint = geocentric.subpoint()
+                    
+                    # Get orbital elements
+                    elements = satellite.orbit_elements_at(t)
+                    
+                    return {
+                        'name': satellite.name,
+                        'norad_id': satellite.model.satnum,
+                        'position': {
+                            'latitude': subpoint.latitude.degrees,
+                            'longitude': subpoint.longitude.degrees,
+                            'altitude': subpoint.elevation.km
+                        },
+                        'orbit': {
+                            'inclination': elements.inclination.degrees,
+                            'eccentricity': elements.eccentricity,
+                            'period': elements.period_in_days * 24 * 60,  # minutes
+                            'semi_major_axis': elements.semi_major_axis.km
+                        },
+                        'updated': t.utc_datetime().isoformat()
+                    }
+            return None
+        except Exception as e:
+            self.logger.error(f"Error getting satellite info for {satellite_name}: {e}")
+            return None
     
     def visualize_orbits(self, hours: float = 2):
         """Create 3D visualization of satellite orbits."""
@@ -348,8 +433,8 @@ class StarlinkTracker:
             t1 = self.ts.from_datetime(datetime.now() + timedelta(hours=hours))
             times = self.ts.linspace(t0, t1, self.config['visualization']['orbit_points'])
             
-            # Plot orbits for first 5 satellites
-            satellites_to_plot = self.satellites[:5]
+            # Plot orbits for first 10 satellites
+            satellites_to_plot = self.satellites[:10]
             
             for satellite in satellites_to_plot:
                 try:

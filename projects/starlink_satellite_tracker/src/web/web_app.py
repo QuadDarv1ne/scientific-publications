@@ -42,16 +42,38 @@ except ImportError:
                     'time': datetime.now() + timedelta(minutes=30),
                     'altitude': 65.5,
                     'azimuth': 42.3,
-                    'distance': 350.2
+                    'distance': 350.2,
+                    'velocity': 7.5,
+                    'brightness': 2.1
                 },
                 {
                     'satellite': 'STARLINK-5678',
                     'time': datetime.now() + timedelta(minutes=90),
                     'altitude': 78.2,
                     'azimuth': 58.1,
-                    'distance': 420.7
+                    'distance': 420.7,
+                    'velocity': 7.2,
+                    'brightness': 1.8
                 }
             ]
+        
+        def get_satellite_info(self, satellite_name):
+            return {
+                'name': satellite_name,
+                'norad_id': 12345,
+                'position': {
+                    'latitude': 45.0,
+                    'longitude': -122.0,
+                    'altitude': 550.0
+                },
+                'orbit': {
+                    'inclination': 53.0,
+                    'eccentricity': 0.001,
+                    'period': 95.0,
+                    'semi_major_axis': 6900.0
+                },
+                'updated': datetime.now().isoformat()
+            }
         
         def start_scheduler(self):
             """Minimal scheduler method."""
@@ -274,7 +296,9 @@ def api_passes():
                 'time': p['time'].isoformat(),
                 'altitude': round(p['altitude'], 1),
                 'azimuth': round(p['azimuth'], 1),
-                'distance': round(p['distance'], 1)
+                'distance': round(p['distance'], 1),
+                'velocity': round(p['velocity'], 2) if 'velocity' in p else 0,
+                'brightness': round(p['brightness'], 1) if 'brightness' in p else 5.0
             })
         
         return jsonify({
@@ -351,6 +375,56 @@ def api_coverage():
             'global_coverage': 0,
             'error': 'Failed to generate coverage data'
         }), 500
+
+@app.route('/api/satellite/<satellite_name>')
+@handle_api_errors
+@cached(ttl=300)  # Cache for 5 minutes
+def api_satellite_info(satellite_name):
+    """API endpoint returning detailed information about a specific satellite."""
+    try:
+        info = tracker_instance.get_satellite_info(satellite_name)
+        if info:
+            return jsonify(info)
+        else:
+            return jsonify({'error': f'Satellite {satellite_name} not found'}), 404
+    except Exception as e:
+        app.logger.error(f"Error in api_satellite_info: {e}")
+        return jsonify({'error': 'Failed to get satellite information'}), 500
+
+@app.route('/api/search')
+@handle_api_errors
+@cached(ttl=300)  # Cache for 5 minutes
+def api_search():
+    """API endpoint for searching satellites by name or ID."""
+    try:
+        query = request.args.get('q', '').strip().upper()
+        if not query:
+            return jsonify({'error': 'Search query is required'}), 400
+        
+        # Update TLE data if needed
+        satellites = tracker_instance.update_tle_data()
+        
+        # Search for matching satellites
+        matches = []
+        for sat in satellites:
+            if query in sat.name.upper() or query in str(sat.model.satnum):
+                matches.append({
+                    'name': sat.name,
+                    'id': sat.model.satnum,
+                    'short_name': sat.name.split('-')[-1] if '-' in sat.name else sat.name
+                })
+                # Limit to 20 results
+                if len(matches) >= 20:
+                    break
+        
+        return jsonify({
+            'results': matches,
+            'count': len(matches),
+            'query': query
+        })
+    except Exception as e:
+        app.logger.error(f"Error in api_search: {e}")
+        return jsonify({'error': 'Failed to search satellites'}), 500
 
 @app.route('/api/export/<format>')
 @handle_api_errors
