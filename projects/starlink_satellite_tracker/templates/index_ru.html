@@ -165,8 +165,17 @@
 <script>
 // Получение данных о спутниках
 function fetchSatelliteData() {
+    // Показываем индикатор загрузки
+    document.getElementById('satellite-count').textContent = '...';
+    document.getElementById('last-update').textContent = 'Загрузка...';
+    
     fetch('/api/satellites')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             document.getElementById('satellite-count').textContent = data.count;
             document.getElementById('last-update').textContent = new Date(data.updated).toLocaleString();
@@ -193,7 +202,12 @@ function fetchPassesData() {
     `;
     
     fetch('/api/passes?hours=48')
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
             const nextPassContent = document.getElementById('next-pass-content');
             const recentPasses = document.getElementById('recent-passes');
@@ -227,7 +241,7 @@ function fetchPassesData() {
                             </div>
                         </div>
                         <div class="mt-3">
-                            <span class="badge bg-success"><i class="fas fa-eye me-1"></i> Видимый</span>
+                            <span class="badge bg-success" style="cursor: pointer;" onclick="showPassDetails('${nextPass.satellite}')"><i class="fas fa-eye me-1"></i> Видимый</span>
                         </div>
                     </div>
                 `;
@@ -281,6 +295,7 @@ function fetchPassesData() {
                         <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
                     </div>
                     <p class="text-danger mb-0">Ошибка загрузки данных о пролетах</p>
+                    <p class="small text-muted">${error.message}</p>
                 </div>
             `;
             document.getElementById('recent-passes').innerHTML = '<tr><td colspan="6" class="text-center text-danger">Ошибка загрузки пролетов</td></tr>';
@@ -332,6 +347,13 @@ function showSatelliteInfo(satelliteName) {
     alert(`Информация о спутнике ${satelliteName} будет отображаться здесь в модальном окне.`);
 }
 
+// Показать детали пролета
+function showPassDetails(satelliteName) {
+    alert(`Детали пролета спутника ${satelliteName}:\n\nЭта функция откроет страницу с подробной информацией о пролете спутника.`);
+    // В реальной реализации это может открыть модальное окно или перенаправить на страницу деталей
+    // window.location.href = `/passes?satellite=${encodeURIComponent(satelliteName)}&details=true`;
+}
+
 // Функция очистки кэша
 document.getElementById('clear-cache-btn').addEventListener('click', function() {
     if (confirm('Вы уверены, что хотите очистить все кэшированные данные?')) {
@@ -357,20 +379,45 @@ document.getElementById('refresh-btn').addEventListener('click', function() {
     btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Обновление...';
     btn.disabled = true;
     
-    Promise.all([
-        fetchSatelliteData(),
-        fetchPassesData()
-    ]).then(() => {
-        setTimeout(() => {
+    // Добавляем небольшую задержку для лучшего UX
+    setTimeout(() => {
+        Promise.all([
+            fetchSatelliteData(),
+            fetchPassesData()
+        ]).then(() => {
+            setTimeout(() => {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                // Показываем уведомление в виде toast вместо alert для лучшего UX
+                showToast('Данные успешно обновлены!', 'success');
+            }, 500);
+        }).catch(() => {
             btn.innerHTML = originalText;
             btn.disabled = false;
-            alert('Данные успешно обновлены!');
-        }, 500);
-    }).catch(() => {
-        btn.innerHTML = originalText;
-        btn.disabled = false;
-    });
+            showToast('Ошибка при обновлении данных', 'error');
+        });
+    }, 300);
 });
+
+// Функция для показа уведомлений
+function showToast(message, type) {
+    // Создаем временный элемент уведомления
+    const toast = document.createElement('div');
+    toast.className = `position-fixed top-0 end-0 m-3 p-3 bg-${type === 'success' ? 'success' : 'danger'} text-white rounded shadow`;
+    toast.style.zIndex = '1050';
+    toast.innerHTML = message;
+    toast.style.transition = 'opacity 0.3s';
+    
+    document.body.appendChild(toast);
+    
+    // Удаляем уведомление через 3 секунды
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => {
+            document.body.removeChild(toast);
+        }, 300);
+    }, 3000);
+}
 
 // Обработчик нажатия кнопки поиска
 document.getElementById('search-btn').addEventListener('click', function() {
@@ -392,8 +439,11 @@ document.getElementById('satellite-search').addEventListener('keypress', functio
 
 // Загрузка начальных данных
 document.addEventListener('DOMContentLoaded', function() {
-    fetchSatelliteData();
-    fetchPassesData();
+    // Добавляем небольшую задержку для улучшения производительности
+    setTimeout(() => {
+        fetchSatelliteData();
+        fetchPassesData();
+    }, 100);
 });
 </script>
 {% endblock %}
