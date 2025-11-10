@@ -16,6 +16,31 @@ from typing import List, Optional, Dict, Any
 import hashlib
 import math
 
+
+class StarlinkTrackerError(Exception):
+    """Base exception class for Starlink Tracker errors."""
+    pass
+
+
+class TLEDataError(StarlinkTrackerError):
+    """Exception raised for TLE data related errors."""
+    pass
+
+
+class PredictionError(StarlinkTrackerError):
+    """Exception raised for prediction related errors."""
+    pass
+
+
+class SchedulerError(StarlinkTrackerError):
+    """Exception raised for scheduler related errors."""
+    pass
+
+
+class VisualizationError(StarlinkTrackerError):
+    """Exception raised for visualization related errors."""
+    pass
+
 # Import required libraries
 try:
     import requests
