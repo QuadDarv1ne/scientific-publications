@@ -11,7 +11,16 @@ from flask import Flask, render_template, jsonify, request
 
 # Import our tracker module
 try:
-    from main import StarlinkTracker
+    import sys
+    import os
+    sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+    from core.main import StarlinkTracker
+    # Load configuration
+    try:
+        with open('config.json', 'r') as f:
+            config = json.load(f)
+    except:
+        config = {}
 except ImportError:
     # If main.py doesn't exist, create a minimal version
     class StarlinkTracker:
@@ -39,11 +48,27 @@ except ImportError:
                     'distance': 420.7
                 }
             ]
+    config = {}
 
 app = Flask(__name__)
 
 # Global tracker instance
 tracker = StarlinkTracker()
+
+# Load configuration settings
+try:
+    with open('config.json', 'r') as f:
+        config = json.load(f)
+except:
+    config = {}
+
+# Set default observer location from config
+if 'observer' in config:
+    DEFAULT_LATITUDE = config['observer'].get('default_latitude', 55.7558)
+    DEFAULT_LONGITUDE = config['observer'].get('default_longitude', 37.6173)
+else:
+    DEFAULT_LATITUDE = 55.7558  # Moscow
+    DEFAULT_LONGITUDE = 37.6173
 
 # Default observer location (can be configured)
 DEFAULT_LATITUDE = 55.7558  # Moscow
@@ -165,21 +190,46 @@ def export():
 def api_export(format):
     """API endpoint for exporting data in various formats."""
     try:
-        # This would implement actual data export
-        # For now, just return sample data
-        data = {
-            'generated': datetime.now().isoformat(),
-            'satellite_count': 100,
-            'format': format
-        }
+        # Import data processor
+        import sys
+        import os
+        sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+        from utils.data_processor import DataProcessor
+        
+        # Load configuration
+        try:
+            with open('config.json', 'r') as f:
+                config = json.load(f)
+        except:
+            config = {}
+        
+        # Initialize processor
+        processor = DataProcessor(config)
+        
+        # Load satellite data
+        satellites = processor.load_satellite_data()
+        
+        if not satellites:
+            return jsonify({'error': 'No satellite data available'}), 404
+        
+        # Generate filename with timestamp
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f'starlink_export_{timestamp}'
         
         if format == 'json':
+            # Export to JSON
+            processor.export_to_json(satellites, filename + '.json')
+            # Return the data
+            with open(filename + '.json', 'r') as f:
+                data = json.load(f)
             return jsonify(data)
         elif format == 'csv':
-            # Would return CSV data
-            csv_data = "name,id,altitude,velocity\n"
-            csv_data += "STARLINK-1234,1234,550,7.5\n"
-            csv_data += "STARLINK-5678,5678,545,7.6\n"
+            # Export to CSV
+            processor.export_to_csv(satellites, filename + '.csv')
+            # Return the data
+            import pandas as pd
+            df = pd.read_csv(filename + '.csv')
+            csv_data = df.to_csv(index=False)
             return csv_data, 200, {'Content-Type': 'text/csv'}
         else:
             return jsonify({'error': f'Unsupported format: {format}'}), 400
@@ -223,7 +273,7 @@ def create_templates_dir():
 </body>
 </html>'''
     
-    with open(os.path.join(templates_dir, 'base.html'), 'w') as f:
+    with open(os.path.join(templates_dir, 'base.html'), 'w', encoding='utf-8') as f:
         f.write(base_html)
     
     # Create index template
@@ -298,7 +348,7 @@ fetch('/api/passes?hours=24')
 </script>
 {% endblock %}'''
     
-    with open(os.path.join(templates_dir, 'index.html'), 'w') as f:
+    with open(os.path.join(templates_dir, 'index.html'), 'w', encoding='utf-8') as f:
         f.write(index_html)
     
     # Create passes template
@@ -363,7 +413,7 @@ fetch('/api/passes?hours=48')
 </script>
 {% endblock %}'''
     
-    with open(os.path.join(templates_dir, 'passes.html'), 'w') as f:
+    with open(os.path.join(templates_dir, 'passes.html'), 'w', encoding='utf-8') as f:
         f.write(passes_html)
     
     # Create simple templates for other pages
@@ -374,7 +424,7 @@ fetch('/api/passes?hours=48')
     }
     
     for filename, content in simple_pages.items():
-        with open(os.path.join(templates_dir, filename), 'w') as f:
+        with open(os.path.join(templates_dir, filename), 'w', encoding='utf-8') as f:
             f.write('{% extends "base.html" %}\n\n{% block content %}\n' + content + '\n{% endblock %}')
 
 if __name__ == '__main__':

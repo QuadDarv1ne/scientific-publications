@@ -2,13 +2,19 @@
   "data_sources": {
     "celestrak_url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle",
     "tle_cache_path": "data/tle_cache/",
-    "max_cache_days": 7
+    "max_cache_days": 7,
+    "backup_urls": [
+      "https://celestrak.org/NORAD/elements/starlink.txt",
+      "https://www.celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=csv"
+    ]
   },
   "visualization": {
     "orbit_points": 100,
     "earth_texture": "data/earth_texture.jpg",
     "show_ground_track": true,
-    "color_scheme": "dark"
+    "color_scheme": "dark",
+    "plotly_3d": true,
+    "matplotlib_2d": true
   },
   "schedule": {
     "tle_update_cron": "0 0 */6 * *",
@@ -27,7 +33,8 @@
       "smtp_server": "smtp.gmail.com",
       "smtp_port": 587,
       "username": "",
-      "password": ""
+      "password": "",
+      "recipient": ""
     },
     "telegram": {
       "enabled": false,
@@ -37,5 +44,11 @@
     "min_elevation": 10,
     "min_brightness": -1,
     "advance_notice_minutes": 30
+  },
+  "export": {
+    "default_format": "json",
+    "include_tle_data": true,
+    "include_predictions": true,
+    "compress_large_files": true
   }
 }

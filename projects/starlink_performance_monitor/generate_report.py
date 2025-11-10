@@ -7,7 +7,7 @@ Report generation script.
 import argparse
 import json
 from datetime import datetime, timedelta
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -88,7 +88,7 @@ class ReportGenerator:
         finally:
             session.close()
             
-    def generate_daily_report(self, date: datetime = None) -> Dict[str, Any]:
+    def generate_daily_report(self, date: Optional[datetime] = None) -> Dict[str, Any]:
         """
         Generate a daily report.
         
@@ -116,15 +116,22 @@ class ReportGenerator:
         # Calculate summary statistics
         summary = {
             'total_tests': len(df),
-            'avg_download_mbps': df['download_mbps'].mean(),
-            'avg_upload_mbps': df['upload_mbps'].mean(),
-            'avg_ping_ms': df['ping_ms'].mean(),
-            'max_download_mbps': df['download_mbps'].max(),
-            'min_download_mbps': df['download_mbps'].min(),
-            'max_upload_mbps': df['upload_mbps'].max(),
-            'min_upload_mbps': df['upload_mbps'].min(),
-            'max_ping_ms': df['ping_ms'].max(),
-            'min_ping_ms': df['ping_ms'].min()
+            'avg_download_mbps': float(df['download_mbps'].mean()),
+            'avg_upload_mbps': float(df['upload_mbps'].mean()),
+            'avg_ping_ms': float(df['ping_ms'].mean()),
+            'avg_packet_loss_percent': float(df['packet_loss_percent'].mean()),
+            'max_download_mbps': float(df['download_mbps'].max()),
+            'min_download_mbps': float(df['download_mbps'].min()),
+            'max_upload_mbps': float(df['upload_mbps'].max()),
+            'min_upload_mbps': float(df['upload_mbps'].min()),
+            'max_ping_ms': float(df['ping_ms'].max()),
+            'min_ping_ms': float(df['ping_ms'].min()),
+            'max_packet_loss_percent': float(df['packet_loss_percent'].max()),
+            'min_packet_loss_percent': float(df['packet_loss_percent'].min()),
+            'std_download_mbps': float(df['download_mbps'].std()),
+            'std_upload_mbps': float(df['upload_mbps'].std()),
+            'std_ping_ms': float(df['ping_ms'].std()),
+            'std_packet_loss_percent': float(df['packet_loss_percent'].std())
         }
         
         return {
@@ -137,7 +144,7 @@ class ReportGenerator:
             'metrics': df.to_dict(orient='records')
         }
         
-    def generate_weekly_report(self, date: datetime = None) -> Dict[str, Any]:
+    def generate_weekly_report(self, date: Optional[datetime] = None) -> Dict[str, Any]:
         """
         Generate a weekly report.
         
@@ -167,15 +174,22 @@ class ReportGenerator:
         # Calculate summary statistics
         summary = {
             'total_tests': len(df),
-            'avg_download_mbps': df['download_mbps'].mean(),
-            'avg_upload_mbps': df['upload_mbps'].mean(),
-            'avg_ping_ms': df['ping_ms'].mean(),
-            'max_download_mbps': df['download_mbps'].max(),
-            'min_download_mbps': df['download_mbps'].min(),
-            'max_upload_mbps': df['upload_mbps'].max(),
-            'min_upload_mbps': df['upload_mbps'].min(),
-            'max_ping_ms': df['ping_ms'].max(),
-            'min_ping_ms': df['ping_ms'].min()
+            'avg_download_mbps': float(df['download_mbps'].mean()),
+            'avg_upload_mbps': float(df['upload_mbps'].mean()),
+            'avg_ping_ms': float(df['ping_ms'].mean()),
+            'avg_packet_loss_percent': float(df['packet_loss_percent'].mean()),
+            'max_download_mbps': float(df['download_mbps'].max()),
+            'min_download_mbps': float(df['download_mbps'].min()),
+            'max_upload_mbps': float(df['upload_mbps'].max()),
+            'min_upload_mbps': float(df['upload_mbps'].min()),
+            'max_ping_ms': float(df['ping_ms'].max()),
+            'min_ping_ms': float(df['ping_ms'].min()),
+            'max_packet_loss_percent': float(df['packet_loss_percent'].max()),
+            'min_packet_loss_percent': float(df['packet_loss_percent'].min()),
+            'std_download_mbps': float(df['download_mbps'].std()),
+            'std_upload_mbps': float(df['upload_mbps'].std()),
+            'std_ping_ms': float(df['ping_ms'].std()),
+            'std_packet_loss_percent': float(df['packet_loss_percent'].std())
         }
         
         return {
@@ -217,12 +231,19 @@ class ReportGenerator:
             'avg_download_mbps': df['download_mbps'].mean(),
             'avg_upload_mbps': df['upload_mbps'].mean(),
             'avg_ping_ms': df['ping_ms'].mean(),
+            'avg_packet_loss_percent': df['packet_loss_percent'].mean(),
             'max_download_mbps': df['download_mbps'].max(),
             'min_download_mbps': df['download_mbps'].min(),
             'max_upload_mbps': df['upload_mbps'].max(),
             'min_upload_mbps': df['upload_mbps'].min(),
             'max_ping_ms': df['ping_ms'].max(),
-            'min_ping_ms': df['ping_ms'].min()
+            'min_ping_ms': df['ping_ms'].min(),
+            'max_packet_loss_percent': df['packet_loss_percent'].max(),
+            'min_packet_loss_percent': df['packet_loss_percent'].min(),
+            'std_download_mbps': df['download_mbps'].std(),
+            'std_upload_mbps': df['upload_mbps'].std(),
+            'std_ping_ms': df['ping_ms'].std(),
+            'std_packet_loss_percent': df['packet_loss_percent'].std()
         }
         
         return {
@@ -277,47 +298,184 @@ class ReportGenerator:
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         df = df.sort_values('timestamp')
         
-        # Create the plot
-        fig, ax = plt.subplots(figsize=(12, 8))
+        # Create a figure with multiple subplots
+        fig, axes = plt.subplots(2, 2, figsize=(16, 12))
+        fig.suptitle('Starlink Performance Report', fontsize=16)
         
-        # Plot download and upload speeds
-        ax.plot(df['timestamp'], df['download_mbps'], label='Download Speed (Mbps)', color='blue')
-        ax.plot(df['timestamp'], df['upload_mbps'], label='Upload Speed (Mbps)', color='green')
+        # Plot 1: Download and Upload Speeds
+        axes[0, 0].plot(df['timestamp'], df['download_mbps'], label='Download Speed (Mbps)', color='blue')
+        axes[0, 0].plot(df['timestamp'], df['upload_mbps'], label='Upload Speed (Mbps)', color='green')
+        axes[0, 0].set_xlabel('Time')
+        axes[0, 0].set_ylabel('Speed (Mbps)')
+        axes[0, 0].set_title('Download & Upload Speeds Over Time')
+        axes[0, 0].legend()
+        axes[0, 0].grid(True, alpha=0.3)
         
-        # Plot ping on secondary y-axis
-        ax2 = ax.twinx()
-        ax2.plot(df['timestamp'], df['ping_ms'], label='Ping (ms)', color='red', alpha=0.7)
+        # Format x-axis dates for the first plot
+        axes[0, 0].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M'))
+        axes[0, 0].xaxis.set_major_locator(mdates.HourLocator(interval=4))
+        plt.setp(axes[0, 0].xaxis.get_majorticklabels(), rotation=45)
         
-        # Formatting
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Speed (Mbps)', color='black')
-        ax2.set_ylabel('Ping (ms)', color='red')
+        # Plot 2: Ping Performance
+        axes[0, 1].plot(df['timestamp'], df['ping_ms'], label='Ping (ms)', color='red')
+        axes[0, 1].set_xlabel('Time')
+        axes[0, 1].set_ylabel('Ping (ms)')
+        axes[0, 1].set_title('Ping Performance Over Time')
+        axes[0, 1].legend()
+        axes[0, 1].grid(True, alpha=0.3)
         
-        # Format x-axis dates
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M'))
-        ax.xaxis.set_major_locator(mdates.HourLocator(interval=4))
-        plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+        # Format x-axis dates for the second plot
+        axes[0, 1].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M'))
+        axes[0, 1].xaxis.set_major_locator(mdates.HourLocator(interval=4))
+        plt.setp(axes[0, 1].xaxis.get_majorticklabels(), rotation=45)
         
-        # Add legends
-        lines, labels = ax.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax2.legend(lines + lines2, labels + labels2, loc='upper left')
+        # Plot 3: Packet Loss
+        axes[1, 0].plot(df['timestamp'], df['packet_loss_percent'], label='Packet Loss (%)', color='orange')
+        axes[1, 0].set_xlabel('Time')
+        axes[1, 0].set_ylabel('Packet Loss (%)')
+        axes[1, 0].set_title('Packet Loss Over Time')
+        axes[1, 0].legend()
+        axes[1, 0].grid(True, alpha=0.3)
         
-        # Add grid
-        ax.grid(True, alpha=0.3)
+        # Format x-axis dates for the third plot
+        axes[1, 0].xaxis.set_major_formatter(mdates.DateFormatter('%m-%d %H:%M'))
+        axes[1, 0].xaxis.set_major_locator(mdates.HourLocator(interval=4))
+        plt.setp(axes[1, 0].xaxis.get_majorticklabels(), rotation=45)
         
-        # Title
-        if 'date' in report_data:
-            plt.title(f'Starlink Performance - {report_data["date"]}')
-        elif 'week' in report_data:
-            plt.title(f'Starlink Performance - {report_data["week"]}')
-        else:
-            plt.title('Starlink Performance')
-            
+        # Plot 4: Distribution Histogram
+        axes[1, 1].hist(df['download_mbps'], bins=20, alpha=0.7, label='Download Speed', color='blue')
+        axes[1, 1].hist(df['upload_mbps'], bins=20, alpha=0.7, label='Upload Speed', color='green')
+        axes[1, 1].set_xlabel('Speed (Mbps)')
+        axes[1, 1].set_ylabel('Frequency')
+        axes[1, 1].set_title('Speed Distribution')
+        axes[1, 1].legend()
+        axes[1, 1].grid(True, alpha=0.3)
+        
+        # Adjust layout
         plt.tight_layout()
+        
+        # Title based on report type
+        if 'date' in report_data:
+            fig.suptitle(f'Starlink Performance - {report_data["date"]}', fontsize=16)
+        elif 'week' in report_data:
+            fig.suptitle(f'Starlink Performance - {report_data["week"]}', fontsize=16)
+        else:
+            fig.suptitle('Starlink Performance', fontsize=16)
+            
         plt.savefig(filename, dpi=300, bbox_inches='tight')
         plt.close()
         print(f"Performance chart saved as {filename}")
+        
+    def generate_detailed_charts(self, report_data: Dict[str, Any], base_filename: str):
+        """
+        Generate detailed charts for the report.
+        
+        Args:
+            report_data: Report data dictionary
+            base_filename: Base filename for output files
+        """
+        if 'metrics' not in report_data or not report_data['metrics']:
+            print("No metrics data to generate charts")
+            return
+            
+        df = pd.DataFrame(report_data['metrics'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df = df.sort_values('timestamp')
+        
+        # Generate time series chart
+        self.generate_performance_chart(report_data, f"{base_filename}_timeseries.png")
+        
+        # Generate correlation heatmap
+        self.generate_correlation_heatmap(report_data, f"{base_filename}_correlation.png")
+        
+        # Generate box plots
+        self.generate_box_plots(report_data, f"{base_filename}_boxplot.png")
+        
+    def generate_correlation_heatmap(self, report_data: Dict[str, Any], filename: str):
+        """
+        Generate a correlation heatmap.
+        
+        Args:
+            report_data: Report data dictionary
+            filename: Output filename for chart
+        """
+        if 'metrics' not in report_data or not report_data['metrics']:
+            print("No metrics data to generate correlation heatmap")
+            return
+            
+        df = pd.DataFrame(report_data['metrics'])
+        
+        # Select numeric columns for correlation
+        numeric_cols = ['download_mbps', 'upload_mbps', 'ping_ms', 'packet_loss_percent']
+        corr_data = df[numeric_cols].corr()
+        
+        # Create heatmap
+        plt.figure(figsize=(10, 8))
+        plt.imshow(corr_data, cmap='coolwarm', interpolation='nearest')
+        plt.colorbar()
+        
+        # Add labels
+        plt.xticks(range(len(numeric_cols)), numeric_cols, rotation=45)
+        plt.yticks(range(len(numeric_cols)), numeric_cols)
+        
+        # Add correlation values
+        for i in range(len(numeric_cols)):
+            for j in range(len(numeric_cols)):
+                plt.text(j, i, f'{corr_data.iloc[i, j]:.2f}', 
+                        ha='center', va='center', fontsize=12)
+        
+        plt.title('Performance Metrics Correlation Heatmap')
+        plt.tight_layout()
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Correlation heatmap saved as {filename}")
+        
+    def generate_box_plots(self, report_data: Dict[str, Any], filename: str):
+        """
+        Generate box plots for performance metrics.
+        
+        Args:
+            report_data: Report data dictionary
+            filename: Output filename for chart
+        """
+        if 'metrics' not in report_data or not report_data['metrics']:
+            print("No metrics data to generate box plots")
+            return
+            
+        df = pd.DataFrame(report_data['metrics'])
+        
+        # Create box plots
+        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
+        fig.suptitle('Performance Metrics Distribution', fontsize=16)
+        
+        # Download speed box plot
+        axes[0, 0].boxplot(df['download_mbps'])
+        axes[0, 0].set_title('Download Speed (Mbps)')
+        axes[0, 0].set_ylabel('Mbps')
+        axes[0, 0].grid(True, alpha=0.3)
+        
+        # Upload speed box plot
+        axes[0, 1].boxplot(df['upload_mbps'])
+        axes[0, 1].set_title('Upload Speed (Mbps)')
+        axes[0, 1].set_ylabel('Mbps')
+        axes[0, 1].grid(True, alpha=0.3)
+        
+        # Ping box plot
+        axes[1, 0].boxplot(df['ping_ms'])
+        axes[1, 0].set_title('Ping (ms)')
+        axes[1, 0].set_ylabel('ms')
+        axes[1, 0].grid(True, alpha=0.3)
+        
+        # Packet loss box plot
+        axes[1, 1].boxplot(df['packet_loss_percent'])
+        axes[1, 1].set_title('Packet Loss (%)')
+        axes[1, 1].set_ylabel('%')
+        axes[1, 1].grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Box plots saved as {filename}")
 
 def main():
     """Main entry point for the report generation script."""
@@ -342,7 +500,7 @@ def main():
         if args.date:
             report_date = datetime.strptime(args.date, '%Y-%m-%d')
         else:
-            report_date = None
+            report_date = datetime.utcnow() - timedelta(days=1)
         report_data = generator.generate_daily_report(report_date)
         default_output = f"daily_report_{report_data['date']}"
     elif args.type == 'weekly':
@@ -366,8 +524,8 @@ def main():
     if args.format in ['csv', 'both']:
         generator.save_report_as_csv(report_data, f"{output_base}.csv")
         
-    # Generate performance chart
-    generator.generate_performance_chart(report_data, f"{output_base}_chart.png")
+    # Generate performance charts
+    generator.generate_detailed_charts(report_data, output_base)
 
 if __name__ == "__main__":
     main()

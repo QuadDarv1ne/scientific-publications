@@ -37,7 +37,7 @@ class PerformanceMetric(Base):
     download_mbps = Column(Float)
     upload_mbps = Column(Float)
     ping_ms = Column(Float)
-    packet_loss_percent = Column(Float)
+    packet_loss_percent = Column(Float)  # Added packet loss tracking
     server_name = Column(String(100))
     location = Column(String(100))
 
@@ -79,7 +79,7 @@ class StarlinkMonitor:
         Base.metadata.create_all(engine)
         return engine
         
-    def run_speedtest(self) -> Dict[str, float]:
+    def run_speedtest(self) -> Dict[str, Any]:
         """
         Run a speedtest and return results.
         
@@ -109,12 +109,28 @@ class StarlinkMonitor:
                 'ping_ms': ping,
                 'server_name': st.results.server['name']
             }
-        except Exception as e:
-            logger.error(f"Speedtest failed: {e}")
+        except speedtest.ConfigRetrievalError as e:
+            logger.error(f"Speedtest configuration error: {e}")
             return {
-                'download_mbps': 0,
-                'upload_mbps': 0,
-                'ping_ms': 0,
+                'download_mbps': 0.0,
+                'upload_mbps': 0.0,
+                'ping_ms': 0.0,
+                'server_name': 'Unknown'
+            }
+        except speedtest.SpeedtestException as e:
+            logger.error(f"Speedtest error: {e}")
+            return {
+                'download_mbps': 0.0,
+                'upload_mbps': 0.0,
+                'ping_ms': 0.0,
+                'server_name': 'Unknown'
+            }
+        except Exception as e:
+            logger.error(f"Unexpected error during speedtest: {e}")
+            return {
+                'download_mbps': 0.0,
+                'upload_mbps': 0.0,
+                'ping_ms': 0.0,
                 'server_name': 'Unknown'
             }
             
@@ -142,8 +158,10 @@ class StarlinkMonitor:
                     total_time += delay * 1000  # Convert to ms
                     ping_times.append(delay * 1000)
                 time.sleep(0.1)  # Small delay between pings
+            except ping3.PingError as e:
+                logger.warning(f"Ping {i+1} failed with ping3 error: {e}")
             except Exception as e:
-                logger.warning(f"Ping {i+1} failed: {e}")
+                logger.warning(f"Ping {i+1} failed with unexpected error: {e}")
                 
         packet_loss = ((count - successful_pings) / count) * 100
         avg_ping = total_time / successful_pings if successful_pings > 0 else 0
@@ -166,29 +184,51 @@ class StarlinkMonitor:
         """
         logger.info("Collecting performance metrics...")
         
-        # Run speedtest
-        speed_results = self.run_speedtest()
-        
-        # Run ping tests to multiple servers
-        ping_servers = self.config.get('monitoring', {}).get('starlink', {}).get('servers', [
-            {'host': '8.8.8.8', 'name': 'Google DNS'},
-            {'host': '1.1.1.1', 'name': 'Cloudflare'}
-        ])
-        
-        ping_results = {}
-        for server in ping_servers:
-            host = server['host']
-            results = self.run_ping_test(host)
-            ping_results[server['name']] = results
+        try:
+            # Run speedtest
+            speed_results = self.run_speedtest()
             
-        # Combine all results
-        metrics = {
-            'timestamp': datetime.utcnow().isoformat(),
-            'speedtest': speed_results,
-            'ping_tests': ping_results
-        }
-        
-        return metrics
+            # Run ping tests to multiple servers
+            ping_servers = self.config.get('monitoring', {}).get('starlink', {}).get('servers', [
+                {'host': '8.8.8.8', 'name': 'Google DNS'},
+                {'host': '1.1.1.1', 'name': 'Cloudflare'}
+            ])
+            
+            ping_results = {}
+            for server in ping_servers:
+                try:
+                    host = server['host']
+                    results = self.run_ping_test(host)
+                    ping_results[server['name']] = results
+                except Exception as e:
+                    logger.error(f"Error running ping test for {server['name']}: {e}")
+                    ping_results[server['name']] = {
+                        'avg_ping_ms': 0,
+                        'packet_loss_percent': 0,
+                        'min_ping_ms': 0,
+                        'max_ping_ms': 0
+                    }
+                
+            # Combine all results
+            metrics = {
+                'timestamp': datetime.utcnow().isoformat(),
+                'speedtest': speed_results,
+                'ping_tests': ping_results
+            }
+            
+            return metrics
+        except Exception as e:
+            logger.error(f"Error collecting metrics: {e}")
+            return {
+                'timestamp': datetime.utcnow().isoformat(),
+                'speedtest': {
+                    'download_mbps': 0.0,
+                    'upload_mbps': 0.0,
+                    'ping_ms': 0.0,
+                    'server_name': 'Unknown'
+                },
+                'ping_tests': {}
+            }
         
     def store_metrics(self, metrics: Dict[str, Any]):
         """
@@ -203,10 +243,17 @@ class StarlinkMonitor:
         try:
             # Store speedtest results
             speedtest_data = metrics.get('speedtest', {})
+            
+            # Get packet loss from ping tests (use average of all servers)
+            ping_tests = metrics.get('ping_tests', {})
+            packet_loss_values = [test.get('packet_loss_percent', 0) for test in ping_tests.values()]
+            avg_packet_loss = sum(packet_loss_values) / len(packet_loss_values) if packet_loss_values else 0
+            
             metric = PerformanceMetric(
                 download_mbps=speedtest_data.get('download_mbps', 0),
                 upload_mbps=speedtest_data.get('upload_mbps', 0),
                 ping_ms=speedtest_data.get('ping_ms', 0),
+                packet_loss_percent=avg_packet_loss,  # Added packet loss tracking
                 server_name=speedtest_data.get('server_name', 'Unknown'),
                 location='Starlink'
             )
@@ -255,12 +302,24 @@ def main():
     
     args = parser.parse_args()
     
-    monitor = StarlinkMonitor(args.config)
-    
-    if args.once:
-        monitor.run_monitoring_cycle()
-    else:
-        monitor.run_continuous_monitoring(args.interval)
+    try:
+        monitor = StarlinkMonitor(args.config)
+        
+        if args.once:
+            monitor.run_monitoring_cycle()
+        else:
+            monitor.run_continuous_monitoring(args.interval)
+    except FileNotFoundError:
+        logger.error(f"Configuration file {args.config} not found")
+        print(f"Error: Configuration file {args.config} not found")
+        print("Please create a config.json file or specify the correct path with --config")
+        return 1
+    except Exception as e:
+        logger.error(f"Unexpected error: {e}")
+        print(f"Error: {e}")
+        return 1
+        
+    return 0
 
 if __name__ == "__main__":
-    main()
+    exit(main())

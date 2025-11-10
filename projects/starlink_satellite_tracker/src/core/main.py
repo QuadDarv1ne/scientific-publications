@@ -15,8 +15,7 @@ try:
     import requests
     import numpy as np
     import pandas as pd
-    from skyfield.api import load, EarthSatellite
-    from skyfield.topos import wgs84
+    from skyfield.api import load, EarthSatellite, Topos
 except ImportError as e:
     print(f"Missing required library: {e}")
     print("Please install dependencies with: pip install -r requirements.txt")
@@ -29,13 +28,33 @@ class StarlinkTracker:
         self.config = config or self._default_config()
         self.satellites = []
         self.ts = load.timescale()
-        self.earth = load('earth.bsp')
+        try:
+            self.earth = load('earth.bsp')
+        except Exception as e:
+            logging.warning(f"Could not load earth.bsp: {e}")
+            self.earth = None
         
         # Create data directory if it doesn't exist
         os.makedirs(self.config['data_sources']['tle_cache_path'], exist_ok=True)
         
     def _default_config(self):
         """Return default configuration."""
+        # Try to load configuration from file
+        try:
+            import json
+            import os
+            # Try to find config.json in the project root
+            config_path = 'config.json'
+            if not os.path.exists(config_path):
+                # Try parent directory
+                config_path = os.path.join('..', 'config.json')
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+            return config
+        except Exception as e:
+            logging.warning(f"Could not load config.json: {e}. Using default configuration.")
+            
+        # Default configuration
         return {
             "data_sources": {
                 "celestrak_url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle",
@@ -68,24 +87,34 @@ class StarlinkTracker:
                 logging.info("Using cached TLE data")
                 return self._load_tle_from_file(cache_file)
         
-        # Download fresh data
-        try:
-            logging.info("Downloading latest TLE data from Celestrak")
-            response = requests.get(self.config['data_sources']['celestrak_url'])
-            response.raise_for_status()
-            
-            with open(cache_file, 'w') as f:
-                f.write(response.text)
-            
-            return self._load_tle_from_file(cache_file)
-        except Exception as e:
-            logging.error(f"Failed to download TLE data: {e}")
-            # Try to use cached data if available
-            if os.path.exists(cache_file):
-                logging.info("Using cached TLE data due to download failure")
+        # Try primary source first
+        urls_to_try = [self.config['data_sources']['celestrak_url']]
+        
+        # Add backup URLs if available
+        if 'backup_urls' in self.config['data_sources']:
+            urls_to_try.extend(self.config['data_sources']['backup_urls'])
+        
+        # Try each URL until one works
+        for url in urls_to_try:
+            try:
+                logging.info(f"Downloading latest TLE data from {url}")
+                response = requests.get(url, timeout=30)
+                response.raise_for_status()
+                
+                with open(cache_file, 'w') as f:
+                    f.write(response.text)
+                
                 return self._load_tle_from_file(cache_file)
-            else:
-                raise
+            except Exception as e:
+                logging.warning(f"Failed to download TLE data from {url}: {e}")
+                continue
+        
+        # If all sources failed, try to use cached data if available
+        if os.path.exists(cache_file):
+            logging.info("Using cached TLE data due to download failure")
+            return self._load_tle_from_file(cache_file)
+        else:
+            raise Exception("Failed to download TLE data from all sources and no cached data available")
     
     def _load_tle_from_file(self, filename):
         """Load TLE data from file and create satellite objects."""
@@ -115,8 +144,11 @@ class StarlinkTracker:
         if not self.satellites:
             raise ValueError("No satellites loaded. Call update_tle_data() first.")
         
+        if self.earth is None:
+            raise ValueError("Earth data not loaded. Check internet connection.")
+        
         # Set observer location
-        observer = self.earth + wgs84.latlon(latitude, longitude, elevation_m=altitude)
+        observer = self.earth + Topos(latitude, longitude, elevation_m=altitude)
         
         # Time range for predictions
         t0 = self.ts.now()

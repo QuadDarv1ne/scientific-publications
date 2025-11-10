@@ -40,6 +40,7 @@
                             <option value="download">Download Speed</option>
                             <option value="upload">Upload Speed</option>
                             <option value="ping">Ping</option>
+                            <option value="packetloss">Packet Loss</option>
                         </select>
                     </div>
                     <div class="col-md-3">
@@ -119,6 +120,13 @@
                             <td id="pingMax">--</td>
                             <td id="pingStd">--</td>
                         </tr>
+                        <tr>
+                            <td>Packet Loss (%)</td>
+                            <td id="packetLossMin">--</td>
+                            <td id="packetLossAvg">--</td>
+                            <td id="packetLossMax">--</td>
+                            <td id="packetLossStd">--</td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
@@ -151,6 +159,7 @@
                                 <th>Download (Mbps)</th>
                                 <th>Upload (Mbps)</th>
                                 <th>Ping (ms)</th>
+                                <th>Packet Loss (%)</th>
                                 <th>Server</th>
                             </tr>
                         </thead>
@@ -222,12 +231,137 @@
     function updateCharts(data) {
         // Update trend chart
         const ctx1 = document.getElementById('trendChart').getContext('2d');
-        // Implementation would go here
+        
+        // Convert data for Chart.js
+        const timestamps = data.map(item => new Date(item.timestamp).toLocaleDateString());
+        const downloadSpeeds = data.map(item => item.download_mbps);
+        const uploadSpeeds = data.map(item => item.upload_mbps);
+        const pingTimes = data.map(item => item.ping_ms);
+        const packetLoss = data.map(item => item.packet_loss_percent);
+        
+        // Clear existing chart if it exists
+        if (window.trendChart) {
+            window.trendChart.destroy();
+        }
+        
+        // Create new chart
+        window.trendChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
+                    label: 'Download Speed (Mbps)',
+                    data: downloadSpeeds,
+                    borderColor: 'rgb(54, 162, 235)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Upload Speed (Mbps)',
+                    data: uploadSpeeds,
+                    borderColor: 'rgb(75, 192, 192)',
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    tension: 0.1
+                }, {
+                    label: 'Ping (ms)',
+                    data: pingTimes,
+                    borderColor: 'rgb(255, 99, 132)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    tension: 0.1,
+                    yAxisID: 'y1'
+                }, {
+                    label: 'Packet Loss (%)',
+                    data: packetLoss,
+                    borderColor: 'rgb(255, 159, 64)',
+                    backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                    tension: 0.1,
+                    yAxisID: 'y2'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Speed (Mbps)'
+                        }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Ping (ms)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    },
+                    y2: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Packet Loss (%)'
+                        },
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
     }
     
     function updateStats(data) {
-        // Update statistics table
-        // Implementation would go here
+        // Calculate statistics for download speed
+        const downloadSpeeds = data.map(item => item.download_mbps);
+        const uploadSpeeds = data.map(item => item.upload_mbps);
+        const pingTimes = data.map(item => item.ping_ms);
+        const packetLoss = data.map(item => item.packet_loss_percent);
+        
+        // Helper function to calculate stats
+        function calculateStats(values) {
+            const min = Math.min(...values);
+            const max = Math.max(...values);
+            const avg = values.reduce((a, b) => a + b, 0) / values.length;
+            const std = Math.sqrt(values.reduce((sq, n) => sq + Math.pow(n - avg, 2), 0) / values.length);
+            return { min, max, avg, std };
+        }
+        
+        // Update download stats
+        const downloadStats = calculateStats(downloadSpeeds);
+        document.getElementById('downloadMin').textContent = downloadStats.min.toFixed(2);
+        document.getElementById('downloadAvg').textContent = downloadStats.avg.toFixed(2);
+        document.getElementById('downloadMax').textContent = downloadStats.max.toFixed(2);
+        document.getElementById('downloadStd').textContent = downloadStats.std.toFixed(2);
+        
+        // Update upload stats
+        const uploadStats = calculateStats(uploadSpeeds);
+        document.getElementById('uploadMin').textContent = uploadStats.min.toFixed(2);
+        document.getElementById('uploadAvg').textContent = uploadStats.avg.toFixed(2);
+        document.getElementById('uploadMax').textContent = uploadStats.max.toFixed(2);
+        document.getElementById('uploadStd').textContent = uploadStats.std.toFixed(2);
+        
+        // Update ping stats
+        const pingStats = calculateStats(pingTimes);
+        document.getElementById('pingMin').textContent = pingStats.min.toFixed(2);
+        document.getElementById('pingAvg').textContent = pingStats.avg.toFixed(2);
+        document.getElementById('pingMax').textContent = pingStats.max.toFixed(2);
+        document.getElementById('pingStd').textContent = pingStats.std.toFixed(2);
+        
+        // Update packet loss stats
+        const packetLossStats = calculateStats(packetLoss);
+        document.getElementById('packetLossMin').textContent = packetLossStats.min.toFixed(2);
+        document.getElementById('packetLossAvg').textContent = packetLossStats.avg.toFixed(2);
+        document.getElementById('packetLossMax').textContent = packetLossStats.max.toFixed(2);
+        document.getElementById('packetLossStd').textContent = packetLossStats.std.toFixed(2);
     }
     
     function updateTable(data) {
@@ -241,6 +375,7 @@
                 <td>${item.download_mbps.toFixed(2)}</td>
                 <td>${item.upload_mbps.toFixed(2)}</td>
                 <td>${item.ping_ms.toFixed(2)}</td>
+                <td>${item.packet_loss_percent.toFixed(2)}</td>
                 <td>${item.server_name}</td>
             `;
             tbody.appendChild(row);

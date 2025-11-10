@@ -15,6 +15,14 @@ class DataProcessor:
     def __init__(self, config=None):
         """Initialize data processor with optional configuration."""
         self.config = config or {}
+        
+        # Load export configuration
+        self.export_config = self.config.get('export', {
+            'default_format': 'json',
+            'include_tle_data': True,
+            'include_predictions': True,
+            'compress_large_files': True
+        })
         self.data_directory = self.config.get('data_sources', {}).get('tle_cache_path', 'data/tle_cache/')
         
     def load_satellite_data(self, filename=None):
@@ -75,9 +83,15 @@ class DataProcessor:
             return False
             
         try:
+            compress = self.export_config.get('compress_large_files', True)
             df = pd.DataFrame(data)
-            df.to_csv(filename, index=False)
-            logging.info(f"Exported {len(data)} records to {filename}")
+            if compress and len(data) > 1000:
+                # Compress large files
+                df.to_csv(filename + '.gz', index=False, compression='gzip')
+                logging.info(f"Exported {len(data)} records to {filename}.gz (compressed)")
+            else:
+                df.to_csv(filename, index=False)
+                logging.info(f"Exported {len(data)} records to {filename}")
             return True
         except Exception as e:
             logging.error(f"Failed to export to CSV: {e}")
@@ -89,13 +103,24 @@ class DataProcessor:
             return False
             
         try:
-            with open(filename, 'w') as f:
-                json.dump({
-                    'satellites': data,
-                    'exported': datetime.now().isoformat(),
-                    'count': len(data)
-                }, f, indent=2)
-            logging.info(f"Exported {len(data)} records to {filename}")
+            compress = self.export_config.get('compress_large_files', True)
+            export_data = {
+                'satellites': data,
+                'exported': datetime.now().isoformat(),
+                'count': len(data),
+                'version': '1.0'
+            }
+            
+            if compress and len(data) > 1000:
+                # Compress large files
+                import gzip
+                with gzip.open(filename + '.gz', 'wt', encoding='utf-8') as f:
+                    json.dump(export_data, f, indent=2)
+                logging.info(f"Exported {len(data)} records to {filename}.gz (compressed)")
+            else:
+                with open(filename, 'w') as f:
+                    json.dump(export_data, f, indent=2)
+                logging.info(f"Exported {len(data)} records to {filename}")
             return True
         except Exception as e:
             logging.error(f"Failed to export to JSON: {e}")
@@ -140,8 +165,22 @@ def main():
     logging.basicConfig(level=logging.INFO, 
                        format='%(asctime)s - %(levelname)s - %(message)s')
     
+    # Load configuration
+    try:
+        import json
+        import os
+        # Try to find config.json in the project root
+        config_path = 'config.json'
+        if not os.path.exists(config_path):
+            # Try parent directory
+            config_path = os.path.join('..', 'config.json')
+        with open(config_path, 'r') as f:
+            config = json.load(f)
+    except:
+        config = {}
+    
     # Initialize processor
-    processor = DataProcessor()
+    processor = DataProcessor(config)
     
     # Load satellite data
     satellites = processor.load_satellite_data()

@@ -18,10 +18,14 @@ git clone <repository-url>
 pip install -r requirements.txt
 
 # Run the tracker
-python main.py --help
+python starlink_tracker.py track --help
 
 # Start the web interface
-python web_app.py
+python starlink_tracker.py web
+
+# Or run directly from source directories
+python src/core/main.py --help
+python src/web/web_app.py
 ```
 
 ## 📖 Описание
@@ -108,13 +112,16 @@ optional arguments:
 
 ```bash
 # Обновить данные TLE и показать предстоящие прохождения
-python main.py --update
+python starlink_tracker.py track --update
 
 # Показать 3D визуализацию орбит
-python main.py --visualize
+python starlink_tracker.py track --visualize
 
 # Включить отладочный режим
-python main.py --debug
+python starlink_tracker.py track --debug
+
+# Или запустить напрямую из директории src/core
+python src/core/main.py --update
 ```
 
 ## 🖥️ Веб-интерфейс
@@ -129,7 +136,11 @@ python main.py --debug
 ### Запуск веб-интерфейса
 
 ```bash
-python web_app.py
+# Используя главный скрипт
+python starlink_tracker.py web
+
+# Или напрямую из директории src/web
+python src/web/web_app.py
 ```
 
 После запуска откройте в браузере http://localhost:5000

@@ -1,4 +1,3 @@
-
 ## 📄 README.md для Starlink Performance Monitor
 
 ```markdown
@@ -82,22 +81,35 @@ python-telegram-bot==20.4
 scikit-learn==1.3.0
 statsmodels==0.14.0
 openmeteo_requests==1.0.0  # Для метеоданных
+flask==2.3.2
+pytest==7.4.0
+pytest-cov==4.1.0
+pylint==2.17.4
+black==23.3.0
+sphinx==7.0.1
+sphinx-rtd-theme==1.2.2
 ```
 
-📦 Установка
+## 📦 Установка
+
 Вариант 1: Локальная установка
 
-```
+```bash
 # Клонирование репозитория
 git clone https://github.com/yourusername/starlink-monitor.git
 cd starlink-monitor
 
 # Создание виртуального окружения
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # Linux/Mac
+# или
+venv\Scripts\activate     # Windows
 
 # Установка зависимостей
 pip install -r requirements.txt
+
+# Проверка установки
+python test_installation.py
 
 # Настройка базы данных
 python setup_database.py
@@ -108,7 +120,7 @@ cp config.example.json config.json
 
 Вариант 2: Docker (рекомендуется)
 
-```
+```bash
 # Сборка и запуск контейнеров
 docker-compose up -d --build
 
@@ -118,7 +130,7 @@ docker-compose exec app python setup_database.py
 
 Вариант 3: Установка как сервис (Linux)
 
-```
+```bash
 # Копирование сервисного файла
 sudo cp starlink-monitor.service /etc/systemd/system/
 
@@ -126,15 +138,28 @@ sudo cp starlink-monitor.service /etc/systemd/system/
 sudo chown root:root /etc/systemd/system/starlink-monitor.service
 sudo chmod 644 /etc/systemd/system/starlink-monitor.service
 
+# Создание пользователя
+sudo useradd --system --no-create-home starlink
+
+# Создание директории и копирование файлов
+sudo mkdir -p /opt/starlink-monitor
+sudo cp -r . /opt/starlink-monitor/
+sudo chown -R starlink:starlink /opt/starlink-monitor
+
+# Создание виртуального окружения
+sudo -u starlink python3 -m venv /opt/starlink-monitor/venv
+sudo -u starlink /opt/starlink-monitor/venv/bin/pip install -r /opt/starlink-monitor/requirements.txt
+
 # Запуск сервиса
 sudo systemctl daemon-reload
 sudo systemctl enable starlink-monitor
 sudo systemctl start starlink-monitor
 ```
 
-⚙️ Конфигурация
+## ⚙️ Конфигурация
+
 Создайте файл config.json:
-```
+```json
 {
   "database": {
     "type": "postgresql",
@@ -228,22 +253,23 @@ sudo systemctl start starlink-monitor
 }
 ```
 
-🚦 Использование
+## 🚦 Использование
+
 Запуск основного мониторинга
 
-```
+```bash
 python monitor.py --config config.json
 ```
 
 Запуск веб-интерфейса
 
-```
+```bash
 python web_app.py --port 8050
 ```
 
 Генерация отчетов
 
-```
+```bash
 # Ежедневный отчет
 python generate_report.py --type daily --output daily_report.pdf
 
@@ -256,7 +282,7 @@ python generate_report.py --start "2025-11-01" --end "2025-11-07" --format excel
 
 Ручное тестирование
 
-```
+```bash
 # Запуск одного цикла тестов
 python manual_test.py
 
@@ -269,7 +295,7 @@ python manual_test.py --type ping
 
 Команды Docker
 
-```
+```bash
 # Просмотр логов
 docker-compose logs -f app
 
@@ -280,7 +306,22 @@ docker-compose exec app python manual_test.py
 docker-compose exec db pg_dump -U monitor_user starlink_monitor > backup.sql
 ```
 
-📊 Веб-интерфейс
+## 🧪 Тестирование
+
+Запуск unit-тестов
+
+```bash
+python -m pytest test_monitor.py -v
+```
+
+Проверка установки
+
+```bash
+python test_installation.py
+```
+
+## 📊 Веб-интерфейс
+
 После запуска веб-приложения откройте http://localhost:8050 в браузере.
 
 Доступные страницы:
@@ -290,6 +331,7 @@ Comparison - Сравнение с другими провайдерами
 Alerts - История оповещений и настройки
 Reports - Генерация и просмотр отчетов
 Settings - Настройки системы и пользователей
+
 Особенности дашборда:
 📈 Live Metrics: Реальные значения скорости и пинга
 🌡️ Weather Correlation: Связь погоды и производительности
@@ -297,10 +339,11 @@ Settings - Настройки системы и пользователей
 📉 Trend Analysis: Долгосрочные тренды и прогнозы
 ⚠️ Alert Panel: Текущие предупреждения и инциденты
 
-🔧 Расширенная настройка
+## 🔧 Расширенная настройка
+
 Интеграция с Grafana
 
-```
+```yaml
 # docker-compose.override.yml
 services:
   grafana:
@@ -315,7 +358,7 @@ services:
 
 Настройка cron для автоматических отчетов
 
-```
+```bash
 # Ежедневный отчет в 8 утра
 0 8 * * * /path/to/venv/bin/python /path/to/generate_report.py --type daily --email admin@example.com
 
@@ -325,7 +368,7 @@ services:
 
 Настройка reverse proxy (Nginx)
 
-```
+```nginx
 server {
     listen 80;
     server_name monitor.yourdomain.com;
@@ -345,7 +388,8 @@ server {
 }
 ```
 
-🤝 Вклад в проект
+## 🤝 Вклад в проект
+
 Мы активно принимаем вклады! См. CONTRIBUTING.md для инструкций.
 
 Приоритетные задачи:
@@ -354,18 +398,24 @@ server {
 🌍 Глобальная сеть мониторинга с crowdsourcing
 📡 Интеграция с оборудованием Starlink (Dishy API)
 📊 Расширенные отчеты для бизнес-аналитики
-📜 Лицензия
+
+## 📜 Лицензия
+
 Проект распространяется под лицензией Apache License 2.0. См. LICENSE для подробностей.
 
-🙏 Благодарности
+## 🙏 Благодарности
+
 Speedtest.net - Инфраструктура для тестирования скорости
 Open-Meteo - Бесплатные метеоданные
 Plotly/Dash - Фреймворк для веб-визуализации
 PostgreSQL - Надежная база данных
 SpaceX и сообщество Starlink за вдохновение
-📬 Поддержка
+
+## 📬 Поддержка
+
 Для вопросов и поддержки, пожалуйста:
 
 Создайте issue в GitHub
 Напишите в Telegram: @starlink_monitor_support
 Email: support@starlink-monitor.example.com
+```

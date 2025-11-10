@@ -14,7 +14,7 @@
 
 <!-- Current Metrics -->
 <div class="row mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card metric-card text-white bg-primary">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-download"></i> Download Speed</h5>
@@ -23,7 +23,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card metric-card text-white bg-success">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-upload"></i> Upload Speed</h5>
@@ -32,12 +32,21 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card metric-card text-white bg-info">
             <div class="card-body">
                 <h5 class="card-title"><i class="fas fa-stopwatch"></i> Ping</h5>
                 <h2 class="card-text" id="pingTime">-- ms</h2>
                 <small>Last updated: <span id="pingTimeTime">--</span></small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card metric-card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-exclamation-triangle"></i> Packet Loss</h5>
+                <h2 class="card-text" id="packetLoss">-- %</h2>
+                <small>Last updated: <span id="packetLossTime">--</span></small>
             </div>
         </div>
     </div>
@@ -79,6 +88,29 @@
         </div>
     </div>
 </div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Packet Loss Over Time</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="packetLossChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">Performance Summary</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="summaryChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -93,11 +125,13 @@
                 document.getElementById('downloadSpeed').textContent = data.download_mbps.toFixed(2) + ' Mbps';
                 document.getElementById('uploadSpeed').textContent = data.upload_mbps.toFixed(2) + ' Mbps';
                 document.getElementById('pingTime').textContent = data.ping_ms.toFixed(2) + ' ms';
+                document.getElementById('packetLoss').textContent = data.packet_loss_percent.toFixed(2) + ' %';
                 
                 const timestamp = new Date(data.timestamp).toLocaleTimeString();
                 document.getElementById('downloadTime').textContent = timestamp;
                 document.getElementById('uploadTime').textContent = timestamp;
                 document.getElementById('pingTimeTime').textContent = timestamp;
+                document.getElementById('packetLossTime').textContent = timestamp;
             }
         } catch (error) {
             console.error('Error fetching current metrics:', error);
@@ -116,6 +150,7 @@
                 const downloadSpeeds = data.map(item => item.download_mbps);
                 const uploadSpeeds = data.map(item => item.upload_mbps);
                 const pingTimes = data.map(item => item.ping_ms);
+                const packetLoss = data.map(item => item.packet_loss_percent);
                 
                 // Performance chart
                 const ctx1 = document.getElementById('performanceChart').getContext('2d');
@@ -173,8 +208,34 @@
                     }
                 });
                 
+                // Packet loss chart
+                const ctx3 = document.getElementById('packetLossChart').getContext('2d');
+                new Chart(ctx3, {
+                    type: 'line',
+                    data: {
+                        labels: timestamps,
+                        datasets: [{
+                            label: 'Packet Loss (%)',
+                            data: packetLoss,
+                            borderColor: 'rgb(255, 159, 64)',
+                            backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                            tension: 0.1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100
+                            }
+                        }
+                    }
+                });
+                
                 // Download distribution (histogram)
-                const ctx3 = document.getElementById('downloadDistribution').getContext('2d');
+                const ctx4 = document.getElementById('downloadDistribution').getContext('2d');
                 const downloadBins = Array(10).fill(0);
                 const maxDownload = Math.max(...downloadSpeeds);
                 const binSize = maxDownload / 10;
@@ -186,7 +247,7 @@
                 
                 const binLabels = Array.from({length: 10}, (_, i) => `${(i * binSize).toFixed(0)}-${((i + 1) * binSize).toFixed(0)} Mbps`);
                 
-                new Chart(ctx3, {
+                new Chart(ctx4, {
                     type: 'bar',
                     data: {
                         labels: binLabels,
@@ -204,6 +265,45 @@
                         scales: {
                             y: {
                                 beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                
+                // Summary chart (radar chart)
+                const ctx5 = document.getElementById('summaryChart').getContext('2d');
+                // Calculate averages
+                const avgDownload = downloadSpeeds.reduce((a, b) => a + b, 0) / downloadSpeeds.length;
+                const avgUpload = uploadSpeeds.reduce((a, b) => a + b, 0) / uploadSpeeds.length;
+                const avgPing = pingTimes.reduce((a, b) => a + b, 0) / pingTimes.length;
+                const avgPacketLoss = packetLoss.reduce((a, b) => a + b, 0) / packetLoss.length;
+                
+                new Chart(ctx5, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Download (Mbps)', 'Upload (Mbps)', 'Ping (ms)', 'Packet Loss (%)'],
+                        datasets: [{
+                            label: 'Performance Metrics',
+                            data: [avgDownload, avgUpload, avgPing, avgPacketLoss],
+                            fill: true,
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgb(255, 99, 132)',
+                            pointBackgroundColor: 'rgb(255, 99, 132)',
+                            pointBorderColor: '#fff',
+                            pointHoverBackgroundColor: '#fff',
+                            pointHoverBorderColor: 'rgb(255, 99, 132)'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            r: {
+                                angleLines: {
+                                    display: true
+                                },
+                                suggestedMin: 0,
+                                suggestedMax: 100
                             }
                         }
                     }

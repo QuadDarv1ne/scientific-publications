@@ -9,8 +9,10 @@ import json
 import tempfile
 import os
 from unittest.mock import patch, MagicMock
+from datetime import datetime
 
 from monitor import StarlinkMonitor, PerformanceMetric
+
 
 class TestStarlinkMonitor(unittest.TestCase):
     """Test cases for StarlinkMonitor class."""
@@ -104,6 +106,86 @@ class TestStarlinkMonitor(unittest.TestCase):
         self.assertEqual(results['avg_ping_ms'], 30.0)  # Average of successful pings
         self.assertEqual(results['min_ping_ms'], 25.0)
         self.assertEqual(results['max_ping_ms'], 35.0)
+        
+    def test_collect_metrics(self):
+        """Test collecting metrics."""
+        with patch.object(StarlinkMonitor, 'run_speedtest') as mock_speedtest, \
+             patch.object(StarlinkMonitor, 'run_ping_test') as mock_ping_test:
+            
+            # Mock speedtest results
+            mock_speedtest.return_value = {
+                'download_mbps': 100.0,
+                'upload_mbps': 50.0,
+                'ping_ms': 25.0,
+                'server_name': 'Test Server'
+            }
+            
+            # Mock ping test results
+            mock_ping_test.return_value = {
+                'avg_ping_ms': 30.0,
+                'packet_loss_percent': 5.0,
+                'min_ping_ms': 25.0,
+                'max_ping_ms': 35.0
+            }
+            
+            monitor = StarlinkMonitor(self.temp_config.name)
+            metrics = monitor.collect_metrics()
+            
+            self.assertIn('timestamp', metrics)
+            self.assertIn('speedtest', metrics)
+            self.assertIn('ping_tests', metrics)
+            self.assertEqual(metrics['speedtest']['download_mbps'], 100.0)
+            self.assertEqual(metrics['speedtest']['upload_mbps'], 50.0)
+            self.assertEqual(metrics['speedtest']['ping_ms'], 25.0)
+            
+    @patch('monitor.sessionmaker')
+    @patch('monitor.create_engine')
+    def test_store_metrics(self, mock_create_engine, mock_sessionmaker):
+        """Test storing metrics in the database."""
+        # Mock database session
+        mock_session = MagicMock()
+        mock_sessionmaker.return_value.return_value = mock_session
+        
+        # Mock metrics data
+        metrics = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'speedtest': {
+                'download_mbps': 100.0,
+                'upload_mbps': 50.0,
+                'ping_ms': 25.0,
+                'server_name': 'Test Server'
+            },
+            'ping_tests': {
+                'Google DNS': {
+                    'avg_ping_ms': 30.0,
+                    'packet_loss_percent': 5.0,
+                    'min_ping_ms': 25.0,
+                    'max_ping_ms': 35.0
+                },
+                'Cloudflare': {
+                    'avg_ping_ms': 28.0,
+                    'packet_loss_percent': 3.0,
+                    'min_ping_ms': 23.0,
+                    'max_ping_ms': 33.0
+                }
+            }
+        }
+        
+        monitor = StarlinkMonitor(self.temp_config.name)
+        monitor.store_metrics(metrics)
+        
+        # Verify that the session methods were called
+        mock_session.add.assert_called_once()
+        mock_session.commit.assert_called_once()
+        
+        # Verify that the stored metric has the correct average packet loss
+        stored_metric = mock_session.add.call_args[0][0]
+        self.assertEqual(stored_metric.download_mbps, 100.0)
+        self.assertEqual(stored_metric.upload_mbps, 50.0)
+        self.assertEqual(stored_metric.ping_ms, 25.0)
+        self.assertEqual(stored_metric.packet_loss_percent, 4.0)  # Average of 5.0 and 3.0
+        self.assertEqual(stored_metric.server_name, 'Test Server')
+
 
 class TestPerformanceMetric(unittest.TestCase):
     """Test cases for PerformanceMetric ORM model."""
@@ -114,6 +196,7 @@ class TestPerformanceMetric(unittest.TestCase):
             download_mbps=100.5,
             upload_mbps=50.2,
             ping_ms=25.3,
+            packet_loss_percent=2.1,
             server_name="Test Server",
             location="Starlink"
         )
@@ -121,8 +204,26 @@ class TestPerformanceMetric(unittest.TestCase):
         self.assertEqual(metric.download_mbps, 100.5)
         self.assertEqual(metric.upload_mbps, 50.2)
         self.assertEqual(metric.ping_ms, 25.3)
+        self.assertEqual(metric.packet_loss_percent, 2.1)
         self.assertEqual(metric.server_name, "Test Server")
         self.assertEqual(metric.location, "Starlink")
+        
+    def test_performance_metric_default_values(self):
+        """Test creating a PerformanceMetric instance with default values."""
+        metric = PerformanceMetric(
+            download_mbps=100.5,
+            upload_mbps=50.2,
+            ping_ms=25.3,
+            server_name="Test Server"
+        )
+        
+        self.assertEqual(metric.download_mbps, 100.5)
+        self.assertEqual(metric.upload_mbps, 50.2)
+        self.assertEqual(metric.ping_ms, 25.3)
+        self.assertEqual(metric.packet_loss_percent, None)  # Should be None by default
+        self.assertEqual(metric.server_name, "Test Server")
+        self.assertEqual(metric.location, None)  # Should be None by default
+
 
 if __name__ == '__main__':
     unittest.main()
