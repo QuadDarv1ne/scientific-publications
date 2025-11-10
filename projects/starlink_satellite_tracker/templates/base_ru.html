@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Starlink Satellite Tracker</title>
+    <title>Трекер спутников Starlink</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -42,23 +42,23 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="/"><i class="fas fa-satellite"></i> Starlink Tracker</a>
+            <a class="navbar-brand" href="/"><i class="fas fa-satellite"></i> Трекер Starlink</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <div class="navbar-nav">
-                    <a class="nav-link" href="/"><i class="fas fa-home"></i> Dashboard</a>
-                    <a class="nav-link" href="/passes"><i class="fas fa-calendar-alt"></i> Passes</a>
-                    <a class="nav-link" href="/coverage"><i class="fas fa-globe-americas"></i> Coverage</a>
-                    <a class="nav-link" href="/settings"><i class="fas fa-cog"></i> Settings</a>
-                    <a class="nav-link" href="/export"><i class="fas fa-download"></i> Export</a>
+                    <a class="nav-link" href="/"><i class="fas fa-home"></i> Панель управления</a>
+                    <a class="nav-link" href="/passes"><i class="fas fa-calendar-alt"></i> Пролеты</a>
+                    <a class="nav-link" href="/coverage"><i class="fas fa-globe-americas"></i> Покрытие</a>
+                    <a class="nav-link" href="/settings"><i class="fas fa-cog"></i> Настройки</a>
+                    <a class="nav-link" href="/export"><i class="fas fa-download"></i> Экспорт</a>
                 </div>
-                <!-- Language Switcher -->
+                <!-- Переключатель языка -->
                 <div class="navbar-nav ms-auto">
                     <div class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="languageDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-globe"></i> Language
+                            <i class="fas fa-globe"></i> Язык
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="languageDropdown">
                             <li><a class="dropdown-item" href="#" onclick="switchLanguage('en')">English</a></li>
@@ -79,7 +79,7 @@
             <div class="row">
                 <div class="col-md-12 text-center">
                     <p class="mb-0 text-muted">
-                        <i class="fas fa-satellite"></i> Starlink Satellite Tracker &copy; 2025
+                        <i class="fas fa-satellite"></i> Трекер спутников Starlink &copy; 2025
                     </p>
                 </div>
             </div>
@@ -88,21 +88,21 @@
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Function to switch language
+        // Функция переключения языка
         function switchLanguage(lang) {
-            // Set language preference in localStorage
+            // Сохраняем предпочтение языка в localStorage
             localStorage.setItem('preferredLanguage', lang);
             
-            // Reload the page to apply language changes
+            // Перезагружаем страницу для применения изменений
             location.reload();
         }
         
-        // Set the page language based on preference
+        // Устанавливаем язык страницы в соответствии с предпочтениями
         document.addEventListener('DOMContentLoaded', function() {
-            const preferredLanguage = localStorage.getItem('preferredLanguage') || 'en';
+            const preferredLanguage = localStorage.getItem('preferredLanguage') || 'ru';
             document.documentElement.lang = preferredLanguage;
             
-            // Update dropdown text based on current language
+            // Обновляем текст в выпадающем списке в соответствии с текущим языком
             const languageText = preferredLanguage === 'ru' ? 'Русский' : 'English';
             document.querySelector('#languageDropdown').innerHTML = '<i class="fas fa-globe"></i> ' + languageText;
         });

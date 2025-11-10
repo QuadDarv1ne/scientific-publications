@@ -29,6 +29,7 @@ from src.database.db_manager import get_database_manager, get_db_session
 
 # Add project root to path for imports
 import sys
+import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.utils.logging_config import setup_logging, get_logger
@@ -45,6 +46,128 @@ from src.web.realtime_updater import start_realtime_updater, stop_realtime_updat
 setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
 logger = get_logger(__name__)
 
+# Language translations dictionary
+LANGUAGES = {
+    'en': {
+        'dashboard': 'Dashboard',
+        'performance': 'Performance',
+        'alerts': 'Alerts',
+        'reports': 'Reports',
+        'settings': 'Settings',
+        'ml_analysis': 'ML Analysis',
+        'logout': 'Logout',
+        'login': 'Login',
+        'username': 'Username',
+        'password': 'Password',
+        'invalid_credentials': 'Invalid credentials',
+        'performance_history': 'Performance History',
+        'alerts_notifications': 'Alerts & Notifications',
+        'last_1_hour': 'Last 1 Hour',
+        'last_6_hours': 'Last 6 Hours',
+        'last_12_hours': 'Last 12 Hours',
+        'last_24_hours': 'Last 24 Hours',
+        'last_7_days': 'Last 7 Days',
+        'download_speed': 'Download Speed',
+        'upload_speed': 'Upload Speed',
+        'ping': 'Ping',
+        'packet_loss': 'Packet Loss',
+        'performance_history_chart': 'Performance History',
+        'download_distribution': 'Download Speed Distribution',
+        'ping_performance': 'Ping Performance',
+        'packet_loss_over_time': 'Packet Loss Over Time',
+        'performance_summary': 'Performance Summary',
+        'weather_correlation_analysis': 'Weather Correlation Analysis',
+        'weather_parameter': 'Weather Parameter',
+        'performance_metric': 'Performance Metric',
+        'correlation': 'Correlation',
+        'strength': 'Strength',
+        'interpretation': 'Interpretation',
+        'recent_alerts': 'Recent Alerts',
+        'time': 'Time',
+        'type': 'Type',
+        'message': 'Message',
+        'value': 'Value',
+        'threshold': 'Threshold',
+        'no_correlation_data': 'No correlation data available',
+        'no_recent_alerts': 'No recent alerts',
+        'error_loading_data': 'Error loading data',
+        'refresh': 'Refresh',
+        'auto_refresh': 'Auto Refresh',
+        'line': 'Line',
+        'bar': 'Bar',
+        'area': 'Area',
+        'connecting_data_stream': 'Connecting to real-time data stream...',
+        'connected_data_stream': 'Connected to real-time data stream',
+        'disconnected_data_stream': 'Disconnected from real-time data stream',
+        'data_stream_simulation': 'Real-time data stream simulation active',
+        'failed_connect_data_stream': 'Failed to connect to real-time data stream',
+        'data_updated': 'Data updated successfully',
+        'error_fetching_metrics': 'Error fetching current metrics',
+        'no_data_time_range': 'No data available for the selected time range',
+        'error_fetching_chart': 'Error fetching chart data',
+        'site_name': 'Starlink Performance Monitor'
+    },
+    'ru': {
+        'dashboard': 'Панель управления',
+        'performance': 'Производительность',
+        'alerts': 'Оповещения',
+        'reports': 'Отчеты',
+        'settings': 'Настройки',
+        'ml_analysis': 'Анализ ML',
+        'logout': 'Выйти',
+        'login': 'Войти',
+        'username': 'Имя пользователя',
+        'password': 'Пароль',
+        'invalid_credentials': 'Неверные учетные данные',
+        'performance_history': 'История производительности',
+        'alerts_notifications': 'Оповещения и уведомления',
+        'last_1_hour': 'Последний 1 час',
+        'last_6_hours': 'Последние 6 часов',
+        'last_12_hours': 'Последние 12 часов',
+        'last_24_hours': 'Последние 24 часа',
+        'last_7_days': 'Последние 7 дней',
+        'download_speed': 'Скорость загрузки',
+        'upload_speed': 'Скорость отдачи',
+        'ping': 'Пинг',
+        'packet_loss': 'Потери пакетов',
+        'performance_history_chart': 'История производительности',
+        'download_distribution': 'Распределение скорости загрузки',
+        'ping_performance': 'Производительность пинга',
+        'packet_loss_over_time': 'Потери пакетов со временем',
+        'performance_summary': 'Сводка производительности',
+        'weather_correlation_analysis': 'Анализ корреляции погоды',
+        'weather_parameter': 'Параметр погоды',
+        'performance_metric': 'Метрика производительности',
+        'correlation': 'Корреляция',
+        'strength': 'Сила',
+        'interpretation': 'Интерпретация',
+        'recent_alerts': 'Последние оповещения',
+        'time': 'Время',
+        'type': 'Тип',
+        'message': 'Сообщение',
+        'value': 'Значение',
+        'threshold': 'Порог',
+        'no_correlation_data': 'Нет данных о корреляции',
+        'no_recent_alerts': 'Нет последних оповещений',
+        'error_loading_data': 'Ошибка загрузки данных',
+        'refresh': 'Обновить',
+        'auto_refresh': 'Автообновление',
+        'line': 'Линия',
+        'bar': 'Столбцы',
+        'area': 'Область',
+        'connecting_data_stream': 'Подключение к потоку данных в реальном времени...',
+        'connected_data_stream': 'Подключено к потоку данных в реальном времени',
+        'disconnected_data_stream': 'Отключено от потока данных в реальном времени',
+        'data_stream_simulation': 'Симуляция потока данных в реальном времени активна',
+        'failed_connect_data_stream': 'Не удалось подключиться к потоку данных в реальном времени',
+        'data_updated': 'Данные успешно обновлены',
+        'error_fetching_metrics': 'Ошибка получения текущих метрик',
+        'no_data_time_range': 'Нет данных для выбранного временного диапазона',
+        'error_fetching_chart': 'Ошибка получения данных диаграммы',
+        'site_name': 'Монитор производительности Starlink'
+    }
+}
+
 # Create Flask app with template folder specified
 template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 app = Flask(__name__, template_folder=template_dir)
@@ -52,6 +175,11 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Add secret key for sessions
 app.secret_key = os.urandom(24)
+
+def get_translations():
+    """Get translations for the current language."""
+    lang = session.get('language', 'en')
+    return LANGUAGES.get(lang, LANGUAGES['en'])
 
 def require_auth(f):
     """Decorator to require authentication for routes."""
@@ -63,6 +191,18 @@ def require_auth(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
+
+@app.context_processor
+def inject_translations():
+    """Inject translations into template context."""
+    return dict(t=get_translations())
+
+@app.route('/set_language/<lang>')
+def set_language(lang):
+    """Set the language for the session."""
+    if lang in LANGUAGES:
+        session['language'] = lang
+    return redirect(request.referrer or url_for('dashboard'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -77,7 +217,7 @@ def login():
             session['username'] = username
             return redirect(url_for('dashboard'))
         else:
-            return render_template('login.html', error='Invalid credentials')
+            return render_template('login.html', error='invalid_credentials')
     
     return render_template('login.html')
 

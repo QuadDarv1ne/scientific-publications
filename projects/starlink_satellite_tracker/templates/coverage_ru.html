@@ -1,0 +1,134 @@
+{% extends "base_ru.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Глобальное покрытие Starlink</h1>
+        <p class="lead">Интерактивная карта, показывающая текущее покрытие спутников Starlink по всему миру</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Карта покрытия</h5>
+            </div>
+            <div class="card-body">
+                <div id="coverage-map" style="height: 500px; width: 100%; background-color: #f8f9fa; border-radius: 0.375rem; display: flex; align-items: center; justify-content: center;">
+                    <div class="text-center">
+                        <i class="fas fa-globe-americas fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">Интерактивная визуализация карты покрытия</p>
+                        <p class="small text-muted">В полной реализации здесь будет отображаться карта мира с областями покрытия спутников</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Статистика регионального покрытия</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Регион</th>
+                                <th>Спутники</th>
+                                <th>Покрытие</th>
+                            </tr>
+                        </thead>
+                        <tbody id="coverage-stats">
+                            <tr>
+                                <td colspan="3" class="text-center">Загрузка данных о покрытии...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Статус созвездия</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <h6 class="text-muted">Всего спутников</h6>
+                        <h3 id="total-satellites" class="mb-0">-</h3>
+                    </div>
+                    <div class="icon-circle bg-success text-white">
+                        <i class="fas fa-satellite"></i>
+                    </div>
+                </div>
+                
+                <div class="progress mb-3">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: 92%" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100">92% Работоспособные</div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-6">
+                        <p class="mb-1"><small class="text-muted">Активные</small></p>
+                        <p class="mb-0"><strong id="active-satellites">-</strong></p>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-1"><small class="text-muted">Неактивные</small></p>
+                        <p class="mb-0"><strong id="inactive-satellites">-</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Получение данных о покрытии
+fetch('/api/coverage')
+    .then(response => response.json())
+    .then(data => {
+        // Обновление статистики регионального покрытия
+        const statsTable = document.getElementById('coverage-stats');
+        statsTable.innerHTML = '';
+        
+        if (data.regions && data.regions.length > 0) {
+            data.regions.forEach(region => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${region.name}</td>
+                    <td>${region.satellite_count}</td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <span>${region.coverage_percentage}%</span>
+                            <div class="progress ms-2" style="width: 100px; height: 5px;">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: ${region.coverage_percentage}%" 
+                                     aria-valuenow="${region.coverage_percentage}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                    </td>
+                `;
+                statsTable.appendChild(row);
+            });
+        } else {
+            statsTable.innerHTML = '<tr><td colspan="3" class="text-center">Данные о покрытии недоступны</td></tr>';
+        }
+        
+        // Обновление статуса созвездия
+        document.getElementById('total-satellites').textContent = data.total_satellites || '-';
+        document.getElementById('active-satellites').textContent = Math.round((data.total_satellites || 0) * (data.global_coverage || 0) / 100) || '-';
+        document.getElementById('inactive-satellites').textContent = Math.round((data.total_satellites || 0) * (100 - (data.global_coverage || 0)) / 100) || '-';
+    })
+    .catch(error => {
+        console.error('Ошибка при получении данных о покрытии:', error);
+        document.getElementById('coverage-stats').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Ошибка загрузки данных о покрытии</td></tr>';
+    });
+</script>
+{% endblock %}

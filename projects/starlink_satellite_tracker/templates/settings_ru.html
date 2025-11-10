@@ -1,0 +1,160 @@
+{% extends "base_ru.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Настройки</h1>
+        <p class="lead">Настройте местоположение наблюдения и параметры уведомлений</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Местоположение наблюдателя</h5>
+            </div>
+            <div class="card-body">
+                <form id="location-form">
+                    <div class="mb-3">
+                        <label for="latitude" class="form-label">Широта</label>
+                        <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
+                        <div class="form-text">Диапазон: от -90 до 90 градусов</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="longitude" class="form-label">Долгота</label>
+                        <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
+                        <div class="form-text">Диапазон: от -180 до 180 градусов</div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="altitude" class="form-label">Высота (метры)</label>
+                        <input type="number" class="form-control" id="altitude" step="1" placeholder="0" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="timezone" class="form-label">Часовой пояс</label>
+                        <select class="form-select" id="timezone">
+                            <option value="Europe/Moscow" selected>Москва (GMT+3)</option>
+                            <option value="UTC">UTC</option>
+                            <option value="America/New_York">Нью-Йорк (GMT-5)</option>
+                            <option value="America/Los_Angeles">Лос-Анджелес (GMT-8)</option>
+                            <option value="Asia/Tokyo">Токио (GMT+9)</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Сохранить местоположение</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Настройки уведомлений</h5>
+            </div>
+            <div class="card-body">
+                <form id="notification-form">
+                    <div class="mb-3">
+                        <label class="form-label">Email уведомления</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="email-enabled">
+                            <label class="form-check-label" for="email-enabled">Включить Email уведомления</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email-address" class="form-label">Email адрес</label>
+                        <input type="email" class="form-control" id="email-address" placeholder="ваш@email.com">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telegram уведомления</label>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="telegram-enabled">
+                            <label class="form-check-label" for="telegram-enabled">Включить Telegram уведомления</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="telegram-chat-id" class="form-label">ID чата в Telegram</label>
+                        <input type="text" class="form-control" id="telegram-chat-id" placeholder="ID чата">
+                    </div>
+                    <div class="mb-3">
+                        <label for="min-elevation" class="form-label">Минимальная высота (градусы)</label>
+                        <input type="number" class="form-control" id="min-elevation" min="0" max="90" value="10">
+                        <div class="form-text">Уведомлять только о пролетах выше этой высоты</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Сохранить настройки уведомлений</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Конфигурация системы</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Источники данных</h6>
+                        <div class="mb-3">
+                            <label for="celestrak-url" class="form-label">URL Celestrak</label>
+                            <input type="url" class="form-control" id="celestrak-url" value="https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle">
+                        </div>
+                        <div class="mb-3">
+                            <label for="cache-days" class="form-label">Длительность кэширования (дни)</label>
+                            <input type="number" class="form-control" id="cache-days" min="1" max="30" value="7">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Настройки планировщика</h6>
+                        <div class="mb-3">
+                            <label for="tle-update-cron" class="form-label">Расписание обновления TLE</label>
+                            <input type="text" class="form-control" id="tle-update-cron" value="0 0 */6 * *">
+                            <div class="form-text">Cron выражение для обновления TLE</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="prediction-cron" class="form-label">Расписание обновления прогнозов</label>
+                            <input type="text" class="form-control" id="prediction-cron" value="*/30 * * * *">
+                            <div class="form-text">Cron выражение для обновления прогнозов</div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-success" id="save-config">Сохранить конфигурацию</button>
+                <button type="button" class="btn btn-warning" id="clear-cache">Очистить кэш</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Обработка отправки форм
+document.getElementById('location-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Настройки местоположения успешно сохранены!');
+});
+
+document.getElementById('notification-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    alert('Настройки уведомлений успешно сохранены!');
+});
+
+document.getElementById('save-config').addEventListener('click', function() {
+    alert('Конфигурация системы успешно сохранена!');
+});
+
+document.getElementById('clear-cache').addEventListener('click', function() {
+    if (confirm('Вы уверены, что хотите очистить все кэшированные данные?')) {
+        fetch('/api/cache/clear', { method: 'POST' })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message || 'Кэш успешно очищен!');
+            })
+            .catch(error => {
+                console.error('Ошибка при очистке кэша:', error);
+                alert('Ошибка при очистке кэша');
+            });
+    }
+});
+</script>
+{% endblock %}
