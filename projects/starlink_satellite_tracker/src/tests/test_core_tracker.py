@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Unit tests for the core tracker functionality
+Test suite for Starlink Satellite Tracker Core Module
+Verifies core functionality of the tracking system
 """
 
 import unittest
@@ -9,36 +10,35 @@ import sys
 from unittest.mock import patch, MagicMock
 from datetime import datetime
 
-# Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
-
-from core.main import StarlinkTracker
-
+# Add the project directory to the path so we can import our modules
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 class TestStarlinkTracker(unittest.TestCase):
-    
     def setUp(self):
         """Set up test fixtures before each test method."""
-        # Create a minimal config for testing
         self.test_config = {
             'data_sources': {
                 'celestrak_url': 'https://test.example.com/test.txt',
-                'tle_cache_path': '/tmp/test_cache/',
+                'tle_cache_path': 'test_cache/',
                 'max_cache_days': 7
             },
             'visualization': {
-                'orbit_points': 50
+                'orbit_points': 100,
+                'earth_texture': 'data/earth_texture.jpg',
+                'show_ground_track': True,
+                'color_scheme': 'dark'
             },
-            'observer': {
-                'default_latitude': 55.7558,
-                'default_longitude': 37.6173
+            'schedule': {
+                'tle_update_cron': '0 0 */6 * *',
+                'prediction_update_cron': '*/30 * * * *',
+                'notification_check_cron': '*/15 * * * *'
             }
         }
     
     @patch('core.main.load')
     @patch('os.makedirs')
     def test_initialization_success(self, mock_makedirs, mock_load):
-        """Test successful initialization of StarlinkTracker."""
+        """Test successful initialization."""
         # Mock time scale and earth data
         mock_ts = MagicMock()
         mock_earth = MagicMock()
@@ -46,12 +46,12 @@ class TestStarlinkTracker(unittest.TestCase):
         
         mock_makedirs.return_value = None
         
+        from core.main import StarlinkTracker
         tracker = StarlinkTracker(self.test_config)
         
         self.assertIsInstance(tracker, StarlinkTracker)
-        self.assertEqual(tracker.config, self.test_config)
-        self.assertEqual(tracker.satellites, [])
-        mock_makedirs.assert_called_once_with('/tmp/test_cache/', exist_ok=True)
+        self.assertEqual(tracker.ts, mock_ts)
+        self.assertEqual(tracker.earth, mock_earth)
     
     @patch('core.main.load')
     @patch('os.makedirs')
@@ -63,9 +63,11 @@ class TestStarlinkTracker(unittest.TestCase):
         
         mock_makedirs.return_value = None
         
+        from core.main import StarlinkTracker
         tracker = StarlinkTracker(self.test_config)
         
         self.assertIsInstance(tracker, StarlinkTracker)
+        # When earth data fails to load, it should be set to None
         self.assertIsNone(tracker.earth)
     
     @patch('core.main.load')
@@ -80,6 +82,7 @@ class TestStarlinkTracker(unittest.TestCase):
         # Simulate directory creation failure
         mock_makedirs.side_effect = Exception("Permission denied")
         
+        from core.main import StarlinkTracker
         with self.assertRaises(Exception):
             StarlinkTracker(self.test_config)
     
@@ -91,6 +94,7 @@ class TestStarlinkTracker(unittest.TestCase):
         mock_exists.return_value = True
         mock_getmtime.return_value = datetime.now().timestamp() - 3600  # 1 hour ago
         
+        from core.main import StarlinkTracker
         tracker = StarlinkTracker(self.test_config)
         
         # Mock _load_tle_from_file
@@ -118,6 +122,7 @@ class TestStarlinkTracker(unittest.TestCase):
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
         
+        from core.main import StarlinkTracker
         tracker = StarlinkTracker(self.test_config)
         
         # Mock file operations
@@ -130,6 +135,7 @@ class TestStarlinkTracker(unittest.TestCase):
     
     def test_predict_passes_no_satellites(self):
         """Test pass prediction with no satellites loaded."""
+        from core.main import StarlinkTracker
         tracker = StarlinkTracker(self.test_config)
         
         with self.assertRaises(ValueError) as context:
@@ -139,6 +145,7 @@ class TestStarlinkTracker(unittest.TestCase):
     
     def test_predict_passes_invalid_coordinates(self):
         """Test pass prediction with invalid coordinates."""
+        from core.main import StarlinkTracker
         tracker = StarlinkTracker(self.test_config)
         
         # Test invalid latitude

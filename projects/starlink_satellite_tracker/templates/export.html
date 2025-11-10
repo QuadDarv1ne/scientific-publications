@@ -1,5 +1,125 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Data Export</h1><p>Export satellite data in various formats.</p>
+<div class="row">
+    <div class="col-md-12">
+        <h1>Data Export</h1>
+        <p class="lead">Export satellite data in various formats for analysis</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Export Satellite Data</h5>
+            </div>
+            <div class="card-body">
+                <form id="export-form">
+                    <div class="mb-3">
+                        <label class="form-label">Data to Export</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include-tle" checked>
+                            <label class="form-check-label" for="include-tle">Include TLE Data</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="include-predictions" checked>
+                            <label class="form-check-label" for="include-predictions">Include Predictions</label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="export-format" class="form-label">Export Format</label>
+                        <select class="form-select" id="export-format">
+                            <option value="json" selected>JSON</option>
+                            <option value="csv">CSV</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="date-range" class="form-label">Date Range</label>
+                        <select class="form-select" id="date-range">
+                            <option value="all" selected>All Available Data</option>
+                            <option value="today">Today</option>
+                            <option value="week">Last 7 Days</option>
+                            <option value="month">Last 30 Days</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-download"></i> Export Data
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Export History</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>File</th>
+                                <th>Format</th>
+                                <th>Date</th>
+                                <th>Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4" class="text-center">No export history available</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-trash"></i> Clear History
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">API Access</h5>
+            </div>
+            <div class="card-body">
+                <p>Access satellite data programmatically using our RESTful API:</p>
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">API Endpoints</h6>
+                    <ul class="mb-0">
+                        <li><code>GET /api/satellites</code> - Get current satellite positions</li>
+                        <li><code>GET /api/passes?lat=:lat&lon=:lon&hours=:hours</code> - Get predicted passes</li>
+                        <li><code>GET /api/coverage</code> - Get global coverage data</li>
+                        <li><code>GET /api/export/json</code> - Export data in JSON format</li>
+                        <li><code>GET /api/export/csv</code> - Export data in CSV format</li>
+                    </ul>
+                </div>
+                <button type="button" class="btn btn-outline-primary">
+                    <i class="fas fa-book"></i> View Full API Documentation
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle export form submission
+document.getElementById('export-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const format = document.getElementById('export-format').value;
+    
+    // In a real implementation, this would trigger the actual export
+    alert(`Exporting data in ${format.toUpperCase()} format. This would download a file in a real implementation.`);
+    
+    // Example of how to trigger an actual download:
+    // window.location.href = `/api/export/${format}`;
+});
+</script>
 {% endblock %}
