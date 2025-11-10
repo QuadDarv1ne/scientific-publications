@@ -171,7 +171,9 @@ LANGUAGES = {
         'confirm_reset': 'Yes, I want to reset all settings',
         'settings_saved': 'Settings saved successfully!',
         'settings_reset': 'Settings reset to defaults.',
-        'enable_weather_integration': 'Enable Weather Integration'
+        'enable_weather_integration': 'Enable Weather Integration',
+        'navigation': 'Navigation',
+        'minutes': 'minutes'
     },
     'ru': {
         'dashboard': 'Панель управления',
@@ -301,7 +303,9 @@ LANGUAGES = {
         'confirm_reset': 'Да, я хочу сбросить все настройки',
         'settings_saved': 'Настройки успешно сохранены!',
         'settings_reset': 'Настройки сброшены к значениям по умолчанию.',
-        'enable_weather_integration': 'Включить интеграцию погоды'
+        'enable_weather_integration': 'Включить интеграцию погоды',
+        'navigation': 'Навигация',
+        'minutes': 'минуты'
     }
 }
 

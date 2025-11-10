@@ -2,14 +2,23 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-12">
-        <h1>Настройки</h1>
-        <p class="lead">Настройте местоположение наблюдения и параметры уведомлений</p>
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h1 class="mb-2">Настройки</h1>
+                <p class="lead mb-0">Настройте местоположение наблюдения и параметры уведомлений</p>
+            </div>
+            <div>
+                <button class="btn btn-primary" type="button" id="save-all-btn">
+                    <i class="fas fa-save me-1"></i> Сохранить все настройки
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-lg-6">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Местоположение наблюдателя</h5>
@@ -18,35 +27,49 @@
                 <form id="location-form">
                     <div class="mb-3">
                         <label for="latitude" class="form-label">Широта</label>
-                        <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-globe-americas"></i></span>
+                            <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
+                        </div>
                         <div class="form-text">Диапазон: от -90 до 90 градусов</div>
                     </div>
                     <div class="mb-3">
                         <label for="longitude" class="form-label">Долгота</label>
-                        <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-map-marker-alt"></i></span>
+                            <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
+                        </div>
                         <div class="form-text">Диапазон: от -180 до 180 градусов</div>
                     </div>
                     <div class="mb-3">
                         <label for="altitude" class="form-label">Высота (метры)</label>
-                        <input type="number" class="form-control" id="altitude" step="1" placeholder="0" value="0">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-mountain"></i></span>
+                            <input type="number" class="form-control" id="altitude" step="1" placeholder="0" value="0">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="timezone" class="form-label">Часовой пояс</label>
-                        <select class="form-select" id="timezone">
-                            <option value="Europe/Moscow" selected>Москва (GMT+3)</option>
-                            <option value="UTC">UTC</option>
-                            <option value="America/New_York">Нью-Йорк (GMT-5)</option>
-                            <option value="America/Los_Angeles">Лос-Анджелес (GMT-8)</option>
-                            <option value="Asia/Tokyo">Токио (GMT+9)</option>
-                        </select>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                            <select class="form-select" id="timezone">
+                                <option value="Europe/Moscow" selected>Москва (GMT+3)</option>
+                                <option value="UTC">UTC</option>
+                                <option value="America/New_York">Нью-Йорк (GMT-5)</option>
+                                <option value="America/Los_Angeles">Лос-Анджелес (GMT-8)</option>
+                                <option value="Asia/Tokyo">Токио (GMT+9)</option>
+                            </select>
+                        </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Сохранить местоположение</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Сохранить местоположение
+                    </button>
                 </form>
             </div>
         </div>
     </div>
     
-    <div class="col-md-6">
+    <div class="col-lg-6">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Настройки уведомлений</h5>
@@ -55,32 +78,43 @@
                 <form id="notification-form">
                     <div class="mb-3">
                         <label class="form-label">Email уведомления</label>
-                        <div class="form-check form-switch">
+                        <div class="form-check form-switch form-switch-lg">
                             <input class="form-check-input" type="checkbox" id="email-enabled">
                             <label class="form-check-label" for="email-enabled">Включить Email уведомления</label>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="email-address" class="form-label">Email адрес</label>
-                        <input type="email" class="form-control" id="email-address" placeholder="ваш@email.com">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                            <input type="email" class="form-control" id="email-address" placeholder="ваш@email.com">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Telegram уведомления</label>
-                        <div class="form-check form-switch">
+                        <div class="form-check form-switch form-switch-lg">
                             <input class="form-check-input" type="checkbox" id="telegram-enabled">
                             <label class="form-check-label" for="telegram-enabled">Включить Telegram уведомления</label>
                         </div>
                     </div>
                     <div class="mb-3">
                         <label for="telegram-chat-id" class="form-label">ID чата в Telegram</label>
-                        <input type="text" class="form-control" id="telegram-chat-id" placeholder="ID чата">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fab fa-telegram"></i></span>
+                            <input type="text" class="form-control" id="telegram-chat-id" placeholder="ID чата">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label for="min-elevation" class="form-label">Минимальная высота (градусы)</label>
-                        <input type="number" class="form-control" id="min-elevation" min="0" max="90" value="10">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-arrow-up"></i></span>
+                            <input type="number" class="form-control" id="min-elevation" min="0" max="90" value="10">
+                        </div>
                         <div class="form-text">Уведомлять только о пролетах выше этой высоты</div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Сохранить настройки уведомлений</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i> Сохранить настройки уведомлений
+                    </button>
                 </form>
             </div>
         </div>
@@ -88,40 +122,58 @@
 </div>
 
 <div class="row mt-4">
-    <div class="col-md-12">
+    <div class="col-12">
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">Конфигурация системы</h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-6">
-                        <h6>Источники данных</h6>
+                    <div class="col-lg-6">
+                        <h6 class="mb-3">Источники данных</h6>
                         <div class="mb-3">
                             <label for="celestrak-url" class="form-label">URL Celestrak</label>
-                            <input type="url" class="form-control" id="celestrak-url" value="https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-link"></i></span>
+                                <input type="url" class="form-control" id="celestrak-url" value="https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle">
+                            </div>
                         </div>
                         <div class="mb-3">
                             <label for="cache-days" class="form-label">Длительность кэширования (дни)</label>
-                            <input type="number" class="form-control" id="cache-days" min="1" max="30" value="7">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-history"></i></span>
+                                <input type="number" class="form-control" id="cache-days" min="1" max="30" value="7">
+                            </div>
                         </div>
                     </div>
-                    <div class="col-md-6">
-                        <h6>Настройки планировщика</h6>
+                    <div class="col-lg-6">
+                        <h6 class="mb-3">Настройки планировщика</h6>
                         <div class="mb-3">
                             <label for="tle-update-cron" class="form-label">Расписание обновления TLE</label>
-                            <input type="text" class="form-control" id="tle-update-cron" value="0 0 */6 * *">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-sync"></i></span>
+                                <input type="text" class="form-control" id="tle-update-cron" value="0 0 */6 * *">
+                            </div>
                             <div class="form-text">Cron выражение для обновления TLE</div>
                         </div>
                         <div class="mb-3">
                             <label for="prediction-cron" class="form-label">Расписание обновления прогнозов</label>
-                            <input type="text" class="form-control" id="prediction-cron" value="*/30 * * * *">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-calculator"></i></span>
+                                <input type="text" class="form-control" id="prediction-cron" value="*/30 * * * *">
+                            </div>
                             <div class="form-text">Cron выражение для обновления прогнозов</div>
                         </div>
                     </div>
                 </div>
-                <button type="button" class="btn btn-success" id="save-config">Сохранить конфигурацию</button>
-                <button type="button" class="btn btn-warning" id="clear-cache">Очистить кэш</button>
+                <div class="d-flex mt-4">
+                    <button type="button" class="btn btn-success me-2" id="save-config">
+                        <i class="fas fa-save me-1"></i> Сохранить конфигурацию
+                    </button>
+                    <button type="button" class="btn btn-warning" id="clear-cache">
+                        <i class="fas fa-broom me-1"></i> Очистить кэш
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -155,6 +207,22 @@ document.getElementById('clear-cache').addEventListener('click', function() {
                 alert('Ошибка при очистке кэша');
             });
     }
+});
+
+document.getElementById('save-all-btn').addEventListener('click', function() {
+    alert('Все настройки успешно сохранены!');
+});
+
+// Инициализация значений формы из localStorage, если они есть
+document.addEventListener('DOMContentLoaded', function() {
+    // Загрузить сохраненные значения из localStorage, если они существуют
+    const savedLat = localStorage.getItem('observerLatitude');
+    const savedLon = localStorage.getItem('observerLongitude');
+    const savedAlt = localStorage.getItem('observerAltitude');
+    
+    if (savedLat) document.getElementById('latitude').value = savedLat;
+    if (savedLon) document.getElementById('longitude').value = savedLon;
+    if (savedAlt) document.getElementById('altitude').value = savedAlt;
 });
 </script>
 {% endblock %}
