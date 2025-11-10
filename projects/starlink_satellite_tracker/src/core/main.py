@@ -607,6 +607,14 @@ class StarlinkTracker:
         self.tle_cache.clear()
         self.prediction_cache.clear()
         self.prediction_cache_timestamps.clear()
+        # Clear prediction file cache
+        try:
+            for filename in os.listdir(self.prediction_cache_dir):
+                if filename.startswith("prediction_") and filename.endswith(".json"):
+                    os.remove(os.path.join(self.prediction_cache_dir, filename))
+            self.logger.info("Prediction file cache cleared")
+        except Exception as e:
+            self.logger.warning(f"Error clearing prediction file cache: {e}")
         self.logger.info("All caches cleared")
 
 
