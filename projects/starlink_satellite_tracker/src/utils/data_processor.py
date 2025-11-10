@@ -18,45 +18,72 @@ from utils.config_manager import get_config
 
 
 class DataCache:
-    """Simple in-memory cache for processed data."""
+    """Enhanced in-memory cache with LRU eviction and time-based expiration."""
     
-    def __init__(self, max_size: int = 100):
-        self.cache = {}
-        self.access_times = {}
+    def __init__(self, max_size: int = 100, ttl_minutes: int = 30):
+        self.cache = {}  # key -> (value, timestamp, access_count)
         self.max_size = max_size
+        self.ttl = timedelta(minutes=ttl_minutes)
         self.logger = logging.getLogger(__name__)
     
     def get(self, key: str) -> Optional[Any]:
-        """Retrieve item from cache."""
+        """Retrieve item from cache with TTL check."""
         if key in self.cache:
-            self.access_times[key] = datetime.now()
+            value, timestamp, access_count = self.cache[key]
+            
+            # Check if item has expired
+            if datetime.now() - timestamp > self.ttl:
+                # Remove expired item
+                del self.cache[key]
+                self.logger.debug(f"Removed expired cache entry: {key}")
+                return None
+            
+            # Update access count
+            self.cache[key] = (value, timestamp, access_count + 1)
             self.logger.debug(f"Cache hit for key: {key}")
-            return self.cache[key]
+            return value
+        
         self.logger.debug(f"Cache miss for key: {key}")
         return None
     
     def put(self, key: str, value: Any) -> None:
-        """Store item in cache."""
-        # If cache is full, remove oldest entry
+        """Store item in cache with LRU eviction."""
+        # If cache is full, remove least recently used entry
         if len(self.cache) >= self.max_size:
-            oldest_key = min(self.access_times.keys(), key=lambda k: self.access_times[k])
-            del self.cache[oldest_key]
-            del self.access_times[oldest_key]
-            self.logger.debug(f"Removed oldest cache entry: {oldest_key}")
+            # Find LRU entry (lowest access count and oldest timestamp)
+            lru_key = min(self.cache.keys(), 
+                         key=lambda k: (self.cache[k][2], self.cache[k][1]))
+            del self.cache[lru_key]
+            self.logger.debug(f"Removed LRU cache entry: {lru_key}")
         
-        self.cache[key] = value
-        self.access_times[key] = datetime.now()
+        # Store with current timestamp and zero access count
+        self.cache[key] = (value, datetime.now(), 0)
         self.logger.debug(f"Added to cache: {key}")
     
     def clear(self) -> None:
         """Clear all cache entries."""
         self.cache.clear()
-        self.access_times.clear()
         self.logger.debug("Cache cleared")
     
     def size(self) -> int:
         """Get current cache size."""
         return len(self.cache)
+    
+    def cleanup_expired(self) -> int:
+        """Remove all expired entries and return count of removed items."""
+        now = datetime.now()
+        expired_keys = [
+            key for key, (_, timestamp, _) in self.cache.items()
+            if now - timestamp > self.ttl
+        ]
+        
+        for key in expired_keys:
+            del self.cache[key]
+        
+        if expired_keys:
+            self.logger.debug(f"Cleaned up {len(expired_keys)} expired cache entries")
+        
+        return len(expired_keys)
 
 
 class DataProcessor:
@@ -74,12 +101,11 @@ class DataProcessor:
         })
         self.data_directory = self.config.get('data_sources', {}).get('tle_cache_path', 'data/tle_cache/')
         
-        # Initialize cache
-        self.cache = DataCache(max_size=50)
+        # Initialize cache with 60-minute TTL
+        self.cache = DataCache(max_size=100, ttl_minutes=60)
         
-        # Cache for processed satellite data
-        self._satellite_cache = {}
-        self._cache_expiry = timedelta(minutes=30)  # Cache expires after 30 minutes
+        # Cleanup expired cache entries periodically
+        self._last_cleanup = datetime.now()  # Cache expires after 30 minutes
     
     def _generate_cache_key(self, filename: str, criteria: Optional[Dict[str, Any]] = None) -> str:
         """Generate a cache key based on filename and criteria."""
@@ -95,6 +121,9 @@ class DataProcessor:
     def load_satellite_data(self, filename: Optional[str] = None) -> Optional[List[Dict[str, str]]]:
         """Load satellite data from TLE file or cache."""
         try:
+            # Periodically cleanup expired cache entries
+            self._cleanup_cache_if_needed()
+            
             if filename is None:
                 # Find the most recent TLE file
                 try:
@@ -155,6 +184,9 @@ class DataProcessor:
     
     def filter_satellites(self, satellites: Optional[List[Dict[str, str]]], criteria: Optional[Dict[str, Any]] = None) -> List[Dict[str, str]]:
         """Filter satellites based on provided criteria."""
+        # Periodically cleanup expired cache entries
+        self._cleanup_cache_if_needed()
+        
         if not criteria or not satellites:
             return satellites or []
             
@@ -189,6 +221,9 @@ class DataProcessor:
     
     def export_to_csv(self, data: List[Dict[str, Any]], filename: str) -> bool:
         """Export satellite data to CSV format."""
+        # Periodically cleanup expired cache entries
+        self._cleanup_cache_if_needed()
+        
         if not data:
             self.logger.warning("No data to export to CSV")
             return False
@@ -220,6 +255,9 @@ class DataProcessor:
     
     def export_to_json(self, data: List[Dict[str, Any]], filename: str) -> bool:
         """Export satellite data to JSON format."""
+        # Periodically cleanup expired cache entries
+        self._cleanup_cache_if_needed()
+        
         if not data:
             self.logger.warning("No data to export to JSON")
             return False
@@ -308,9 +346,19 @@ class DataProcessor:
             self.logger.error(f"Error analyzing constellation: {e}")
             return {}
     
+    def _cleanup_cache_if_needed(self) -> None:
+        """Periodically cleanup expired cache entries."""
+        # Cleanup every 30 minutes
+        if datetime.now() - self._last_cleanup > timedelta(minutes=30):
+            removed_count = self.cache.cleanup_expired()
+            if removed_count > 0:
+                self.logger.info(f"Cleaned up {removed_count} expired cache entries")
+            self._last_cleanup = datetime.now()
+    
     def clear_cache(self) -> None:
         """Clear all cached data."""
         self.cache.clear()
+        self._last_cleanup = datetime.now()
         self.logger.info("Data processor cache cleared")
 
 

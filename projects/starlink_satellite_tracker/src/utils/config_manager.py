@@ -104,7 +104,9 @@ class ConfigManager:
                 },
                 "min_elevation": 10,
                 "min_brightness": -1,
-                "advance_notice_minutes": 30
+                "advance_notice_minutes": 30,
+                "excluded_satellites": [],
+                "excluded_patterns": ["DEBRIS", "TEST"]
             },
             "export": {
                 "default_format": "json",

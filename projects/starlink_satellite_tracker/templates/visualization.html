@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Satellite Visualization</h1>
+        <p class="lead">Interactive 3D visualization of Starlink satellite orbits</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Orbit Visualization Controls</h5>
+            </div>
+            <div class="card-body">
+                <form id="visualization-form" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="orbit-hours" class="form-label">Time Period (hours):</label>
+                        <select class="form-select" id="orbit-hours">
+                            <option value="1">1 hour</option>
+                            <option value="2" selected>2 hours</option>
+                            <option value="4">4 hours</option>
+                            <option value="8">8 hours</option>
+                            <option value="24">24 hours</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="orbit-satellites" class="form-label">Number of Satellites:</label>
+                        <select class="form-select" id="orbit-satellites">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="15">15</option>
+                            <option value="20">20</option>
+                            <option value="30">30</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="color-scheme" class="form-label">Color Scheme:</label>
+                        <select class="form-select" id="color-scheme">
+                            <option value="default" selected>Default</option>
+                            <option value="rainbow">Rainbow</option>
+                            <option value="velocity">By Velocity</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-sync-alt"></i> Update Visualization
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Satellite Orbits Visualization</h5>
+            </div>
+            <div class="card-body">
+                <div id="orbit-plot" style="height: 600px;">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <div>
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading orbit visualization...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Visualization Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Controls</h6>
+                        <ul>
+                            <li><strong>Rotate:</strong> Click and drag to rotate the 3D view</li>
+                            <li><strong>Zoom:</strong> Scroll to zoom in/out</li>
+                            <li><strong>Pan:</strong> Right-click and drag to pan the view</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Legend</h6>
+                        <ul>
+                            <li><strong>Lines:</strong> Satellite orbital paths</li>
+                            <li><strong>Colors:</strong> Different satellites (based on selection)</li>
+                            <li><strong>Axis:</strong> X, Y, Z coordinates in kilometers</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+<script>
+// Fetch and display orbit visualization
+function loadOrbitVisualization(hours = 2, satellites = 10, colorScheme = 'default') {
+    const plotDiv = document.getElementById('orbit-plot');
+    
+    // Show loading indicator
+    plotDiv.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+            <div>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading orbit visualization...</p>
+            </div>
+        </div>
+    `;
+    
+    fetch(`/api/visualization/orbits?hours=${hours}&satellites=${satellites}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.plot) {
+                const plotData = JSON.parse(data.plot);
+                
+                // Apply color scheme
+                if (colorScheme === 'rainbow') {
+                    // Apply rainbow colors
+                    for (let i = 0; i < plotData.data.length; i++) {
+                        plotData.data[i].line.color = `hsl(${(i * 360 / plotData.data.length)}, 70%, 50%)`;
+                    }
+                } else if (colorScheme === 'velocity') {
+                    // Apply velocity-based colors (this would require additional data)
+                    // For now, we'll just use a different default scheme
+                    for (let i = 0; i < plotData.data.length; i++) {
+                        const intensity = i / plotData.data.length;
+                        plotData.data[i].line.color = `rgb(${Math.floor(255 * intensity)}, ${Math.floor(100 + 155 * (1 - intensity))}, ${Math.floor(200 * (1 - intensity))})`;
+                    }
+                }
+                
+                Plotly.newPlot('orbit-plot', plotData.data, plotData.layout, {responsive: true});
+            } else {
+                plotDiv.innerHTML = `
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                            <p class="mt-2">No visualization data available</p>
+                        </div>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading orbit visualization:', error);
+            plotDiv.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                        <p class="mt-2">Error loading orbit visualization</p>
+                        <p class="small text-muted">${error.message}</p>
+                    </div>
+                </div>
+            `;
+        });
+}
+
+// Load initial visualization
+document.addEventListener('DOMContentLoaded', function() {
+    loadOrbitVisualization();
+});
+
+// Handle form submission
+document.getElementById('visualization-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const hours = document.getElementById('orbit-hours').value;
+    const satellites = document.getElementById('orbit-satellites').value;
+    const colorScheme = document.getElementById('color-scheme').value;
+    
+    loadOrbitVisualization(hours, satellites, colorScheme);
+});
+</script>
+{% endblock %}

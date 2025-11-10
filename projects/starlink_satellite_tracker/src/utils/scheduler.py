@@ -239,8 +239,61 @@ class StarlinkScheduler:
                 return
             
             self.logger.info("Starting notification check task")
-            # This would check for upcoming passes and send notifications
-            # For now, we'll just log that the task ran
+            
+            # Check for upcoming passes and send notifications
+            if self.tracker:
+                try:
+                    # Import notification system
+                    from utils.notify import NotificationSystem
+                    
+                    # Get observer location from config
+                    observer_config = self.config.get('observer', {})
+                    lat = observer_config.get('default_latitude', 55.7558)
+                    lon = observer_config.get('default_longitude', 37.6173)
+                    alt = observer_config.get('default_altitude', 0)
+                    
+                    # Get notification settings
+                    notification_config = self.config.get('notifications', {})
+                    advance_notice = notification_config.get('advance_notice_minutes', 30)
+                    
+                    # Predict passes for the next 2 hours
+                    passes = self.tracker.predict_passes(lat, lon, alt, hours_ahead=2)
+                    
+                    # Initialize notification system
+                    notifier = NotificationSystem(self.config)
+                    
+                    # Check each pass
+                    current_time = datetime.now()
+                    for pass_info in passes:
+                        pass_time = pass_info.get('time')
+                        if not pass_time:
+                            continue
+                        
+                        # Calculate time until pass
+                        time_until_pass = (pass_time - current_time).total_seconds() / 60  # in minutes
+                        
+                        # Check if this pass is coming up soon (within advance notice window)
+                        if 0 < time_until_pass <= advance_notice:
+                            # Send notification
+                            satellite_name = pass_info.get('satellite', 'Unknown')
+                            max_elevation = pass_info.get('altitude', 0)
+                            azimuth = pass_info.get('azimuth', 0)
+                            brightness = pass_info.get('brightness', 0)
+                            
+                            notifier.notify_upcoming_pass(
+                                satellite_name, 
+                                pass_time, 
+                                max_elevation, 
+                                azimuth,
+                                brightness
+                            )
+                except ImportError:
+                    self.logger.warning("Notification system not available")
+                except Exception as e:
+                    self.logger.error(f"Error checking passes for notifications: {e}")
+            else:
+                self.logger.warning("No tracker instance available for notification check")
+            
             self.logger.info("Notification check completed")
         except Exception as e:
             self.logger.error(f"Notification check failed: {e}")

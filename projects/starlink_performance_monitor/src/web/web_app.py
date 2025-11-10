@@ -138,7 +138,12 @@ LANGUAGES = {
         'average': 'Average',
         'minimum': 'Minimum',
         'maximum': 'Maximum',
-        'standard_deviation': 'Standard Deviation'
+        'standard_deviation': 'Standard Deviation',
+        'connecting_data_stream': 'Connecting to data stream...',
+        'line': 'Line',
+        'bar': 'Bar',
+        'area': 'Area',
+        'download_distribution': 'Download Speed Distribution'
     },
     'ru': {
         'dashboard': 'Панель управления',
@@ -235,7 +240,12 @@ LANGUAGES = {
         'average': 'Среднее',
         'minimum': 'Минимум',
         'maximum': 'Максимум',
-        'standard_deviation': 'Стандартное отклонение'
+        'standard_deviation': 'Стандартное отклонение',
+        'connecting_data_stream': 'Подключение к потоку данных...',
+        'line': 'Линия',
+        'bar': 'Столбец',
+        'area': 'Область',
+        'download_distribution': 'Распределение скорости загрузки'
     }
 }
 
@@ -302,7 +312,7 @@ def logout():
 @require_auth
 def dashboard():
     """Main dashboard page."""
-    return render_template('enhanced_dashboard.html')
+    return render_template('dashboard.html')
 
 @app.route('/enhanced')
 @require_auth

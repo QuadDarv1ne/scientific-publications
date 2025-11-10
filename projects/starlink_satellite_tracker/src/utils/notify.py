@@ -32,6 +32,7 @@ class NotificationSystem:
         self.config = config or get_config()
         self.email_config = self.config.get('notifications', {}).get('email', {})
         self.telegram_config = self.config.get('notifications', {}).get('telegram', {})
+        self.notification_config = self.config.get('notifications', {})
         self.logger = logging.getLogger(__name__)
         
     def send_email_notification(self, subject: str, message: str, recipient: str) -> bool:
@@ -118,15 +119,57 @@ class NotificationSystem:
             self.logger.error(f"Failed to send Telegram notification: {e}")
             return False
     
+    def should_notify_for_pass(self, satellite_name: str, max_elevation: float, 
+                              brightness: float = 0.0) -> bool:
+        """Determine if a notification should be sent for a satellite pass based on filters."""
+        try:
+            # Check minimum elevation
+            min_elevation = self.notification_config.get('min_elevation', 10)
+            if max_elevation < min_elevation:
+                self.logger.debug(f"Skipping notification for {satellite_name}: Elevation {max_elevation}° below minimum {min_elevation}°")
+                return False
+            
+            # Check minimum brightness (if provided)
+            min_brightness = self.notification_config.get('min_brightness', -1)
+            if brightness < min_brightness:
+                self.logger.debug(f"Skipping notification for {satellite_name}: Brightness {brightness} below minimum {min_brightness}")
+                return False
+            
+            # Check satellite name filters
+            excluded_satellites = self.notification_config.get('excluded_satellites', [])
+            if satellite_name in excluded_satellites:
+                self.logger.debug(f"Skipping notification for {satellite_name}: Satellite is excluded")
+                return False
+            
+            # Check satellite name patterns
+            excluded_patterns = self.notification_config.get('excluded_patterns', [])
+            for pattern in excluded_patterns:
+                if pattern in satellite_name:
+                    self.logger.debug(f"Skipping notification for {satellite_name}: Matches excluded pattern '{pattern}'")
+                    return False
+            
+            # All filters passed
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Error checking notification filters for {satellite_name}: {e}")
+            # If there's an error in filtering, default to allowing notifications
+            return True
+    
     def notify_upcoming_pass(self, satellite_name: str, pass_time: datetime, 
-                           max_elevation: float, azimuth: float) -> bool:
+                           max_elevation: float, azimuth: float, brightness: float = 0.0) -> bool:
         """Send notification about an upcoming satellite pass."""
         try:
             # Validate inputs
             if not satellite_name or not pass_time:
                 self.logger.error("Satellite name and pass time are required")
                 return False
-                
+            
+            # Check if we should notify based on filters
+            if not self.should_notify_for_pass(satellite_name, max_elevation, brightness):
+                self.logger.info(f"Skipping notification for {satellite_name} based on filters")
+                return True  # Not an error, just filtered out
+            
             # Format message
             time_str = pass_time.strftime("%Y-%m-%d %H:%M:%S")
             message = f"""🚀 STARLINK SATELLITE PASS ALERT 🚀
@@ -135,6 +178,7 @@ Satellite: {satellite_name}
 Time: {time_str}
 Maximum Elevation: {max_elevation:.1f}°
 Azimuth: {azimuth:.1f}°
+Brightness: {brightness:.1f} mag
 
 Best viewing conditions expected!
 Look up and enjoy the show! 🌌

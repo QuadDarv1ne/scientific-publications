@@ -274,10 +274,18 @@ Sends alerts about upcoming satellite passes via email or Telegram.
     },
     "min_elevation": 10,
     "min_brightness": -1,
-    "advance_notice_minutes": 30
+    "advance_notice_minutes": 30,
+    "excluded_satellites": [],
+    "excluded_patterns": ["DEBRIS", "TEST"]
   }
 }
 ```
+
+**Notification Filtering:**
+- `min_elevation`: Minimum elevation angle for notifications (default: 10°)
+- `min_brightness`: Minimum brightness (magnitude) for notifications (default: -1)
+- `excluded_satellites`: List of specific satellite names to exclude from notifications
+- `excluded_patterns`: List of patterns to exclude from notifications (e.g., "DEBRIS" excludes all debris satellites)
 
 **Email Notification Setup:**
 ```python
