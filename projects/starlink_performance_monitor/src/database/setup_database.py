@@ -6,10 +6,16 @@ Database setup script.
 
 import json
 import argparse
+import sys
+import os
+
+# Add the src directory to the path so we can import from monitor
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from monitor import Base, PerformanceMetric
+from src.monitor.monitor import Base, PerformanceMetric
 
 def setup_database(config_path: str = "config.json"):
     """

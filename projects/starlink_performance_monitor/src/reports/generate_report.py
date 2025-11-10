@@ -8,6 +8,11 @@ import argparse
 import json
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
+import sys
+import os
+
+# Add the src directory to the path so we can import from monitor
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -15,7 +20,7 @@ import matplotlib.dates as mdates
 from sqlalchemy import create_engine, and_
 from sqlalchemy.orm import sessionmaker
 
-from monitor import PerformanceMetric, Base
+from src.monitor.monitor import PerformanceMetric, Base
 
 class ReportGenerator:
     """Generate performance reports in various formats."""

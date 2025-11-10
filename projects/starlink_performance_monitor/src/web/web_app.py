@@ -8,6 +8,7 @@ import json
 import argparse
 import os
 import hashlib
+import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any
 from functools import wraps
@@ -19,9 +20,23 @@ from flask import Flask, render_template, jsonify, request, session, redirect, u
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
-from monitor import PerformanceMetric, Base
+# Add the src directory to the path so we can import from monitor
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
-app = Flask(__name__)
+from src.monitor.monitor import PerformanceMetric, Base
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Create Flask app with template folder specified
+template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+app = Flask(__name__, template_folder=template_dir)
 
 # Add secret key for sessions
 app.secret_key = os.urandom(24)

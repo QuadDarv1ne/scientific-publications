@@ -8,6 +8,11 @@ import json
 import logging
 from datetime import datetime
 from typing import Dict, Any, List, Optional
+import sys
+import os
+
+# Add the src directory to the path so we can import from monitor
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 # Try to import telegram, but don't fail if it's not available
 TELEGRAM_AVAILABLE = False
@@ -20,7 +25,7 @@ except ImportError:
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
-from monitor import PerformanceMetric, Base
+from src.monitor.monitor import PerformanceMetric, Base
 
 # Configure logging
 logging.basicConfig(

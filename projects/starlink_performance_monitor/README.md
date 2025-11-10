@@ -1,9 +1,89 @@
 ## 📄 README.md для Starlink Performance Monitor
 
-```markdown
-# 📊 Starlink Performance Monitor
+```
+# Starlink Performance Monitor
 
-![Performance Dashboard](https://via.placeholder.com/800x400?text=Starlink+Performance+Dashboard) <!-- Замените на реальный скриншот -->
+## Project Structure
+
+```
+starlink_performance_monitor/
+├── src/
+│   ├── monitor/          # Monitoring core functionality
+│   │   ├── __init__.py
+│   │   └── monitor.py
+│   ├── web/              # Web dashboard and API
+│   │   ├── __init__.py
+│   │   ├── web_app.py
+│   │   └── templates/
+│   ├── reports/          # Report generation
+│   │   ├── __init__.py
+│   │   └── generate_report.py
+│   ├── alerts/           # Alerting system
+│   │   ├── __init__.py
+│   │   └── alerts.py
+│   ├── database/         # Database setup
+│   │   ├── __init__.py
+│   │   └── setup_database.py
+│   └── utils/            # Utility scripts
+│       ├── __init__.py
+│       └── manual_test.py
+├── tests/                # Unit tests
+│   ├── test_alerts.py
+│   ├── test_generate_report.py
+│   ├── test_installation.py
+│   └── test_monitor.py
+├── docs/                 # Documentation
+├── main.py               # Main entry point
+├── config.example.json   # Example configuration
+├── requirements.txt      # Python dependencies
+├── Dockerfile
+├── CONTRIBUTING.md
+├── LICENCE
+└── starlink-monitor.service
+```
+
+## Quick Start
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Copy and configure the config file:
+   ```bash
+   cp config.example.json config.json
+   # Edit config.json with your settings
+   ```
+
+3. Set up the database:
+   ```bash
+   python src/database/setup_database.py
+   ```
+
+4. Run the monitor:
+   ```bash
+   python src/monitor/monitor.py
+   ```
+
+5. Start the web interface:
+   ```bash
+   python src/web/web_app.py
+   ```
+
+## Components
+
+- **Monitor**: Collects performance metrics (speed, ping, packet loss)
+- **Web**: Dashboard and API for viewing metrics
+- **Alerts**: Notification system for performance issues
+- **Reports**: Generate detailed performance reports
+- **Database**: Storage for historical metrics
+
+## Testing
+
+Run unit tests:
+```bash
+python -m pytest tests/ -v
+```
 
 **Automated performance monitoring and analysis tool for Starlink satellite internet**
 
@@ -94,7 +174,7 @@ sphinx-rtd-theme==1.2.2
 
 Вариант 1: Локальная установка
 
-```bash
+```
 # Клонирование репозитория
 git clone https://github.com/yourusername/starlink-monitor.git
 cd starlink-monitor
@@ -120,7 +200,7 @@ cp config.example.json config.json
 
 Вариант 2: Docker (рекомендуется)
 
-```bash
+```
 # Сборка и запуск контейнеров
 docker-compose up -d --build
 
@@ -130,7 +210,7 @@ docker-compose exec app python setup_database.py
 
 Вариант 3: Установка как сервис (Linux)
 
-```bash
+```
 # Копирование сервисного файла
 sudo cp starlink-monitor.service /etc/systemd/system/
 
@@ -159,7 +239,7 @@ sudo systemctl start starlink-monitor
 ## ⚙️ Конфигурация
 
 Создайте файл config.json:
-```json
+```
 {
   "database": {
     "type": "postgresql",
@@ -257,19 +337,19 @@ sudo systemctl start starlink-monitor
 
 Запуск основного мониторинга
 
-```bash
+```
 python monitor.py --config config.json
 ```
 
 Запуск веб-интерфейса
 
-```bash
+```
 python web_app.py --port 8050
 ```
 
 Генерация отчетов
 
-```bash
+```
 # Ежедневный отчет
 python generate_report.py --type daily --output daily_report.pdf
 
@@ -282,7 +362,7 @@ python generate_report.py --start "2025-11-01" --end "2025-11-07" --format excel
 
 Ручное тестирование
 
-```bash
+```
 # Запуск одного цикла тестов
 python manual_test.py
 
@@ -295,7 +375,7 @@ python manual_test.py --type ping
 
 Команды Docker
 
-```bash
+```
 # Просмотр логов
 docker-compose logs -f app
 
@@ -310,13 +390,13 @@ docker-compose exec db pg_dump -U monitor_user starlink_monitor > backup.sql
 
 Запуск unit-тестов
 
-```bash
+```
 python -m pytest test_monitor.py -v
 ```
 
 Проверка установки
 
-```bash
+```
 python test_installation.py
 ```
 
@@ -343,7 +423,7 @@ Settings - Настройки системы и пользователей
 
 Интеграция с Grafana
 
-```yaml
+```
 # docker-compose.override.yml
 services:
   grafana:
@@ -358,7 +438,7 @@ services:
 
 Настройка cron для автоматических отчетов
 
-```bash
+```
 # Ежедневный отчет в 8 утра
 0 8 * * * /path/to/venv/bin/python /path/to/generate_report.py --type daily --email admin@example.com
 
@@ -368,7 +448,7 @@ services:
 
 Настройка reverse proxy (Nginx)
 
-```nginx
+```
 server {
     listen 80;
     server_name monitor.yourdomain.com;
@@ -418,4 +498,3 @@ SpaceX и сообщество Starlink за вдохновение
 Создайте issue в GitHub
 Напишите в Telegram: @starlink_monitor_support
 Email: support@starlink-monitor.example.com
-```
