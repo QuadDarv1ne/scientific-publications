@@ -114,14 +114,9 @@ class APICache:
         if self.use_redis and self.redis_client:
             try:
                 cached_data = self.redis_client.get(key)
-                if cached_data:
+                if cached_data and isinstance(cached_data, (str, bytes)):
                     self.logger.debug(f"Redis cache hit for key: {key}")
-                    # Handle potential async response
-                    if hasattr(cached_data, '__await__'):
-                        # This is an async response, skip Redis caching
-                        pass
-                    else:
-                        return json.loads(cached_data)
+                    return json.loads(cached_data)
             except Exception as e:
                 self.logger.warning(f"Error retrieving from Redis cache: {e}")
         
