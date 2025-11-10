@@ -7,8 +7,13 @@ Manual testing script for running individual tests.
 import argparse
 import json
 from datetime import datetime
+import sys
+import os
 
-from monitor import StarlinkMonitor
+# Add the src directory to the path so we can import from monitor
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+from src.monitor.monitor import StarlinkMonitor
 
 def run_manual_test(config_path: str = "config.json", test_type: str = "all"):
     """
