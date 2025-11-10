@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Real-time Satellite Map</h1>
+        <p class="lead">Interactive map showing current positions of Starlink satellites</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Satellite Positions</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label for="satellite-filter" class="form-label">Filter Satellites:</label>
+                    <input type="text" class="form-control" id="satellite-filter" placeholder="Enter satellite name or ID">
+                </div>
+                <div id="satellite-map" style="height: 600px; width: 100%;">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <div>
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading satellite positions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Map Controls</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Map Features</h6>
+                        <ul>
+                            <li><strong>Pan:</strong> Click and drag to move the map</li>
+                            <li><strong>Zoom:</strong> Scroll to zoom in/out</li>
+                            <li><strong>Satellite Markers:</strong> Click on markers for satellite details</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Legend</h6>
+                        <ul>
+                            <li><span style="color: #007bff;">●</span> Active Starlink Satellites</li>
+                            <li><span style="color: #28a745;">●</span> High Altitude Satellites</li>
+                            <li><span style="color: #ffc107;">●</span> Medium Altitude Satellites</li>
+                            <li><span style="color: #dc3545;">●</span> Low Altitude Satellites</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Function to load satellite positions and display on map
+function loadSatellitePositions(filter = '') {
+    const mapDiv = document.getElementById('satellite-map');
+    
+    // Show loading indicator
+    mapDiv.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+            <div>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading satellite positions...</p>
+            </div>
+        </div>
+    `;
+    
+    // Fetch satellite data
+    fetch('/api/satellites')
+        .then(response => response.json())
+        .then(data => {
+            if (data.satellites && data.satellites.length > 0) {
+                // Filter satellites if needed
+                let satellites = data.satellites;
+                if (filter) {
+                    satellites = satellites.filter(sat => 
+                        sat.name.toLowerCase().includes(filter.toLowerCase()) || 
+                        sat.id.toString().includes(filter)
+                    );
+                }
+                
+                // Display map with satellite positions
+                displaySatelliteMap(satellites);
+            } else {
+                mapDiv.innerHTML = `
+                    <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                            <p class="mt-2">No satellite data available</p>
+                        </div>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading satellite positions:', error);
+            mapDiv.innerHTML = `
+                <div class="d-flex justify-content-center align-items-center" style="height: 100%;">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                        <p class="mt-2">Error loading satellite positions</p>
+                        <p class="small text-muted">${error.message}</p>
+                    </div>
+                </div>
+            `;
+        });
+}
+
+// Function to display satellite positions on a map
+function displaySatelliteMap(satellites) {
+    const mapDiv = document.getElementById('satellite-map');
+    
+    // For now, we'll create a simple visualization
+    // In a real implementation, this would use a mapping library like Leaflet or Google Maps
+    mapDiv.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center" style="height: 100%; flex-direction: column;">
+            <div class="text-center mb-4">
+                <i class="fas fa-globe-americas fa-3x text-primary mb-3"></i>
+                <h5>Interactive Satellite Map</h5>
+                <p class="text-muted">This would show a world map with satellite positions in a full implementation</p>
+            </div>
+            
+            <div style="width: 80%; max-width: 600px;">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">Sample Satellite Positions</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Satellite</th>
+                                        <th>Latitude</th>
+                                        <th>Longitude</th>
+                                        <th>Altitude</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${satellites.slice(0, 10).map(sat => `
+                                        <tr>
+                                            <td>${sat.name}</td>
+                                            <td>${(Math.random() * 180 - 90).toFixed(2)}°</td>
+                                            <td>${(Math.random() * 360 - 180).toFixed(2)}°</td>
+                                            <td>${(500 + Math.random() * 200).toFixed(0)} km</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+// Load initial satellite positions
+document.addEventListener('DOMContentLoaded', function() {
+    loadSatellitePositions();
+    
+    // Add event listener for filter input
+    document.getElementById('satellite-filter').addEventListener('input', function(e) {
+        loadSatellitePositions(e.target.value);
+    });
+});
+</script>
+{% endblock %}

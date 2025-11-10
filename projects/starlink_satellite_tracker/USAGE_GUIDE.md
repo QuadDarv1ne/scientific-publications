@@ -1,4 +1,361 @@
-# Starlink Satellite Tracker - Usage Guide
+# 🛰️ Starlink Satellite Tracker - Usage Guide
+
+This guide provides detailed instructions on how to use all features of the Starlink Satellite Tracker, including the newly enhanced capabilities.
+
+## 🚀 Quick Start
+
+```bash
+# Clone the repository
+git clone <repository-url>
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Run the tracker
+python starlink_tracker.py track --help
+
+# Start the web interface
+python starlink_tracker.py web
+
+# Or run directly from source directories
+python src/core/main.py --help
+python src/web/web_app.py
+```
+
+## 🖥️ Web Interface Usage
+
+### Main Dashboard (`/`)
+
+The main dashboard provides an overview of:
+- Current satellite tracking status
+- Next visible satellite pass
+- Recent activity (upcoming passes)
+
+### Passes Page (`/passes`)
+
+View and predict satellite passes over your location:
+- Configure observer location (latitude, longitude, altitude)
+- Set time period for predictions (1-168 hours)
+- View detailed pass information (time, elevation, azimuth, distance)
+
+### Visualization Page (`/visualization`)
+
+Interactive 3D visualization of satellite orbits:
+- Configure time period (1-24 hours)
+- Select number of satellites to display (5-30)
+- Choose color schemes (default, rainbow, velocity-based)
+- Rotate, zoom, and pan the 3D view
+
+### Coverage Page (`/coverage`)
+
+View global Starlink constellation coverage:
+- Regional coverage statistics
+- Constellation status information
+
+### Settings Page (`/settings`)
+
+Configure all system settings:
+- Observer location preferences
+- Notification settings (email, Telegram)
+- System configuration (data sources, scheduler)
+
+### Export Page (`/export`)
+
+Export satellite data in various formats:
+- JSON or CSV format
+- Select data to include (TLE data, predictions)
+- Choose date range for export
+
+## 📊 API Usage
+
+### Core API Endpoints
+
+#### Get Satellite Positions
+```bash
+# Get current satellite positions
+curl http://localhost:5000/api/satellites
+```
+
+#### Get Predicted Passes
+```bash
+# Get passes for a specific location
+curl "http://localhost:5000/api/passes?lat=40.7128&lon=-74.0060&hours=48"
+```
+
+#### Get Global Coverage
+```bash
+# Get global coverage data
+curl http://localhost:5000/api/coverage
+```
+
+#### Export Data
+```bash
+# Export data to JSON
+curl http://localhost:5000/api/export/json
+
+# Export data to CSV
+curl http://localhost:5000/api/export/csv
+```
+
+#### Orbit Visualization
+```bash
+# Get interactive 3D orbit visualization data
+curl "http://localhost:5000/api/visualization/orbits?hours=2&satellites=10"
+```
+
+#### Clear Cache
+```bash
+# Clear all cached data
+curl -X POST http://localhost:5000/api/cache/clear
+```
+
+## ⚙️ Configuration
+
+### Configuration File Structure
+
+```json
+{
+  "data_sources": {
+    "celestrak_url": "https://celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle",
+    "tle_cache_path": "data/tle_cache/",
+    "max_cache_days": 7,
+    "backup_urls": [
+      "https://celestrak.org/NORAD/elements/starlink.txt",
+      "https://www.celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=csv"
+    ]
+  },
+  "visualization": {
+    "orbit_points": 100,
+    "earth_texture": "data/earth_texture.jpg",
+    "show_ground_track": true,
+    "color_scheme": "dark",
+    "plotly_3d": true,
+    "matplotlib_2d": true
+  },
+  "schedule": {
+    "tle_update_cron": "0 0 */6 * *",
+    "prediction_update_cron": "*/30 * * * *",
+    "notification_check_cron": "*/15 * * * *"
+  },
+  "observer": {
+    "default_latitude": 55.7558,
+    "default_longitude": 37.6173,
+    "default_altitude": 0,
+    "timezone": "Europe/Moscow"
+  },
+  "notifications": {
+    "email": {
+      "enabled": false,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "",
+      "password": "",
+      "recipient": ""
+    },
+    "telegram": {
+      "enabled": false,
+      "bot_token": "",
+      "chat_id": ""
+    },
+    "min_elevation": 10,
+    "min_brightness": -1,
+    "advance_notice_minutes": 30,
+    "excluded_satellites": [],
+    "excluded_patterns": ["DEBRIS", "TEST"]
+  },
+  "export": {
+    "default_format": "json",
+    "include_tle_data": true,
+    "include_predictions": true,
+    "compress_large_files": true
+  }
+}
+```
+
+## 📧 Notification System
+
+### Email Notifications
+
+To enable email notifications, configure the email section in `config.json`:
+
+```json
+{
+  "notifications": {
+    "email": {
+      "enabled": true,
+      "smtp_server": "smtp.gmail.com",
+      "smtp_port": 587,
+      "username": "your_email@gmail.com",
+      "password": "your_app_password",
+      "recipient": "recipient@example.com"
+    }
+  }
+}
+```
+
+### Telegram Notifications
+
+To enable Telegram notifications, configure the Telegram section in `config.json`:
+
+```json
+{
+  "notifications": {
+    "telegram": {
+      "enabled": true,
+      "bot_token": "your_bot_token",
+      "chat_id": "your_chat_id"
+    }
+  }
+}
+```
+
+### Notification Filtering
+
+The notification system includes advanced filtering capabilities:
+
+- **Minimum Elevation**: Only notify for passes above a specified elevation angle
+- **Minimum Brightness**: Only notify for satellites brighter than a specified magnitude
+- **Excluded Satellites**: Skip notifications for specific satellite names
+- **Excluded Patterns**: Skip notifications for satellites matching specific patterns
+
+## 📈 Performance Optimizations
+
+### Enhanced Caching
+
+The system implements multiple caching layers:
+
+1. **TLE Data Caching**: Satellite data cached with expiration
+2. **API Response Caching**: Web API responses cached to reduce computation
+3. **Prediction Caching**: Pass predictions cached to avoid recalculation
+4. **Data Processor Caching**: Export operations cached with LRU eviction
+
+### Memory Management
+
+- Periodic cache cleanup to prevent memory leaks
+- Configurable cache sizes and TTL values
+- Automatic removal of expired entries
+
+## 🧪 Testing
+
+### Running Tests
+
+```bash
+# Run all tests
+python -m pytest src/tests/ -v
+
+# Run specific test module
+python src/tests/test_config_manager.py
+
+# Run tests with coverage
+python -m pytest src/tests/ --cov=src --cov-report=html
+
+# Run a specific test class
+python -m pytest src/tests/test_core_tracker.py::TestStarlinkTracker -v
+```
+
+### Test Coverage
+
+The test suite includes:
+- Core tracker functionality tests
+- Configuration manager tests
+- Data processor tests
+- Notification system tests
+- Scheduler tests
+- Web application tests
+- Custom exception tests
+- Enhanced caching tests
+
+## 🛠️ Command Line Usage
+
+### Tracker Commands
+
+```bash
+# Update TLE data and show upcoming passes
+python starlink_tracker.py track --update
+
+# Show 3D visualization of orbits
+python starlink_tracker.py track --visualize
+
+# Start scheduler for automated tasks
+python starlink_tracker.py track --schedule
+
+# Enable debug mode
+python starlink_tracker.py track --debug
+
+# Send notifications for upcoming passes
+python starlink_tracker.py track --notify
+```
+
+### Web Interface Commands
+
+```bash
+# Start the web interface
+python starlink_tracker.py web
+
+# Start web interface with debug logging
+python starlink_tracker.py web --debug
+```
+
+## 🤖 Scheduler Configuration
+
+The scheduler supports configurable cron expressions:
+
+- `0 0 */6 * *`: Every 6 hours (TLE updates)
+- `*/30 * * * *`: Every 30 minutes (Prediction updates)
+- `*/15 * * * *`: Every 15 minutes (Notification checks)
+
+Customize these in the `schedule` section of `config.json`.
+
+## 📊 Data Export
+
+### Export Formats
+
+- **JSON**: Structured data export with metadata
+- **CSV**: Tabular data export for spreadsheet applications
+
+### Export Options
+
+- Include TLE data
+- Include prediction results
+- Compress large files automatically
+- Select date ranges for export
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+1. **TLE Data Not Updating**: Check internet connection and data source URLs
+2. **Visualization Not Working**: Ensure matplotlib and plotly are installed
+3. **Notifications Not Sending**: Verify configuration and credentials
+4. **Scheduler Not Running**: Check cron expressions and system time
+
+### Debugging
+
+Enable debug logging to get detailed information:
+
+```bash
+python starlink_tracker.py track --debug
+python starlink_tracker.py web --debug
+```
+
+## 📈 Performance Tips
+
+1. **Cache Management**: Regularly clear cache if memory usage is high
+2. **Satellite Selection**: Limit number of satellites for visualization
+3. **Update Frequency**: Adjust scheduler intervals based on needs
+4. **Data Retention**: Configure appropriate cache expiration times
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Table of Contents
 1. [Installation](#installation)
@@ -534,7 +891,7 @@ Through the web interface:
 4. Download the file
 
 ### API Export
-```bash
+```
 # Export via API
 curl http://localhost:5000/api/export/json -o starlink_data.json
 curl http://localhost:5000/api/export/csv -o starlink_data.csv

@@ -279,13 +279,15 @@ class StarlinkScheduler:
                             max_elevation = pass_info.get('altitude', 0)
                             azimuth = pass_info.get('azimuth', 0)
                             brightness = pass_info.get('brightness', 0)
+                            velocity = pass_info.get('velocity', 0)
                             
                             notifier.notify_upcoming_pass(
                                 satellite_name, 
                                 pass_time, 
                                 max_elevation, 
                                 azimuth,
-                                brightness
+                                brightness,
+                                velocity
                             )
                 except ImportError:
                     self.logger.warning("Notification system not available")

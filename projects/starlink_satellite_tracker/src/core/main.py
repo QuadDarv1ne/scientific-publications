@@ -279,6 +279,9 @@ class StarlinkTracker:
                         f.write(response.text)
                     
                     return self._load_tle_from_file(cache_file)
+                except requests.exceptions.RequestException as e:
+                    self.logger.warning(f"Network error downloading TLE data from {url}: {e}")
+                    continue
                 except Exception as e:
                     self.logger.warning(f"Failed to download TLE data from {url}: {e}")
                     continue
@@ -288,11 +291,14 @@ class StarlinkTracker:
                 self.logger.info("Using cached TLE data due to download failure")
                 return self._load_tle_from_file(cache_file)
             else:
-                raise Exception("Failed to download TLE data from all sources and no cached data available")
+                raise TLEDataError("Failed to download TLE data from all sources and no cached data available")
                 
+        except TLEDataError:
+            # Re-raise custom exceptions
+            raise
         except Exception as e:
             self.logger.error(f"Error updating TLE data: {e}")
-            raise
+            raise TLEDataError(f"Failed to update TLE data: {str(e)}") from e
     
     def _load_tle_from_file(self, filename) -> List[EarthSatellite]:
         """Load TLE data from file and create satellite objects."""
@@ -344,7 +350,7 @@ class StarlinkTracker:
             return success if success is not None else True
         except Exception as e:
             self.logger.error(f"Failed to start scheduler: {e}")
-            return False
+            raise SchedulerError(f"Failed to start scheduler: {str(e)}") from e
     
     def stop_scheduler(self) -> bool:
         """Stop the automated scheduler."""
@@ -361,7 +367,7 @@ class StarlinkTracker:
                 return True
         except Exception as e:
             self.logger.error(f"Error stopping scheduler: {e}")
-            return False
+            raise SchedulerError(f"Failed to stop scheduler: {str(e)}") from e
     
     def predict_passes(self, latitude: float, longitude: float, altitude: float = 0, 
                       hours_ahead: int = 24, min_elevation: float = 10) -> List[Dict[str, Any]]:
@@ -391,23 +397,23 @@ class StarlinkTracker:
                 return file_cached_data
             
             if not self.satellites:
-                raise ValueError("No satellites loaded. Call update_tle_data() first.")
+                raise PredictionError("No satellites loaded. Call update_tle_data() first.")
             
             if self.earth is None:
-                raise ValueError("Earth data not loaded. Check internet connection.")
+                raise PredictionError("Earth data not loaded. Check internet connection.")
             
             if self.ts is None:
-                raise ValueError("Time scale not initialized.")
+                raise PredictionError("Time scale not initialized.")
             
             # Validate input parameters
             if not (-90 <= latitude <= 90):
-                raise ValueError(f"Invalid latitude: {latitude}. Must be between -90 and 90.")
+                raise PredictionError(f"Invalid latitude: {latitude}. Must be between -90 and 90.")
             if not (-180 <= longitude <= 180):
-                raise ValueError(f"Invalid longitude: {longitude}. Must be between -180 and 180.")
+                raise PredictionError(f"Invalid longitude: {longitude}. Must be between -180 and 180.")
             if hours_ahead <= 0:
-                raise ValueError(f"Invalid hours_ahead: {hours_ahead}. Must be positive.")
+                raise PredictionError(f"Invalid hours_ahead: {hours_ahead}. Must be positive.")
             if min_elevation < 0:
-                raise ValueError(f"Invalid min_elevation: {min_elevation}. Must be non-negative.")
+                raise PredictionError(f"Invalid min_elevation: {min_elevation}. Must be non-negative.")
             
             # Set observer location
             observer = self.earth + Topos(latitude, longitude, elevation_m=altitude)
@@ -462,9 +468,12 @@ class StarlinkTracker:
             self.logger.info(f"Predicted {len(passes)} passes for {len(self.satellites)} satellites")
             return passes
             
+        except PredictionError:
+            # Re-raise custom exceptions
+            raise
         except Exception as e:
             self.logger.error(f"Error predicting passes: {e}")
-            raise
+            raise PredictionError(f"Failed to predict satellite passes: {str(e)}") from e
     
     def _calculate_velocity(self, satellite: EarthSatellite, time, observer=None) -> float:
         """Calculate satellite velocity relative to observer or Earth center."""
@@ -584,14 +593,14 @@ class StarlinkTracker:
             from mpl_toolkits.mplot3d import Axes3D
         except ImportError:
             self.logger.error("Matplotlib not installed. Cannot create visualization.")
-            raise ImportError("Matplotlib not installed. Cannot create visualization.")
+            raise VisualizationError("Matplotlib not installed. Cannot create visualization.")
         
         try:
             if not self.satellites:
-                raise ValueError("No satellites loaded. Call update_tle_data() first.")
+                raise VisualizationError("No satellites loaded. Call update_tle_data() first.")
             
             if self.ts is None:
-                raise ValueError("Time scale not initialized.")
+                raise VisualizationError("Time scale not initialized.")
             
             fig = plt.figure(figsize=(12, 10))
             ax = fig.add_subplot(111, projection='3d')
@@ -623,9 +632,12 @@ class StarlinkTracker:
             self.logger.info(f"Visualized orbits for {len(satellites_to_plot)} satellites")
             plt.show()
             
+        except VisualizationError:
+            # Re-raise custom exceptions
+            raise
         except Exception as e:
             self.logger.error(f"Error visualizing orbits: {e}")
-            raise
+            raise VisualizationError(f"Failed to visualize satellite orbits: {str(e)}") from e
     
     def clear_caches(self) -> None:
         """Clear all caches."""
@@ -679,29 +691,43 @@ def main():
         
         # Start scheduler if requested
         if args.schedule:
-            if tracker.start_scheduler():
-                print("Scheduler started. Press Ctrl+C to stop.")
-                try:
-                    # Keep running
-                    while True:
-                        time.sleep(1)
-                except KeyboardInterrupt:
-                    print("\nStopping scheduler...")
-                    tracker.stop_scheduler()
-            else:
-                print("Failed to start scheduler")
+            try:
+                if tracker.start_scheduler():
+                    print("Scheduler started. Press Ctrl+C to stop.")
+                    try:
+                        # Keep running
+                        while True:
+                            time.sleep(1)
+                    except KeyboardInterrupt:
+                        print("\nStopping scheduler...")
+                        tracker.stop_scheduler()
+                else:
+                    print("Failed to start scheduler")
+                    sys.exit(1)
+            except SchedulerError as e:
+                print(f"Scheduler error: {e}")
                 sys.exit(1)
         
         # Example: Predict passes for a location (Moscow in this example)
         if args.notify or not any([args.visualize, args.update, args.schedule]):
-            passes = tracker.predict_passes(latitude=55.7558, longitude=37.6173)
-            print(f"Found {len(passes)} upcoming passes:")
-            for p in passes[:10]:  # Show first 10
-                print(f"  {p['satellite']}: {p['time'].strftime('%Y-%m-%d %H:%M:%S')} "
-                      f"at {p['altitude']:.1f}° alt, {p['azimuth']:.1f}° az")
+            try:
+                passes = tracker.predict_passes(latitude=55.7558, longitude=37.6173)
+                print(f"Found {len(passes)} upcoming passes:")
+                for p in passes[:10]:  # Show first 10
+                    print(f"  {p['satellite']}: {p['time'].strftime('%Y-%m-%d %H:%M:%S')} "
+                          f"at {p['altitude']:.1f}° alt, {p['azimuth']:.1f}° az")
+            except PredictionError as e:
+                print(f"Prediction error: {e}")
+                sys.exit(1)
     
+    except TLEDataError as e:
+        logging.error(f"TLE data error: {e}")
+        sys.exit(1)
+    except VisualizationError as e:
+        logging.error(f"Visualization error: {e}")
+        sys.exit(1)
     except Exception as e:
-        logging.error(f"Error running Starlink Tracker: {e}")
+        logging.error(f"Unexpected error running Starlink Tracker: {e}")
         sys.exit(1)
 
 

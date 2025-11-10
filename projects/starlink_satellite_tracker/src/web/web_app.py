@@ -287,6 +287,22 @@ def visualization():
     template = get_template_name('visualization', language)
     return render_template(template)
 
+
+@app.route('/map')
+def map_view():
+    """Page for real-time satellite map."""
+    language = request.args.get('lang', 'en')
+    template = get_template_name('map', language)
+    return render_template(template)
+
+
+@app.route('/statistics')
+def statistics():
+    """Page for satellite statistics."""
+    language = request.args.get('lang', 'en')
+    template = get_template_name('statistics', language)
+    return render_template(template)
+
 @app.route('/api/satellites')
 @handle_api_errors
 @cached(ttl=600)  # Cache for 10 minutes
@@ -631,6 +647,48 @@ def api_visualize_orbits():
     except Exception as e:
         app.logger.error(f"Error in api_visualize_orbits: {e}")
         return jsonify({'error': 'Failed to generate orbit visualization'}), 500
+
+
+@app.route('/api/statistics')
+@handle_api_errors
+def api_statistics():
+    """API endpoint for satellite pass statistics."""
+    try:
+        from utils.data_processor import DataProcessor
+        
+        # Get location parameters from request or use defaults
+        lat = float(request.args.get('lat', DEFAULT_LATITUDE))
+        lon = float(request.args.get('lon', DEFAULT_LONGITUDE))
+        hours = int(request.args.get('hours', 24))
+        
+        # Validate parameters
+        if not (-90 <= lat <= 90):
+            return jsonify({'error': 'Invalid latitude. Must be between -90 and 90.'}), 400
+        if not (-180 <= lon <= 180):
+            return jsonify({'error': 'Invalid longitude. Must be between -180 and 180.'}), 400
+        if not (1 <= hours <= 168):  # Max 1 week
+            return jsonify({'error': 'Invalid hours. Must be between 1 and 168.'}), 400
+        
+        # Predict passes
+        passes = tracker_instance.predict_passes(lat, lon, hours_ahead=hours)
+        
+        # Initialize data processor
+        processor = DataProcessor()
+        
+        # Calculate statistics
+        stats = processor.calculate_satellite_statistics(passes)
+        
+        return jsonify({
+            'statistics': stats,
+            'location': {'latitude': lat, 'longitude': lon},
+            'period_hours': hours,
+            'generated': datetime.now().isoformat()
+        })
+    except Exception as e:
+        app.logger.error(f"Error in api_statistics: {e}")
+        return jsonify({
+            'error': 'Failed to calculate satellite statistics'
+        }), 500
 
 @app.errorhandler(404)
 def not_found(error):

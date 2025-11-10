@@ -346,6 +346,50 @@ class DataProcessor:
             self.logger.error(f"Error analyzing constellation: {e}")
             return {}
     
+    def calculate_satellite_statistics(self, passes: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Calculate statistics for satellite passes."""
+        if not passes:
+            self.logger.warning("No passes to analyze for statistics")
+            return {}
+            
+        try:
+            # Check cache for statistics
+            cache_key = f"pass_stats_{len(passes)}"
+            cached_result = self.cache.get(cache_key)
+            if cached_result is not None:
+                self.logger.info("Using cached pass statistics")
+                return cached_result
+            
+            # Calculate statistics
+            total_passes = len(passes)
+            if total_passes == 0:
+                return {}
+            
+            # Extract values for calculations
+            elevations = [p.get('altitude', 0) for p in passes]
+            brightnesses = [p.get('brightness', 0) for p in passes]
+            distances = [p.get('distance', 0) for p in passes]
+            
+            # Calculate statistics
+            stats = {
+                'total_passes': total_passes,
+                'average_elevation': sum(elevations) / total_passes if elevations else 0,
+                'max_elevation': max(elevations) if elevations else 0,
+                'min_elevation': min(elevations) if elevations else 0,
+                'average_brightness': sum(brightnesses) / total_passes if brightnesses else 0,
+                'average_distance': sum(distances) / total_passes if distances else 0,
+                'analysis_date': datetime.now().isoformat()
+            }
+            
+            # Cache the statistics
+            self.cache.put(cache_key, stats)
+            self.logger.info(f"Calculated statistics for {total_passes} passes")
+            return stats
+            
+        except Exception as e:
+            self.logger.error(f"Error calculating satellite statistics: {e}")
+            return {}
+    
     def _cleanup_cache_if_needed(self) -> None:
         """Periodically cleanup expired cache entries."""
         # Cleanup every 30 minutes

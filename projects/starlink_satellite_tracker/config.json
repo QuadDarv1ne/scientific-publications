@@ -43,9 +43,12 @@
     },
     "min_elevation": 10,
     "min_brightness": -1,
+    "min_velocity": 0,
     "advance_notice_minutes": 30,
     "excluded_satellites": [],
-    "excluded_patterns": ["DEBRIS", "TEST"]
+    "excluded_patterns": ["DEBRIS", "TEST"],
+    "included_satellites": [],
+    "included_patterns": []
   },
   "export": {
     "default_format": "json",

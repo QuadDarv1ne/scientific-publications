@@ -76,39 +76,6 @@
     </div>
 </div>
 
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Satellite Orbits Visualization</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <label for="orbit-hours" class="form-label">Time Period (hours):</label>
-                    <select class="form-select" id="orbit-hours" style="width: auto; display: inline-block;">
-                        <option value="1">1 hour</option>
-                        <option value="2" selected>2 hours</option>
-                        <option value="4">4 hours</option>
-                        <option value="8">8 hours</option>
-                    </select>
-                    <label for="orbit-satellites" class="form-label ms-3">Satellites:</label>
-                    <select class="form-select" id="orbit-satellites" style="width: auto; display: inline-block;">
-                        <option value="5">5</option>
-                        <option value="10" selected>10</option>
-                        <option value="15">15</option>
-                        <option value="20">20</option>
-                    </select>
-                    <button class="btn btn-primary ms-2" id="update-orbit-btn">Update Visualization</button>
-                </div>
-                <div id="orbit-plot" style="height: 500px;">
-                    <p class="text-muted text-center">Loading orbit visualization...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 <script>
 // Fetch satellite data
 fetch('/api/satellites')
@@ -172,36 +139,5 @@ fetch('/api/passes?hours=48')
         document.getElementById('next-pass-content').innerHTML = '<p class="text-danger">Error loading pass data</p>';
         document.getElementById('recent-passes').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading passes</td></tr>';
     });
-
-// Fetch and display orbit visualization
-function loadOrbitVisualization(hours = 2, satellites = 10) {
-    const plotDiv = document.getElementById('orbit-plot');
-    plotDiv.innerHTML = '<p class="text-muted text-center">Loading orbit visualization...</p>';
-    
-    fetch(`/api/visualization/orbits?hours=${hours}&satellites=${satellites}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.plot) {
-                const plotData = JSON.parse(data.plot);
-                Plotly.newPlot('orbit-plot', plotData.data, plotData.layout);
-            } else {
-                plotDiv.innerHTML = '<p class="text-muted text-center">No visualization data available</p>';
-            }
-        })
-        .catch(error => {
-            console.error('Error loading orbit visualization:', error);
-            plotDiv.innerHTML = '<p class="text-danger text-center">Error loading orbit visualization</p>';
-        });
-}
-
-// Load initial visualization
-loadOrbitVisualization();
-
-// Handle update button click
-document.getElementById('update-orbit-btn').addEventListener('click', function() {
-    const hours = document.getElementById('orbit-hours').value;
-    const satellites = document.getElementById('orbit-satellites').value;
-    loadOrbitVisualization(hours, satellites);
-});
 </script>
 {% endblock %}

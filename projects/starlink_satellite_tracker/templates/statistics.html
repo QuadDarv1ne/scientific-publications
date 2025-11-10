@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Satellite Statistics</h1>
+        <p class="lead">Statistical analysis of upcoming Starlink satellite passes</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <form id="stats-filter-form" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="latitude" class="form-label">Latitude</label>
+                        <input type="number" class="form-control" id="latitude" step="0.0001" placeholder="55.7558" value="55.7558">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="longitude" class="form-label">Longitude</label>
+                        <input type="number" class="form-control" id="longitude" step="0.0001" placeholder="37.6173" value="37.6173">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="hours" class="form-label">Hours Ahead</label>
+                        <select class="form-select" id="hours">
+                            <option value="24">24 hours</option>
+                            <option value="48" selected>48 hours</option>
+                            <option value="72">72 hours</option>
+                            <option value="168">1 week</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">Update Statistics</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Pass Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div id="statistics-content">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+                        <div>
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading statistics...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Elevation Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div id="elevation-chart" style="height: 300px;">
+                    <p class="text-muted text-center">Elevation distribution chart will appear here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Brightness Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div id="brightness-chart" style="height: 300px;">
+                    <p class="text-muted text-center">Brightness distribution chart will appear here</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Function to fetch and display statistics
+function fetchStatistics(lat, lon, hours) {
+    const statsContent = document.getElementById('statistics-content');
+    statsContent.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+            <div>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading statistics...</p>
+            </div>
+        </div>
+    `;
+    
+    fetch(`/api/statistics?lat=${lat}&lon=${lon}&hours=${hours}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.statistics && data.statistics.total_passes > 0) {
+                const stats = data.statistics;
+                
+                statsContent.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3>${stats.total_passes}</h3>
+                                <p class="text-muted">Total Passes</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3>${stats.average_elevation.toFixed(1)}°</h3>
+                                <p class="text-muted">Average Elevation</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3>${stats.max_elevation.toFixed(1)}°</h3>
+                                <p class="text-muted">Maximum Elevation</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3>${stats.average_brightness.toFixed(1)}</h3>
+                                <p class="text-muted">Average Brightness</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3>${stats.average_distance.toFixed(0)} km</h3>
+                                <p class="text-muted">Average Distance</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <h3>${stats.min_elevation.toFixed(1)}°</h3>
+                                <p class="text-muted">Minimum Elevation</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-12 text-center">
+                            <small class="text-muted">Statistics generated on ${new Date(data.generated).toLocaleString()}</small>
+                        </div>
+                    </div>
+                `;
+                
+                // Update charts
+                updateCharts(stats);
+            } else {
+                statsContent.innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
+                        <p class="mt-2">No statistics available</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching statistics:', error);
+            statsContent.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                    <p class="mt-2">Error loading statistics</p>
+                    <p class="small text-muted">${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+// Function to update charts
+function updateCharts(stats) {
+    // For now, we'll just show placeholder text
+    // In a real implementation, this would use Chart.js to create actual charts
+    document.getElementById('elevation-chart').innerHTML = `
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="text-center">
+                <i class="fas fa-chart-bar fa-2x text-primary mb-2"></i>
+                <p class="text-muted">Elevation distribution chart</p>
+                <p class="small text-muted">This would show a histogram of pass elevations in a full implementation</p>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('brightness-chart').innerHTML = `
+        <div class="d-flex justify-content-center align-items-center h-100">
+            <div class="text-center">
+                <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
+                <p class="text-muted">Brightness distribution chart</p>
+                <p class="small text-muted">This would show a histogram of satellite brightness in a full implementation</p>
+            </div>
+        </div>
+    `;
+}
+
+// Handle form submission
+document.getElementById('stats-filter-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const lat = document.getElementById('latitude').value;
+    const lon = document.getElementById('longitude').value;
+    const hours = document.getElementById('hours').value;
+    
+    fetchStatistics(lat, lon, hours);
+});
+
+// Load initial data
+document.addEventListener('DOMContentLoaded', function() {
+    fetchStatistics(55.7558, 37.6173, 48);
+});
+</script>
+{% endblock %}

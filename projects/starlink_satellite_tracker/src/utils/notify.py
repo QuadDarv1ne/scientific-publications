@@ -120,7 +120,7 @@ class NotificationSystem:
             return False
     
     def should_notify_for_pass(self, satellite_name: str, max_elevation: float, 
-                              brightness: float = 0.0) -> bool:
+                              brightness: float = 0.0, velocity: float = 0.0) -> bool:
         """Determine if a notification should be sent for a satellite pass based on filters."""
         try:
             # Check minimum elevation
@@ -133,6 +133,12 @@ class NotificationSystem:
             min_brightness = self.notification_config.get('min_brightness', -1)
             if brightness < min_brightness:
                 self.logger.debug(f"Skipping notification for {satellite_name}: Brightness {brightness} below minimum {min_brightness}")
+                return False
+            
+            # Check minimum velocity (if provided)
+            min_velocity = self.notification_config.get('min_velocity', 0)
+            if velocity > 0 and velocity < min_velocity:
+                self.logger.debug(f"Skipping notification for {satellite_name}: Velocity {velocity} km/s below minimum {min_velocity} km/s")
                 return False
             
             # Check satellite name filters
@@ -148,6 +154,24 @@ class NotificationSystem:
                     self.logger.debug(f"Skipping notification for {satellite_name}: Matches excluded pattern '{pattern}'")
                     return False
             
+            # Check for specific included satellites (if specified)
+            included_satellites = self.notification_config.get('included_satellites', [])
+            if included_satellites and satellite_name not in included_satellites:
+                self.logger.debug(f"Skipping notification for {satellite_name}: Satellite not in included list")
+                return False
+            
+            # Check for specific included patterns (if specified)
+            included_patterns = self.notification_config.get('included_patterns', [])
+            if included_patterns:
+                pattern_match = False
+                for pattern in included_patterns:
+                    if pattern in satellite_name:
+                        pattern_match = True
+                        break
+                if not pattern_match:
+                    self.logger.debug(f"Skipping notification for {satellite_name}: Does not match any included pattern")
+                    return False
+            
             # All filters passed
             return True
             
@@ -157,7 +181,7 @@ class NotificationSystem:
             return True
     
     def notify_upcoming_pass(self, satellite_name: str, pass_time: datetime, 
-                           max_elevation: float, azimuth: float, brightness: float = 0.0) -> bool:
+                           max_elevation: float, azimuth: float, brightness: float = 0.0, velocity: float = 0.0) -> bool:
         """Send notification about an upcoming satellite pass."""
         try:
             # Validate inputs
@@ -166,7 +190,7 @@ class NotificationSystem:
                 return False
             
             # Check if we should notify based on filters
-            if not self.should_notify_for_pass(satellite_name, max_elevation, brightness):
+            if not self.should_notify_for_pass(satellite_name, max_elevation, brightness, velocity):
                 self.logger.info(f"Skipping notification for {satellite_name} based on filters")
                 return True  # Not an error, just filtered out
             
@@ -179,6 +203,7 @@ Time: {time_str}
 Maximum Elevation: {max_elevation:.1f}°
 Azimuth: {azimuth:.1f}°
 Brightness: {brightness:.1f} mag
+Velocity: {velocity:.2f} km/s
 
 Best viewing conditions expected!
 Look up and enjoy the show! 🌌

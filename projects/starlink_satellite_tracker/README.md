@@ -199,6 +199,7 @@ Handles data analysis, filtering, and export functionality with caching.
 - `export_to_csv()`: Exports data to CSV format
 - `export_to_json()`: Exports data to JSON format
 - `analyze_constellation()`: Performs basic constellation analysis
+- `calculate_satellite_statistics()`: Calculates statistics for satellite passes
 - `clear_cache()`: Clears data processor cache
 
 **Example Usage:**
@@ -274,9 +275,12 @@ Sends alerts about upcoming satellite passes via email or Telegram.
     },
     "min_elevation": 10,
     "min_brightness": -1,
+    "min_velocity": 0,
     "advance_notice_minutes": 30,
     "excluded_satellites": [],
-    "excluded_patterns": ["DEBRIS", "TEST"]
+    "excluded_patterns": ["DEBRIS", "TEST"],
+    "included_satellites": [],
+    "included_patterns": []
   }
 }
 ```
@@ -284,8 +288,12 @@ Sends alerts about upcoming satellite passes via email or Telegram.
 **Notification Filtering:**
 - `min_elevation`: Minimum elevation angle for notifications (default: 10°)
 - `min_brightness`: Minimum brightness (magnitude) for notifications (default: -1)
+- `min_velocity`: Minimum velocity for notifications (default: 0 km/s)
 - `excluded_satellites`: List of specific satellite names to exclude from notifications
 - `excluded_patterns`: List of patterns to exclude from notifications (e.g., "DEBRIS" excludes all debris satellites)
+- `included_satellites`: List of specific satellite names to include in notifications (empty list = all satellites)
+- `included_patterns`: List of patterns to include in notifications (empty list = all satellites)
+- `advance_notice_minutes`: Time before pass to send notification (default: 30 minutes)
 
 **Email Notification Setup:**
 ```python
@@ -321,17 +329,31 @@ Sends alerts about upcoming satellite passes via email or Telegram.
 ### Web Application (`src/web/web_app.py`)
 Flask-based web interface with RESTful API and caching.
 
+**Enhanced Visualization Capabilities:**
+- Interactive 3D orbit visualization using Plotly
+- Real-time satellite tracking dashboard
+- Configurable visualization parameters (time period, number of satellites)
+- Color scheme options for better visualization
+- Dedicated visualization page (`/visualization`) with advanced controls
+- Real-time satellite map (`/map`) showing current satellite positions
+- Statistical analysis page (`/statistics`) with pass statistics
+
 **API Endpoints:**
 - `GET /api/satellites`: Returns current satellite positions
 - `GET /api/passes`: Returns predicted satellite passes
 - `GET /api/coverage`: Returns global coverage data
 - `GET /api/export/<format>`: Exports data in specified format (json, csv)
+- `GET /api/visualization/orbits`: Returns interactive 3D orbit visualization data
+- `GET /api/statistics`: Returns statistical analysis of satellite passes
 - `POST /api/cache/clear`: Clears API cache
 
 **Web Pages:**
 - `/` - Main dashboard with current satellite positions
 - `/passes` - Calendar of passes over your location
 - `/coverage` - World map of Starlink coverage
+- `/map` - Real-time satellite positions on interactive map
+- `/visualization` - 3D orbit visualization with advanced controls
+- `/statistics` - Statistical analysis of satellite passes
 - `/settings` - Observer settings and notifications
 - `/export` - Export data in various formats
 
@@ -389,6 +411,12 @@ python -m pytest src/tests/ --cov=src --cov-report=html
 # Run a specific test class
 python -m pytest src/tests/test_core_tracker.py::TestStarlinkTracker -v
 ```
+
+**Enhanced Testing Coverage:**
+- Custom exception testing
+- Enhanced data processor caching tests
+- Notification filtering tests
+- Core functionality validation
 
 ## 🛠️ Command Line Arguments
 
@@ -471,21 +499,32 @@ Period: Next 24 hours
 
 The system includes several performance optimizations:
 
-1. **Caching**: 
+1. **Enhanced Caching**: 
    - TLE data caching in memory with expiration
    - API response caching in web interface
    - Prediction result caching
-   - Data processor caching for export operations
+   - Data processor caching with LRU eviction and TTL
+   - Periodic cache cleanup to prevent memory leaks
 
 2. **Data Processing**:
    - Efficient TLE parsing
    - Selective satellite processing (first N satellites)
    - Compressed data export for large datasets
+   - Advanced filtering capabilities
 
 3. **Scheduler Optimization**:
    - Execution cache to prevent duplicate job runs
    - Configurable cron-based scheduling
    - Background threading for non-blocking operations
+   - Automated notification checking with filtering
+
+4. **Web Interface**:
+   - Interactive 3D orbit visualization with Plotly
+   - Real-time satellite tracking dashboard
+   - Configurable visualization parameters
+   - Real-time satellite map visualization
+   - Statistical analysis of satellite passes
+   - Responsive design for all devices
 
 ## 🤝 Contributing
 
