@@ -8,6 +8,7 @@ import json
 import logging
 import os
 from typing import Dict, Any, Optional
+import threading
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool, StaticPool
@@ -109,6 +110,7 @@ class DatabaseManager:
 
 # Global database manager instance
 _db_manager: Optional[DatabaseManager] = None
+_db_manager_lock = threading.Lock()
 
 
 def get_database_manager(config_path: str = "config.json") -> DatabaseManager:
@@ -123,7 +125,9 @@ def get_database_manager(config_path: str = "config.json") -> DatabaseManager:
     """
     global _db_manager
     if _db_manager is None:
-        _db_manager = DatabaseManager(config_path)
+        with _db_manager_lock:
+            if _db_manager is None:
+                _db_manager = DatabaseManager(config_path)
     return _db_manager
 
 

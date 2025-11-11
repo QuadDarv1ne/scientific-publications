@@ -1,14 +1,14 @@
 """
-Системы координат для гелиофизики.
+Coordinate systems for heliophysics.
 """
 
 from typing import Tuple, Union
 
 import numpy as np
 
-# Некоторые версии astropy могут не предоставлять специфичные имена систем координат
-# (HeliographicStonyhurst/HeliographicCarrington). Импорт выполняем в защищённом
-# режиме, чтобы избежать ошибок при импортировании пакета в средах с другой версией astropy.
+# Some versions of astropy may not provide specific coordinate system names
+# (HeliographicStonyhurst/HeliographicCarrington). Import is performed in a protected
+# mode to avoid errors when importing the package in environments with a different astropy version.
 try:
     from astropy.coordinates import SkyCoord  # type: ignore
 except Exception:
@@ -17,7 +17,7 @@ from heliopy.utils.math_utils import MathUtils
 
 
 class CoordinateSystem:
-    """Класс для работы с системами координат."""
+    """Class for working with coordinate systems."""
 
     @staticmethod
     def heliographic_to_cartesian(
@@ -26,28 +26,28 @@ class CoordinateSystem:
         radius: Union[float, np.ndarray] = 1.0,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Преобразование гелиографических координат в декартовы.
+        Convert heliographic coordinates to Cartesian.
 
         Parameters
         ----------
-        lon : float или array
-            Долгота в радианах.
-        lat : float или array
-            Широта в радианах.
-        radius : float или array
-            Радиус (по умолчанию 1.0).
+        lon : float or array
+            Longitude in radians.
+        lat : float or array
+            Latitude in radians.
+        radius : float or array
+            Radius (default 1.0).
 
         Returns
         -------
         x, y, z : arrays
-            Декартовы координаты.
+            Cartesian coordinates.
         """
-        # В гелиографических координатах:
-        # lat - это угол от экватора (широта)
-        # lon - это долгота
-        # Преобразуем в сферические координаты (theta от оси z, phi - азимут)
-        theta = np.pi / 2 - lat  # Полярный угол от оси z
-        phi = lon  # Азимутальный угол
+        # In heliographic coordinates:
+        # lat - is the angle from the equator (latitude)
+        # lon - is the longitude
+        # Convert to spherical coordinates (theta from z-axis, phi - azimuth)
+        theta = np.pi / 2 - lat  # Polar angle from z-axis
+        phi = lon  # Azimuthal angle
 
         return MathUtils.spherical_to_cartesian(radius, theta, phi)
 
@@ -56,21 +56,21 @@ class CoordinateSystem:
         x: Union[float, np.ndarray], y: Union[float, np.ndarray], z: Union[float, np.ndarray]
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Преобразование декартовых координат в гелиографические.
+        Convert Cartesian coordinates to heliographic.
 
         Parameters
         ----------
-        x, y, z : float или array
-            Декартовы координаты.
+        x, y, z : float or array
+            Cartesian coordinates.
 
         Returns
         -------
         lon, lat, radius : arrays
-            Гелиографические координаты (lon, lat в радианах).
+            Heliographic coordinates (lon, lat in radians).
         """
         r, theta, phi = MathUtils.cartesian_to_spherical(x, y, z)
-        lat = np.pi / 2 - theta  # Широта
-        lon = phi  # Долгота
+        lat = np.pi / 2 - theta  # Latitude
+        lon = phi  # Longitude
         return lon, lat, r
 
     @staticmethod
@@ -78,59 +78,59 @@ class CoordinateSystem:
         lon_stonyhurst: Union[float, np.ndarray], lat_stonyhurst: Union[float, np.ndarray], time
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Преобразование из системы Stonyhurst в систему Carrington.
+        Convert from Stonyhurst system to Carrington system.
 
         Parameters
         ----------
-        lon_stonyhurst : float или array
-            Долгота Stonyhurst в радианах.
-        lat_stonyhurst : float или array
-            Широта Stonyhurst в радианах.
+        lon_stonyhurst : float or array
+            Stonyhurst longitude in radians.
+        lat_stonyhurst : float or array
+            Stonyhurst latitude in radians.
         time : Time
-            Время для вычисления вращения.
+            Time for rotation calculation.
 
         Returns
         -------
         lon_carrington, lat_carrington : arrays
-            Координаты Carrington в радианах.
+            Carrington coordinates in radians.
         """
 
         from heliopy.utils.time_utils import TimeUtils
 
         time_obj = TimeUtils.parse_time(time)
 
-        # Вычисление номера вращения Кэррингтона
+        # Calculate Carrington rotation number
         rotation_number = TimeUtils.carrington_rotation(time_obj)
 
-        # Угол поворота между системами
+        # Rotation angle between systems
         rotation_angle = (rotation_number - 1) * 360 * np.pi / 180
 
-        # Преобразование долготы
+        # Longitude transformation
         lon_carrington = lon_stonyhurst + rotation_angle
         lat_carrington = lat_stonyhurst
 
-        return lon_carrington, lat_carrington
+        return np.asarray(lon_carrington), np.asarray(lat_carrington)
 
     @staticmethod
     def carrington_to_stonyhurst(
         lon_carrington: Union[float, np.ndarray], lat_carrington: Union[float, np.ndarray], time
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Преобразование из системы Carrington в систему Stonyhurst.
+        Convert from Carrington system to Stonyhurst system.
 
         Parameters
         ----------
-        lon_carrington : float или array
-            Долгота Carrington в радианах.
-        lat_carrington : float или array
-            Широта Carrington в радианах.
+        lon_carrington : float or array
+            Carrington longitude in radians.
+        lat_carrington : float or array
+            Carrington latitude in radians.
         time : Time
-            Время для вычисления вращения.
+            Time for rotation calculation.
 
         Returns
         -------
         lon_stonyhurst, lat_stonyhurst : arrays
-            Координаты Stonyhurst в радианах.
+            Stonyhurst coordinates in radians.
         """
         from heliopy.utils.time_utils import TimeUtils
 
@@ -141,4 +141,4 @@ class CoordinateSystem:
         lon_stonyhurst = lon_carrington - rotation_angle
         lat_stonyhurst = lat_carrington
 
-        return lon_stonyhurst, lat_stonyhurst
+        return np.asarray(lon_stonyhurst), np.asarray(lat_stonyhurst)

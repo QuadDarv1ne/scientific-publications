@@ -1,5 +1,5 @@
 """
-Математические утилиты для гелиофизики.
+Mathematical utilities for heliophysics.
 """
 
 from typing import Tuple, Union
@@ -8,28 +8,28 @@ import numpy as np
 
 
 class MathUtils:
-    """Математические утилиты."""
+    """Mathematical utilities."""
 
     @staticmethod
     def spherical_to_cartesian(
         r: Union[float, np.ndarray], theta: Union[float, np.ndarray], phi: Union[float, np.ndarray]
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Преобразование сферических координат в декартовы.
+        Convert spherical coordinates to Cartesian.
 
         Parameters
         ----------
-        r : float или array
-            Радиальное расстояние.
-        theta : float или array
-            Полярный угол (от оси z), в радианах.
-        phi : float или array
-            Азимутальный угол, в радианах.
+        r : float or array
+            Radial distance.
+        theta : float or array
+            Polar angle (from z-axis), in radians.
+        phi : float or array
+            Azimuthal angle, in radians.
 
         Returns
         -------
         x, y, z : arrays
-            Декартовы координаты.
+            Cartesian coordinates.
         """
         x = r * np.sin(theta) * np.cos(phi)
         y = r * np.sin(theta) * np.sin(phi)
@@ -41,17 +41,17 @@ class MathUtils:
         x: Union[float, np.ndarray], y: Union[float, np.ndarray], z: Union[float, np.ndarray]
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """
-        Преобразование декартовых координат в сферические.
+        Convert Cartesian coordinates to spherical.
 
         Parameters
         ----------
-        x, y, z : float или array
-            Декартовы координаты.
+        x, y, z : float or array
+            Cartesian coordinates.
 
         Returns
         -------
         r, theta, phi : arrays
-            Сферические координаты (r, theta в радианах, phi в радианах).
+            Spherical coordinates (r, theta in radians, phi in radians).
         """
         r = np.sqrt(x**2 + y**2 + z**2)
         theta = np.arccos(z / r)
@@ -66,19 +66,19 @@ class MathUtils:
         lat2: Union[float, np.ndarray],
     ) -> Union[float, np.ndarray]:
         """
-        Вычисление углового расстояния между двумя точками на сфере.
+        Calculate angular distance between two points on a sphere.
 
         Parameters
         ----------
-        lon1, lat1 : float или array
-            Долгота и широта первой точки (в радианах).
-        lon2, lat2 : float или array
-            Долгота и широта второй точки (в радианах).
+        lon1, lat1 : float or array
+            Longitude and latitude of first point (in radians).
+        lon2, lat2 : float or array
+            Longitude and latitude of second point (in radians).
 
         Returns
         -------
-        float или array
-            Угловое расстояние в радианах.
+        float or array
+            Angular distance in radians.
         """
         # Формула гаверсинуса
         dlat = lat2 - lat1
@@ -96,21 +96,21 @@ class MathUtils:
         radius: float = 1.0,
     ) -> Union[float, np.ndarray]:
         """
-        Вычисление расстояния по большому кругу на сфере.
+        Calculate great circle distance on a sphere.
 
         Parameters
         ----------
-        lon1, lat1 : float или array
-            Долгота и широта первой точки (в радианах).
-        lon2, lat2 : float или array
-            Долгота и широта второй точки (в радианах).
+        lon1, lat1 : float or array
+            Longitude and latitude of first point (in radians).
+        lon2, lat2 : float or array
+            Longitude and latitude of second point (in radians).
         radius : float
-            Радиус сферы.
+            Sphere radius.
 
         Returns
         -------
-        float или array
-            Расстояние по большому кругу.
+        float or array
+            Great circle distance.
         """
         angular_sep = MathUtils.angular_separation(lon1, lat1, lon2, lat2)
         return radius * angular_sep

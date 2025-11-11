@@ -1,5 +1,5 @@
 """
-Загрузчик данных GOES (Geostationary Operational Environmental Satellite).
+GOES data loader (Geostationary Operational Environmental Satellite).
 """
 
 from datetime import datetime
@@ -10,40 +10,58 @@ import numpy as np
 from astropy.time import Time
 
 from heliopy.data_sources.base_loader import BaseLoader
+from heliopy.events.flare_detector import GOESData
 
 
 class GOESLoader(BaseLoader):
-    """Загрузчик данных GOES."""
+    """GOES data loader."""
 
     def __init__(self, cache_dir: Optional[Path] = None):
         """
-        Инициализация загрузчика GOES.
+        Initialize the GOES loader.
 
         Parameters
         ----------
         cache_dir : Path, optional
-            Директория для кэширования данных.
+            Directory for caching data.
         """
         super().__init__(cache_dir)
         self.base_url = "https://www.ngdc.noaa.gov/stp/space-weather/solar-data/solar-features/solar-flares/x-rays/goes/xrs/"
 
-    def load(self, date: Union[str, datetime], satellite: str = "goes16", **kwargs) -> "GOESData":
+    def load(self, date: Union[str, datetime], satellite: str = "goes16", **kwargs) -> GOESData:
         """
-        Загрузка данных GOES.
+        Load GOES data.
 
         Parameters
         ----------
-        date : str или datetime
-            Дата наблюдения.
+        date : str or datetime
+            Observation date.
         satellite : str
-            Спутник ('goes16', 'goes17', 'goes15' и т.д.).
+            Satellite ('goes16', 'goes17', 'goes15', etc.).
         **kwargs
-            Дополнительные параметры.
+            Additional parameters.
 
         Returns
         -------
         GOESData
-            Объект с данными GOES.
+            Object with GOES data.
+        """
+        """
+        Load GOES data.
+
+        Parameters
+        ----------
+        date : str or datetime
+            Observation date.
+        satellite : str
+            Satellite ('goes16', 'goes17', 'goes15', etc.).
+        **kwargs
+            Additional parameters.
+
+        Returns
+        -------
+        GOESData
+            Object with GOES data.
         """
         if isinstance(date, str):
             time = Time(date)

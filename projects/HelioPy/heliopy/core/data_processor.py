@@ -13,7 +13,7 @@ class DataProcessor:
     """Class for data processing and preprocessing."""
 
     def __init__(self):
-        """Инициализация процессора данных."""
+        """Initialize the data processor."""
         pass
 
     @staticmethod
@@ -61,7 +61,7 @@ class DataProcessor:
             return np.log10(data_positive)
 
         else:
-            raise ValueError(f"Неизвестный метод нормализации: {method}")
+            raise ValueError(f"Unknown normalization method: {method}")
 
     @staticmethod
     def remove_background(
@@ -93,7 +93,7 @@ class DataProcessor:
 
             background = ndimage.grey_opening(data, structure=disk(kernel_size))
         else:
-            raise ValueError(f"Неизвестный метод: {method}")
+            raise ValueError(f"Unknown method: {method}")
 
         return data - background
 
@@ -123,7 +123,7 @@ class DataProcessor:
         elif method == "tv":
             return restoration.denoise_tv_chambolle(data, weight=sigma)
         else:
-            raise ValueError(f"Неизвестный метод: {method}")
+            raise ValueError(f"Unknown method: {method}")
 
     @staticmethod
     def calibrate_flux(
@@ -178,14 +178,14 @@ class DataProcessor:
         y, x = np.ogrid[: data.shape[0], : data.shape[1]]
         r = np.sqrt((x - center[0]) ** 2 + (y - center[1]) ** 2)
 
-        # Маска для диска
+        # Disk mask
         mask = r <= radius
 
-        # Модель потемнения к краю (упрощенная)
+        # Limb darkening model (simplified)
         mu = np.sqrt(1 - (r / radius) ** 2)
-        mu = np.maximum(mu, 0.1)  # Избегаем деления на ноль
+        mu = np.maximum(mu, 0.1)  # Avoid division by zero
 
-        # Коррекция
+        # Correction
         corrected = data.copy()
         corrected[mask] = data[mask] / mu[mask]
 
@@ -212,8 +212,8 @@ class DataProcessor:
         list
             List of aligned images.
         """
-        # Упрощенная реализация - в полной версии можно использовать
-        # более сложные алгоритмы регистрации
+        # Simplified implementation - in the full version more complex
+        # registration algorithms can be used
         reference = images[reference_index]
         aligned = [reference]
 
@@ -221,8 +221,8 @@ class DataProcessor:
             if i == reference_index:
                 continue
 
-            # Простое выравнивание по центру масс
-            # В полной версии можно использовать cross-correlation
+            # Simple alignment by center of mass
+            # In the full version cross-correlation can be used
             aligned.append(img)
 
         return aligned

@@ -15,15 +15,52 @@
 <body>
     <div class="container">
         <h1>Анализ солнечных данных</h1>
-        <div class="desc">Здесь вы можете загрузить данные, выбрать источник и запустить анализ солнечной активности.</div>
-        <ul>
-            <li>Выбор источника данных (SDO, SOHO, ACE и др.)</li>
-            <li>Обнаружение вспышек и CME</li>
-            <li>Статистический анализ</li>
-        </ul>
-        <div class="back">
+        <div class="desc">Здесь вы можете выполнить базовые операции анализа через API.</div>
+        <h2>Классификация вспышки</h2>
+        <form onsubmit="classifyFlare(event)">
+            <label>Пиковый поток (W/m²): <input type="number" step="any" id="flareFlux" value="1e-6"></label>
+            <button type="submit">Классифицировать</button>
+        </form>
+        <pre id="flareResult"></pre>
+        <h2>Вращение Кэррингтона</h2>
+        <form onsubmit="calcCarrington(event)">
+            <label>Время (UTC): <input type="text" id="timeStr" value="2023-10-15 12:00:00"></label>
+            <button type="submit">Вычислить</button>
+        </form>
+        <pre id="carringtonResult"></pre>
+        <h2>Преобразование координат</h2>
+        <form onsubmit="convertCoords(event)">
+            <label>r: <input type="number" step="any" id="rVal" value="1"></label>
+            <label>theta (рад): <input type="number" step="any" id="thetaVal" value="0.5"></label>
+            <label>phi (рад): <input type="number" step="any" id="phiVal" value="0.2"></label>
+            <button type="submit">Преобразовать</button>
+        </form>
+        <pre id="coordsResult"></pre>
+        <div class="back" style="margin-top:32px;">
             <a href="/">← На главную</a>
         </div>
     </div>
+    <script>
+    async function classifyFlare(e){
+        e.preventDefault();
+        const flux=document.getElementById('flareFlux').value;
+        const res=await fetch(`/api/flare/classify?flux=${encodeURIComponent(flux)}`);
+        document.getElementById('flareResult').textContent=await res.text();
+    }
+    async function calcCarrington(e){
+        e.preventDefault();
+        const t=document.getElementById('timeStr').value;
+        const res=await fetch(`/api/time/carrington?time=${encodeURIComponent(t)}`);
+        document.getElementById('carringtonResult').textContent=await res.text();
+    }
+    async function convertCoords(e){
+        e.preventDefault();
+        const r=parseFloat(document.getElementById('rVal').value);
+        const theta=parseFloat(document.getElementById('thetaVal').value);
+        const phi=parseFloat(document.getElementById('phiVal').value);
+        const res=await fetch('/api/coords/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({r,theta,phi})});
+        document.getElementById('coordsResult').textContent=await res.text();
+    }
+    </script>
 </body>
 </html>

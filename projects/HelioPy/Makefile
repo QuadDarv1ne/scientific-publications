@@ -11,6 +11,7 @@ help:
 	@echo "  clean          Clean build artifacts"
 	@echo "  docs           Build documentation"
 	@echo "  build          Build distribution packages"
+	@echo "  web            Run web server (Flask)"
 
 install:
 	pip install -e .
@@ -57,6 +58,9 @@ docs-clean:
 
 build: clean
 	python -m build
+
+web:
+	python -m heliopy web --host 127.0.0.1 --port 5010
 
 all-checks: format lint type-check test
 

@@ -1,5 +1,5 @@
 """
-Утилиты для работы со временем в гелиофизике.
+Utilities for working with time in heliophysics.
 """
 
 from datetime import datetime, timedelta
@@ -11,22 +11,22 @@ from astropy.time import Time
 
 
 class TimeUtils:
-    """Утилиты для работы со временем."""
+    """Utilities for working with time."""
 
     @staticmethod
     def parse_time(time_input: Union[str, datetime, Time]) -> Time:
         """
-        Парсинг времени в различных форматах.
+        Parse time in various formats.
 
         Parameters
         ----------
-        time_input : str, datetime, или Time
-            Время в различных форматах.
+        time_input : str, datetime, or Time
+            Time in various formats.
 
         Returns
         -------
         Time
-            Объект astropy Time.
+            Astropy Time object.
         """
         if isinstance(time_input, Time):
             return time_input
@@ -42,21 +42,21 @@ class TimeUtils:
         step: Union[timedelta, u.Quantity] = timedelta(hours=1),
     ) -> np.ndarray:
         """
-        Генерация массива времени в заданном диапазоне.
+        Generate time array in a given range.
 
         Parameters
         ----------
-        start : str, datetime, или Time
-            Начальное время.
-        end : str, datetime, или Time
-            Конечное время.
-        step : timedelta или Quantity
-            Шаг времени.
+        start : str, datetime, or Time
+            Start time.
+        end : str, datetime, or Time
+            End time.
+        step : timedelta or Quantity
+            Time step.
 
         Returns
         -------
         np.ndarray
-            Массив объектов Time.
+            Array of Time objects.
         """
         start_time = TimeUtils.parse_time(start)
         end_time = TimeUtils.parse_time(end)
@@ -77,34 +77,34 @@ class TimeUtils:
     @staticmethod
     def to_datetime(time: Time) -> datetime:
         """
-        Преобразование Time в datetime.
+        Convert Time to datetime.
 
         Parameters
         ----------
         time : Time
-            Время в формате astropy Time.
+            Time in astropy Time format.
 
         Returns
         -------
         datetime
-            Время в формате datetime.
+            Time in datetime format.
         """
         return time.datetime
 
     @staticmethod
     def to_julian_date(time: Union[str, datetime, Time]) -> float:
         """
-        Преобразование времени в юлианскую дату.
+        Convert time to Julian date.
 
         Parameters
         ----------
-        time : str, datetime, или Time
-            Время.
+        time : str, datetime, or Time
+            Time.
 
         Returns
         -------
         float
-            Юлианская дата.
+            Julian date.
         """
         time_obj = TimeUtils.parse_time(time)
         return time_obj.jd
@@ -112,17 +112,17 @@ class TimeUtils:
     @staticmethod
     def carrington_rotation(time: Union[str, datetime, Time]) -> float:
         """
-        Вычисление номера вращения Кэррингтона.
+        Calculate Carrington rotation number.
 
         Parameters
         ----------
-        time : str, datetime, или Time
-            Время.
+        time : str, datetime, or Time
+            Time.
 
         Returns
         -------
         float
-            Номер вращения Кэррингтона.
+            Carrington rotation number.
         """
         time_obj = TimeUtils.parse_time(time)
         # Эпоха первого вращения Кэррингтона: 1853-11-09 12:00:00

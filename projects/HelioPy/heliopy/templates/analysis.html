@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="{{ 'en' if lang_code not in ['en','ru'] else lang_code }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ t.app_name }} — {{ t.analysis_title }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>{{ t.analysis_title }}</h1>
+        <div class="desc">{{ t.analysis_desc }}</div>
+        <nav>
+            <a href="{{ url_for('index') }}">{{ t.index_title }}</a>
+            <span class="spacer"></span>
+            <a class="button" href="{{ url_for('set_lang', lang='en') }}">{{ t.lang_en }}</a>
+            <a class="button" href="{{ url_for('set_lang', lang='ru') }}">{{ t.lang_ru }}</a>
+        </nav>
+        <h2>{{ t.flare_peak_flux }}</h2>
+        <form onsubmit="classifyFlare(event)">
+            <label>{{ t.flare_peak_flux }}: <input type="number" step="any" id="flareFlux" value="1e-6"></label>
+            <button type="submit" class="button">{{ t.btn_classify }}</button>
+        </form>
+        <pre id="flareResult"></pre>
+        <h2>{{ t.carrington_rotation }}</h2>
+        <form onsubmit="calcCarrington(event)">
+            <label>{{ t.time_utc }}: <input type="text" id="timeStr" value="2023-10-15 12:00:00"></label>
+            <button type="submit" class="button">{{ t.btn_compute }}</button>
+        </form>
+        <pre id="carringtonResult"></pre>
+        <h2>{{ t.coords_convert }}</h2>
+        <form onsubmit="convertCoords(event)">
+            <label>{{ t.r }}: <input type="number" step="any" id="rVal" value="1"></label>
+            <label>{{ t.theta }}: <input type="number" step="any" id="thetaVal" value="0.5"></label>
+            <label>{{ t.phi }}: <input type="number" step="any" id="phiVal" value="0.2"></label>
+            <button type="submit" class="button">{{ t.btn_convert }}</button>
+        </form>
+        <pre id="coordsResult"></pre>
+        <div class="back">
+            <a href="/">{{ t.back_home }}</a>
+        </div>
+    </div>
+    <script>
+    async function classifyFlare(e){
+        e.preventDefault();
+        const flux=document.getElementById('flareFlux').value;
+        const res=await fetch(`/api/flare/classify?flux=${encodeURIComponent(flux)}`);
+        document.getElementById('flareResult').textContent=await res.text();
+    }
+    async function calcCarrington(e){
+        e.preventDefault();
+        const t=document.getElementById('timeStr').value;
+        const res=await fetch(`/api/time/carrington?time=${encodeURIComponent(t)}`);
+        document.getElementById('carringtonResult').textContent=await res.text();
+    }
+    async function convertCoords(e){
+        e.preventDefault();
+        const r=parseFloat(document.getElementById('rVal').value);
+        const theta=parseFloat(document.getElementById('thetaVal').value);
+        const phi=parseFloat(document.getElementById('phiVal').value);
+        const res=await fetch('/api/coords/convert',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({r,theta,phi})});
+        document.getElementById('coordsResult').textContent=await res.text();
+    }
+    </script>
+</body>
+</html>

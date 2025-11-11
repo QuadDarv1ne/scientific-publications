@@ -1,29 +1,28 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="{{ 'en' if lang_code not in ['en','ru'] else lang_code }}">
 <head>
     <meta charset="UTF-8">
-    <title>О проекте — HelioPy</title>
+    <title>{{ t.app_name }} — {{ t.about_title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { font-family: Arial, sans-serif; background: #f7f7f7; margin: 0; padding: 0; }
-        .container { max-width: 800px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); padding: 32px; }
-        h1 { color: #333; }
-        .desc { color: #333; font-size: 1.2em; margin-bottom: 24px; }
-        .back { margin-top: 32px; }
-        .back a { color: #388e3c; text-decoration: none; font-weight: bold; }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>О проекте HelioPy</h1>
-        <div class="desc">HelioPy — современная open-source библиотека для анализа солнечной активности и космической погоды.<br>Проект создан для научных исследований, образовательных целей и визуализации данных.</div>
+        <h1>{{ t.about_title }}</h1>
+        <div class="desc">{{ t.about_desc }}</div>
+        <nav>
+            <a href="{{ url_for('index') }}">{{ t.index_title }}</a>
+            <span class="spacer"></span>
+            <a class="button" href="{{ url_for('set_lang', lang='en') }}">{{ t.lang_en }}</a>
+            <a class="button" href="{{ url_for('set_lang', lang='ru') }}">{{ t.lang_ru }}</a>
+        </nav>
         <ul>
-            <li>Исходный код доступен на GitHub</li>
-            <li>Документация: <a href="https://heliopy.readthedocs.io/ru/latest/" target="_blank" rel="noopener">heliopy.readthedocs.io</a></li>
-            <li>Автор: Dupley Maxim Igorevich</li>
+            <li>Source code on GitHub</li>
+            <li>Docs: <a href="https://heliopy.readthedocs.io/en/latest/" target="_blank" rel="noopener">heliopy.readthedocs.io</a></li>
+            <li>Author: Dupley Maxim Igorevich</li>
         </ul>
         <div class="back">
-            <a href="/">← На главную</a>
+            <a href="/">{{ t.back_home }}</a>
         </div>
     </div>
 </body>

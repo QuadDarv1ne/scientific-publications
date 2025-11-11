@@ -17,6 +17,8 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 from flask import Flask, render_template, jsonify, request, session, redirect, url_for
+from werkzeug.security import generate_password_hash, check_password_hash
+import secrets
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
@@ -35,6 +37,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 # Import after the initial setup
 from src.monitor.monitor import PerformanceMetric, Base
+from src.database.models import User
 from src.web.realtime_manager import start_realtime_updater, stop_realtime_updater
 
 # Configure logging
@@ -143,7 +146,31 @@ LANGUAGES = {
         'line': 'Line',
         'bar': 'Bar',
         'area': 'Area',
-        'download_distribution': 'Download Speed Distribution'
+        'download_distribution': 'Download Speed Distribution',
+        
+        'register': 'Register',
+        'create_account': 'Create account',
+        'email': 'Email',
+        'confirm_password': 'Confirm password',
+        'no_account': "Don't have an account?",
+        'have_account': 'Already have an account?',
+        'forgot_password': 'Forgot password?',
+        'password_reset': 'Password reset',
+        'send_reset_link': 'Send reset link',
+        'back_to_login': 'Back to login',
+        'reset_link': 'Reset link',
+        'invalid_or_expired_link': 'The reset link is invalid or expired',
+        'set_new_password': 'Set new password',
+        'password_updated_message': 'Password updated. You can sign in now.',
+        
+        'fields_required': 'Please fill in all fields',
+        'passwords_mismatch': 'Passwords do not match',
+        'password_min_length': 'Password must be at least 6 characters long',
+        'user_exists': 'A user with this name or email already exists',
+        'registration_success': 'Account created. You can sign in now.',
+        'registration_error': 'Registration error',
+        'reset_request_error': 'Error requesting password reset',
+        'reset_error': 'Password reset error'
     },
     'ru': {
         'dashboard': 'Панель управления',
@@ -245,7 +272,31 @@ LANGUAGES = {
         'line': 'Линия',
         'bar': 'Столбец',
         'area': 'Область',
-        'download_distribution': 'Распределение скорости загрузки'
+        'download_distribution': 'Распределение скорости загрузки',
+        
+        'register': 'Регистрация',
+        'create_account': 'Создать аккаунт',
+        'email': 'Email',
+        'confirm_password': 'Повторите пароль',
+        'no_account': 'Нет аккаунта?',
+        'have_account': 'У меня уже есть аккаунт',
+        'forgot_password': 'Забыли пароль?',
+        'password_reset': 'Восстановление пароля',
+        'send_reset_link': 'Отправить ссылку для сброса',
+        'back_to_login': 'Назад к входу',
+        'reset_link': 'Ссылка на сброс',
+        'invalid_or_expired_link': 'Ссылка сброса недействительна или истекла',
+        'set_new_password': 'Установить новый пароль',
+        'password_updated_message': 'Пароль обновлён. Теперь вы можете войти.',
+        
+        'fields_required': 'Заполните все поля',
+        'passwords_mismatch': 'Пароли не совпадают',
+        'password_min_length': 'Пароль должен быть не короче 6 символов',
+        'user_exists': 'Пользователь с таким именем или email уже существует',
+        'registration_success': 'Аккаунт создан. Теперь вы можете войти.',
+        'registration_error': 'Ошибка регистрации',
+        'reset_request_error': 'Ошибка запроса сброса пароля',
+        'reset_error': 'Ошибка сброса пароля'
     }
 }
 
@@ -445,6 +496,114 @@ def satellite_map():
     """Satellite map page."""
     return render_template('map.html')
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    """User registration page."""
+    # If auth disabled, redirect to dashboard
+    web_app = WebApp(app.config.get('CONFIG_PATH', 'config.json'))
+    if not web_app.is_auth_enabled():
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        confirm = request.form.get('confirm', '')
+
+        if not username or not email or not password:
+            return render_template('register.html', error='Заполните все поля')
+        if password != confirm:
+            return render_template('register.html', error='Пароли не совпадают')
+        if len(password) < 6:
+            return render_template('register.html', error='Пароль должен быть не короче 6 символов')
+
+        db = get_db_session()
+        try:
+            # Check duplicates
+            if db.query(User).filter((User.username == username) | (User.email == email)).first():
+                return render_template('register.html', error='Пользователь с таким именем или email уже существует')
+            # Create user
+            pwd_hash = generate_password_hash(password)
+            user = User(username=username, email=email, password_hash=pwd_hash, role='user')
+            db.add(user)
+            db.commit()
+            return render_template('register.html', message='Аккаунт создан. Теперь вы можете войти.')
+        except Exception as e:
+            logger.error(f"Registration error: {e}")
+            db.rollback()
+            return render_template('register.html', error='Ошибка регистрации')
+        finally:
+            db.close()
+
+    return render_template('register.html')
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Password reset request page."""
+    web_app = WebApp(app.config.get('CONFIG_PATH', 'config.json'))
+    if not web_app.is_auth_enabled():
+        return redirect(url_for('dashboard'))
+
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        if not email:
+            return render_template('forgot_password.html', error='Укажите email')
+        db = get_db_session()
+        try:
+            user = db.query(User).filter(User.email == email).first()
+            if not user:
+                # Do not reveal that user does not exist
+                return render_template('forgot_password.html', message='Если такой email существует, ссылка отправлена')
+            # Generate token
+            token = secrets.token_urlsafe(32)
+            user.set_reset_token(token, validity_minutes=30)
+            db.commit()
+
+            reset_link = url_for('reset_password', token=token, _external=True)
+            logger.info(f"Password reset link for {email}: {reset_link}")
+            # If email notifications configured, here we could send the email
+            return render_template('forgot_password.html', message='Ссылка для сброса отправлена', reset_link=reset_link)
+        except Exception as e:
+            logger.error(f"Forgot password error: {e}")
+            db.rollback()
+            return render_template('forgot_password.html', error='Ошибка запроса сброса пароля')
+        finally:
+            db.close()
+
+    return render_template('forgot_password.html')
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token: str):
+    """Password reset page."""
+    web_app = WebApp(app.config.get('CONFIG_PATH', 'config.json'))
+    if not web_app.is_auth_enabled():
+        return redirect(url_for('dashboard'))
+
+    db = get_db_session()
+    try:
+        user = db.query(User).filter(User.reset_token == token).first()
+        valid = bool(user and user.reset_token_valid())
+        if request.method == 'POST':
+            if not valid:
+                return render_template('reset_password.html', valid=False)
+            password = request.form.get('password', '')
+            confirm = request.form.get('confirm', '')
+            if password != confirm:
+                return render_template('reset_password.html', valid=True, error='Пароли не совпадают')
+            if len(password) < 6:
+                return render_template('reset_password.html', valid=True, error='Пароль должен быть не короче 6 символов')
+            user.password_hash = generate_password_hash(password)
+            user.clear_reset_token()
+            db.commit()
+            return render_template('reset_password.html', valid=False, message='Пароль обновлён. Теперь вы можете войти.')
+        return render_template('reset_password.html', valid=valid)
+    except Exception as e:
+        logger.error(f"Reset password error: {e}")
+        db.rollback()
+        return render_template('reset_password.html', valid=False, error='Ошибка сброса пароля')
+    finally:
+        db.close()
+
 @app.route('/api/weather-correlations')
 @require_auth
 def api_weather_correlations():
@@ -549,18 +708,44 @@ class WebApp:
         """
         web_config = self.config.get('web', {})
         auth_config = web_config.get('auth', {})
-        
+
         if not auth_config.get('enabled', False):
             return True
-            
+
+        # First try DB users
+        try:
+            db = get_db_session()
+            user = db.query(User).filter(User.username == username, User.is_active == True).first()
+            if user:
+                # Support both werkzeug hash and legacy sha256 saved in password_hash
+                if (user.password_hash and user.password_hash.startswith('pbkdf2:')):
+                    if check_password_hash(user.password_hash, password):
+                        return True
+                else:
+                    legacy_hash = hashlib.sha256(password.encode()).hexdigest()
+                    if user.password_hash == legacy_hash:
+                        return True
+        except Exception as e:
+            logger.error(f"DB auth error: {e}")
+        finally:
+            try:
+                db.close()
+            except Exception:
+                pass
+
+        # Fallback to users in config.json
         users = auth_config.get('users', [])
         for user in users:
             if user.get('username') == username:
-                # Hash the provided password
                 hashed_password = hashlib.sha256(password.encode()).hexdigest()
                 if user.get('password_hash') == hashed_password:
                     return True
         return False
+
+    def is_auth_enabled(self) -> bool:
+        web_config = self.config.get('web', {})
+        auth_config = web_config.get('auth', {})
+        return auth_config.get('enabled', False)
         
     def is_authenticated(self) -> bool:
         """Check if the current user is authenticated."""

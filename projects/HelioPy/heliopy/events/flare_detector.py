@@ -1,5 +1,5 @@
 """
-Обнаружение солнечных вспышек.
+Solar flare detection.
 """
 
 from dataclasses import dataclass
@@ -12,7 +12,7 @@ from astropy.time import Time
 
 @dataclass
 class Flare:
-    """Класс для представления солнечной вспышки."""
+    """Class for representing a solar flare."""
 
     start_time: Time
     peak_time: Time
@@ -26,7 +26,7 @@ class Flare:
 
 @dataclass
 class GOESData:
-    """Класс для данных GOES."""
+    """Class for GOES data."""
 
     time: Time
     xrsa: np.ndarray  # XRS-A канал
@@ -35,7 +35,7 @@ class GOESData:
 
 
 class FlareDetector:
-    """Класс для обнаружения солнечных вспышек."""
+    """Class for detecting solar flares."""
 
     # Пороги для классификации вспышек (W/m²)
     FLARE_THRESHOLDS = {
@@ -48,28 +48,28 @@ class FlareDetector:
 
     def __init__(self, threshold_factor: float = 1.5):
         """
-        Инициализация детектора вспышек.
+        Initialize the flare detector.
 
         Parameters
         ----------
         threshold_factor : float
-            Фактор для определения порога вспышки.
+            Factor for determining the flare threshold.
         """
         self.threshold_factor = threshold_factor
 
     def detect_flares(self, goes_data: GOESData) -> List[Flare]:
         """
-        Обнаружение вспышек в данных GOES.
+        Detect flares in GOES data.
 
         Parameters
         ----------
         goes_data : GOESData
-            Данные GOES.
+            GOES data.
 
         Returns
         -------
         list
-            Список обнаруженных вспышек.
+            List of detected flares.
         """
         flares = []
 
@@ -91,19 +91,19 @@ class FlareDetector:
 
         # Поиск непрерывных интервалов
         in_flare = False
-        flare_start_idx = None
+        flare_start_idx: Optional[int] = None
 
         for i, is_above in enumerate(above_threshold):
             if is_above and not in_flare:
                 # Начало вспышки
                 in_flare = True
                 flare_start_idx = i
-            elif not is_above and in_flare:
+            elif not is_above and in_flare and flare_start_idx is not None:
                 # Конец вспышки
                 in_flare = False
                 # Определение пика
                 flare_flux = flux[flare_start_idx:i]
-                peak_idx = flare_start_idx + np.argmax(flare_flux)
+                peak_idx = int(flare_start_idx + np.argmax(flare_flux))
 
                 # Создание объекта вспышки
                 flare = self._create_flare(goes_data, flare_start_idx, peak_idx, i)
@@ -112,9 +112,9 @@ class FlareDetector:
                     flares.append(flare)
 
         # Обработка случая, когда вспышка продолжается до конца данных
-        if in_flare:
+        if in_flare and flare_start_idx is not None:
             flare_flux = flux[flare_start_idx:]
-            peak_idx = flare_start_idx + np.argmax(flare_flux)
+            peak_idx = int(flare_start_idx + np.argmax(flare_flux))
             flare = self._create_flare(goes_data, flare_start_idx, peak_idx, len(flux) - 1)
             if flare:
                 flares.append(flare)
@@ -125,24 +125,28 @@ class FlareDetector:
         self, goes_data: GOESData, start_idx: int, peak_idx: int, end_idx: int
     ) -> Optional[Flare]:
         """
-        Создание объекта вспышки из индексов.
+        Create a flare object from indices.
 
         Parameters
         ----------
         goes_data : GOESData
-            Данные GOES.
+            GOES data.
         start_idx : int
-            Индекс начала.
+            Start index.
         peak_idx : int
-            Индекс пика.
+            Peak index.
         end_idx : int
-            Индекс конца.
+            End index.
 
         Returns
         -------
-        Flare или None
-            Объект вспышки или None, если не соответствует критериям.
+        Flare or None
+            Flare object or None if it doesn't meet criteria.
         """
+        # Check if indices are valid
+        if start_idx < 0 or peak_idx < 0 or end_idx < 0:
+            return None
+        
         if len(goes_data.xrsb) == 0:
             return None
 
@@ -155,9 +159,17 @@ class FlareDetector:
             return None
 
         # Извлечение конкретных временных меток по индексам
-        start_time = goes_data.time[start_idx]
-        peak_time = goes_data.time[peak_idx]
-        end_time = goes_data.time[end_idx]
+        try:
+            start_time = goes_data.time[start_idx]
+            peak_time = goes_data.time[peak_idx]
+            end_time = goes_data.time[end_idx]
+        except (IndexError, TypeError):
+            # If we can't get the time values, return None
+            return None
+        
+        # Check that we actually got time values
+        if start_time is None or peak_time is None or end_time is None:
+            return None
 
         duration = timedelta(seconds=(end_idx - start_idx) * 60)  # Предполагаем 1 минута на точку
 
@@ -172,17 +184,17 @@ class FlareDetector:
 
     def _classify_flare(self, peak_flux: float) -> Optional[str]:
         """
-        Классификация вспышки по пиковому потоку.
+        Classify flare by peak flux.
 
         Parameters
         ----------
         peak_flux : float
-            Пиковый поток в W/m².
+            Peak flux in W/m².
 
         Returns
         -------
-        str или None
-            Класс вспышки (A, B, C, M, X) или None.
+        str or None
+            Flare class (A, B, C, M, X) or None.
         """
         if peak_flux >= self.FLARE_THRESHOLDS["X"]:
             return "X"

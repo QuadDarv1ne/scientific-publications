@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}{{ t.register }} - {{ t.site_name }}{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card mt-5">
+        <div class="card-header">
+          <h4 class="mb-0">{{ t.create_account }}</h4>
+        </div>
+        <div class="card-body">
+          {% if error %}
+          <div class="alert alert-danger">{{ t[error] if t[error] else error }}</div>
+          {% endif %}
+          {% if message %}
+          <div class="alert alert-success">{{ t[message] if t[message] else message }}</div>
+          {% endif %}
+          <form method="POST" aria-label="Register form">
+            <div class="mb-3">
+              <label for="username" class="form-label">{{ t.username }}</label>
+              <input type="text" id="username" name="username" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="email" class="form-label">{{ t.email }}</label>
+              <input type="email" id="email" name="email" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">{{ t.password }}</label>
+              <input type="password" id="password" name="password" class="form-control" minlength="6" required>
+            </div>
+            <div class="mb-3">
+              <label for="confirm" class="form-label">{{ t.confirm_password }}</label>
+              <input type="password" id="confirm" name="confirm" class="form-control" minlength="6" required>
+            </div>
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary">{{ t.register }}</button>
+              <a class="btn btn-outline-secondary" href="{{ url_for('login') }}">{{ t.have_account }}</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

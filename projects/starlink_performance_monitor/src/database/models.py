@@ -4,7 +4,8 @@ Starlink Performance Monitor
 Database models for all entities.
 """
 
-from sqlalchemy import Column, Integer, String, Float, DateTime, Text
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean
+from datetime import datetime, UTC, timedelta
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -51,3 +52,35 @@ class WeatherData(Base):
     
     def __repr__(self):
         return f"<WeatherData(timestamp='{self.timestamp}', location=({self.latitude}, {self.longitude}))>"
+
+
+class User(Base):
+    """ORM model for application users (authentication & password reset)."""
+    __tablename__ = 'users'
+
+    id = Column(Integer, primary_key=True)
+    username = Column(String(50), unique=True, nullable=False)
+    email = Column(String(120), unique=True, nullable=False)
+    password_hash = Column(String(128), nullable=False)
+    role = Column(String(30), default='user')
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    reset_token = Column(String(128), nullable=True, index=True)
+    reset_token_expiry = Column(DateTime, nullable=True)
+    is_active = Column(Boolean, default=True)
+
+    def set_reset_token(self, token: str, validity_minutes: int = 30):
+        """Assign a password reset token with expiry."""
+        self.reset_token = token
+        self.reset_token_expiry = datetime.now(UTC) + timedelta(minutes=validity_minutes)
+
+    def clear_reset_token(self):
+        self.reset_token = None
+        self.reset_token_expiry = None
+
+    def reset_token_valid(self) -> bool:
+        if not self.reset_token or not self.reset_token_expiry:
+            return False
+        return datetime.now(UTC) <= self.reset_token_expiry
+
+    def __repr__(self):
+        return f"<User(username='{self.username}', email='{self.email}', role='{self.role}')>"
