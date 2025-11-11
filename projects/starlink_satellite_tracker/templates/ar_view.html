@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Augmented Reality View</h1>
+        <p class="lead">View Starlink satellites in real-time using your device's camera</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> Augmented Reality Information</h5>
+                    <p>This feature requires camera access and is best viewed on mobile devices. Point your camera at the sky to see satellite positions overlaid on the real world.</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Settings</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="ar-settings-form">
+                                    <div class="mb-3">
+                                        <label for="ar-latitude" class="form-label">Latitude</label>
+                                        <input type="number" class="form-control" id="ar-latitude" step="0.0001" placeholder="55.7558" value="55.7558">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ar-longitude" class="form-label">Longitude</label>
+                                        <input type="number" class="form-control" id="ar-longitude" step="0.0001" placeholder="37.6173" value="37.6173">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ar-hours" class="form-label">Hours Ahead</label>
+                                        <select class="form-select" id="ar-hours">
+                                            <option value="1">1 hour</option>
+                                            <option value="2" selected>2 hours</option>
+                                            <option value="4">4 hours</option>
+                                            <option value="8">8 hours</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ar-min-elevation" class="form-label">Minimum Elevation (degrees)</label>
+                                        <input type="number" class="form-control" id="ar-min-elevation" min="0" max="90" value="10">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Update View</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Controls</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button id="start-ar" class="btn btn-success btn-lg">
+                                        <i class="fas fa-camera"></i> Start AR View
+                                    </button>
+                                    <button id="stop-ar" class="btn btn-danger btn-lg" disabled>
+                                        <i class="fas fa-stop"></i> Stop AR View
+                                    </button>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <h6>Instructions:</h6>
+                                    <ol>
+                                        <li>Click "Start AR View" to begin</li>
+                                        <li>Allow camera access when prompted</li>
+                                        <li>Point your device at the sky</li>
+                                        <li>Look for satellite markers overlaid on the camera view</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">AR View</h5>
+            </div>
+            <div class="card-body">
+                <div id="ar-container" style="position: relative; width: 100%; height: 500px; background-color: #000; border-radius: 0.375rem; overflow: hidden;">
+                    <div id="ar-placeholder" class="d-flex justify-content-center align-items-center h-100">
+                        <div class="text-center text-white">
+                            <i class="fas fa-camera fa-3x mb-3"></i>
+                            <p>AR view will appear here when started</p>
+                        </div>
+                    </div>
+                    <video id="ar-video" style="display: none; width: 100%; height: 100%; object-fit: cover;"></video>
+                    <canvas id="ar-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Detected Satellites</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Satellite</th>
+                                <th>Time</th>
+                                <th>Elevation</th>
+                                <th>Azimuth</th>
+                                <th>Brightness</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ar-satellites-table">
+                            <tr>
+                                <td colspan="5" class="text-center">No satellites detected in AR view</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// AR View functionality
+let arActive = false;
+let arStream = null;
+let arAnimationId = null;
+
+// Function to start AR view
+async function startARView() {
+    try {
+        // Get user media (camera)
+        arStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            } 
+        });
+        
+        // Setup video element
+        const video = document.getElementById('ar-video');
+        video.srcObject = arStream;
+        video.style.display = 'block';
+        
+        // Hide placeholder
+        document.getElementById('ar-placeholder').style.display = 'none';
+        
+        // Start AR processing
+        arActive = true;
+        document.getElementById('start-ar').disabled = true;
+        document.getElementById('stop-ar').disabled = false;
+        
+        // Start animation loop
+        animateAR();
+        
+        // Fetch satellite data
+        updateARSatellites();
+        
+    } catch (error) {
+        console.error('Error starting AR view:', error);
+        alert('Failed to access camera. Please ensure you have granted camera permissions.');
+    }
+}
+
+// Function to stop AR view
+function stopARView() {
+    arActive = false;
+    
+    // Stop video stream
+    if (arStream) {
+        arStream.getTracks().forEach(track => track.stop());
+        arStream = null;
+    }
+    
+    // Hide video and show placeholder
+    document.getElementById('ar-video').style.display = 'none';
+    document.getElementById('ar-placeholder').style.display = 'flex';
+    
+    // Stop animation
+    if (arAnimationId) {
+        cancelAnimationFrame(arAnimationId);
+        arAnimationId = null;
+    }
+    
+    // Reset button states
+    document.getElementById('start-ar').disabled = false;
+    document.getElementById('stop-ar').disabled = true;
+}
+
+// Animation loop for AR
+function animateAR() {
+    if (!arActive) return;
+    
+    const video = document.getElementById('ar-video');
+    const canvas = document.getElementById('ar-overlay');
+    const ctx = canvas.getContext('2d');
+    
+    // Set canvas size to match video
+    canvas.width = video.videoWidth || video.width;
+    canvas.height = video.videoHeight || video.height;
+    
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw video frame
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Draw AR elements (satellite markers)
+    drawARSatellites(ctx, canvas.width, canvas.height);
+    
+    // Continue animation loop
+    arAnimationId = requestAnimationFrame(animateAR);
+}
+
+// Function to draw satellite markers on AR view
+function drawARSatellites(ctx, width, height) {
+    // In a real implementation, this would use actual satellite position data
+    // and device orientation to place markers accurately
+    
+    // For demo purposes, draw some sample markers
+    ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+    ctx.strokeStyle = 'rgba(255, 255, 0, 1)';
+    ctx.lineWidth = 2;
+    
+    // Sample satellite positions (in a real app, these would be calculated)
+    const satellites = [
+        { x: width * 0.3, y: height * 0.4, name: 'STARLINK-1234', brightness: 2.1 },
+        { x: width * 0.7, y: height * 0.6, name: 'STARLINK-5678', brightness: 1.8 },
+        { x: width * 0.5, y: height * 0.2, name: 'STARLINK-9012', brightness: 3.2 }
+    ];
+    
+    satellites.forEach(sat => {
+        // Draw satellite marker
+        ctx.beginPath();
+        ctx.arc(sat.x, sat.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Draw satellite name
+        ctx.fillStyle = 'white';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(sat.name, sat.x, sat.y - 15);
+        
+        // Draw brightness
+        ctx.font = '12px Arial';
+        ctx.fillText(`mag: ${sat.brightness}`, sat.x, sat.y + 25);
+    });
+}
+
+// Function to fetch and display AR satellites
+function updateARSatellites() {
+    const lat = document.getElementById('ar-latitude').value;
+    const lon = document.getElementById('ar-longitude').value;
+    const hours = document.getElementById('ar-hours').value;
+    const minElevation = document.getElementById('ar-min-elevation').value;
+    
+    const tableBody = document.getElementById('ar-satellites-table');
+    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Loading satellites...</td></tr>';
+    
+    fetch(`/api/passes?lat=${lat}&lon=${lon}&hours=${hours}&min_elevation=${minElevation}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.passes && data.passes.length > 0) {
+                tableBody.innerHTML = '';
+                
+                // Show first 10 passes
+                data.passes.slice(0, 10).forEach(pass => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${pass.satellite}</td>
+                        <td>${new Date(pass.time).toLocaleTimeString()}</td>
+                        <td>${pass.altitude.toFixed(1)}°</td>
+                        <td>${pass.azimuth.toFixed(1)}°</td>
+                        <td>${pass.brightness.toFixed(1)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center">No satellites found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching AR satellites:', error);
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading satellites</td></tr>';
+        });
+}
+
+// Event listeners
+document.getElementById('start-ar').addEventListener('click', startARView);
+document.getElementById('stop-ar').addEventListener('click', stopARView);
+
+document.getElementById('ar-settings-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    updateARSatellites();
+});
+
+// Initialize
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if WebRTC is supported
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.getElementById('ar-container').innerHTML = `
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="text-center text-white">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                    <p>AR view is not supported in your browser</p>
+                    <p class="small">Please use a modern browser with camera support</p>
+                </div>
+            </div>
+        `;
+        document.getElementById('start-ar').disabled = true;
+    }
+});
+</script>
+{% endblock %}

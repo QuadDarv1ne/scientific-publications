@@ -62,6 +62,64 @@
 </div>
 
 <div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">ML-Based Predictions</h5>
+                <button id="refresh-predictions" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div id="ml-predictions-content">
+                    <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+                        <div>
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading ML-based predictions...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Anomalies</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Satellite</th>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th>Value</th>
+                                <th>Severity</th>
+                            </tr>
+                        </thead>
+                        <tbody id="anomalies-table">
+                            <tr>
+                                <td colspan="5" class="text-center">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                    Loading anomalies...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
@@ -207,6 +265,124 @@ function updateCharts(stats) {
     `;
 }
 
+// Function to fetch and display ML predictions
+function fetchMLPredictions(lat, lon, hours) {
+    const predictionsContent = document.getElementById('ml-predictions-content');
+    predictionsContent.innerHTML = `
+        <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+            <div>
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading ML-based predictions...</p>
+            </div>
+        </div>
+    `;
+    
+    fetch(`/api/predictions/ml?lat=${lat}&lon=${lon}&hours=${hours}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.ml_predictions && data.ml_predictions.predictions && data.ml_predictions.predictions.length > 0) {
+                let predictionsHTML = `
+                    <p><strong>Model Type:</strong> ${data.ml_predictions.model_type}</p>
+                    <p><strong>Average Interval:</strong> ${(data.ml_predictions.average_interval_seconds / 60).toFixed(1)} minutes</p>
+                    <div class="table-responsive">
+                        <table class="table table-striped table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Satellite</th>
+                                    <th>Predicted Time</th>
+                                    <th>Altitude</th>
+                                    <th>Azimuth</th>
+                                    <th>Confidence</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+                
+                data.ml_predictions.predictions.forEach(prediction => {
+                    predictionsHTML += `
+                        <tr>
+                            <td>${prediction.satellite}</td>
+                            <td>${new Date(prediction.predicted_time).toLocaleString()}</td>
+                            <td>${prediction.predicted_altitude.toFixed(1)}°</td>
+                            <td>${prediction.predicted_azimuth.toFixed(1)}°</td>
+                            <td>${(prediction.confidence * 100).toFixed(0)}%</td>
+                        </tr>
+                    `;
+                });
+                
+                predictionsHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                predictionsContent.innerHTML = predictionsHTML;
+            } else {
+                predictionsContent.innerHTML = `
+                    <div class="text-center">
+                        <i class="fas fa-info-circle fa-2x text-info"></i>
+                        <p class="mt-2">No ML predictions available</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching ML predictions:', error);
+            predictionsContent.innerHTML = `
+                <div class="text-center">
+                    <i class="fas fa-exclamation-circle fa-2x text-danger"></i>
+                    <p class="mt-2">Error loading ML predictions</p>
+                    <p class="small text-muted">${error.message}</p>
+                </div>
+            `;
+        });
+}
+
+// Function to fetch and display anomalies
+function fetchAnomalies() {
+    const anomaliesTable = document.getElementById('anomalies-table');
+    anomaliesTable.innerHTML = `
+        <tr>
+            <td colspan="5" class="text-center">
+                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                Loading anomalies...
+            </td>
+        </tr>
+    `;
+    
+    fetch('/api/anomalies?hours=24&limit=10')
+        .then(response => response.json())
+        .then(data => {
+            if (data.anomalies && data.anomalies.length > 0) {
+                anomaliesTable.innerHTML = '';
+                
+                data.anomalies.slice(0, 10).forEach(anomaly => {
+                    if (anomaly.anomalies && anomaly.anomalies.length > 0) {
+                        anomaly.anomalies.forEach(detail => {
+                            const row = document.createElement('tr');
+                            row.innerHTML = `
+                                <td>${anomaly.satellite}</td>
+                                <td>${new Date(anomaly.timestamp).toLocaleString()}</td>
+                                <td>${detail.type.replace('_', ' ')}</td>
+                                <td>${detail.value.toFixed(2)}</td>
+                                <td><span class="badge bg-${detail.severity === 'high' ? 'danger' : 'warning'}">${detail.severity}</span></td>
+                            `;
+                            anomaliesTable.appendChild(row);
+                        });
+                    }
+                });
+            } else {
+                anomaliesTable.innerHTML = '<tr><td colspan="5" class="text-center">No recent anomalies detected</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching anomalies:', error);
+            anomaliesTable.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading anomalies</td></tr>';
+        });
+}
+
 // Handle form submission
 document.getElementById('stats-filter-form').addEventListener('submit', function(e) {
     e.preventDefault();
@@ -216,11 +392,26 @@ document.getElementById('stats-filter-form').addEventListener('submit', function
     const hours = document.getElementById('hours').value;
     
     fetchStatistics(lat, lon, hours);
+    fetchMLPredictions(lat, lon, hours);
+});
+
+// Handle refresh predictions button
+document.getElementById('refresh-predictions').addEventListener('click', function() {
+    const lat = document.getElementById('latitude').value;
+    const lon = document.getElementById('longitude').value;
+    const hours = document.getElementById('hours').value;
+    
+    fetchMLPredictions(lat, lon, hours);
 });
 
 // Load initial data
 document.addEventListener('DOMContentLoaded', function() {
     fetchStatistics(55.7558, 37.6173, 48);
+    fetchMLPredictions(55.7558, 37.6173, 48);
+    fetchAnomalies();
+    
+    // Refresh anomalies every 5 minutes
+    setInterval(fetchAnomalies, 300000);
 });
 </script>
 {% endblock %}
