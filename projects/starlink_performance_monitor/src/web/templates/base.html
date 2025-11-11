@@ -131,8 +131,8 @@
                         {% if session.get('language', 'en') == 'en' %}EN{% else %}RU{% endif %}
                     </button>
                     <ul class="dropdown-menu">
-                        <li><a class="dropdown-item" href="{{ url_for('set_language', language='en') }}">English</a></li>
-                        <li><a class="dropdown-item" href="{{ url_for('set_language', language='ru') }}">Русский</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('set_language', lang='en') }}">English</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('set_language', lang='ru') }}">Русский</a></li>
                     </ul>
                 </div>
                 

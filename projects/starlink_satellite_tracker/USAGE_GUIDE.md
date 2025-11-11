@@ -1,117 +1,117 @@
-# 🛰️ Starlink Satellite Tracker - Usage Guide
+# 🛰️ Трекер спутников Starlink - Руководство по использованию
 
-This guide provides detailed instructions on how to use all features of the Starlink Satellite Tracker, including the newly enhanced capabilities.
+Это руководство содержит подробные инструкции по использованию всех функций Трекера спутников Starlink, включая недавно расширенные возможности.
 
-## 🚀 Quick Start
+## 🚀 Быстрый старт
 
 ```bash
-# Clone the repository
+# Клонирование репозитория
 git clone <repository-url>
 
-# Install dependencies
+# Установка зависимостей
 pip install -r requirements.txt
 
-# Run the tracker
+# Запуск трекера
 python starlink_tracker.py track --help
 
-# Start the web interface
+# Запуск веб-интерфейса
 python starlink_tracker.py web
 
-# Or run directly from source directories
+# Или запуск напрямую из исходных каталогов
 python src/core/main.py --help
 python src/web/web_app.py
 ```
 
-## 🖥️ Web Interface Usage
+## 🖥️ Использование веб-интерфейса
 
-### Main Dashboard (`/`)
+### Главная информационная панель (`/`)
 
-The main dashboard provides an overview of:
-- Current satellite tracking status
-- Next visible satellite pass
-- Recent activity (upcoming passes)
+Главная информационная панель предоставляет обзор:
+- Текущего статуса отслеживания спутников
+- Следующего видимого прохождения спутника
+- Последней активности (предстоящие прохождения)
 
-### Passes Page (`/passes`)
+### Страница прохождений (`/passes`)
 
-View and predict satellite passes over your location:
-- Configure observer location (latitude, longitude, altitude)
-- Set time period for predictions (1-168 hours)
-- View detailed pass information (time, elevation, azimuth, distance)
+Просмотр и прогнозирование прохождений спутников над вашим местоположением:
+- Настройка местоположения наблюдателя (широта, долгота, высота)
+- Установка периода времени для прогнозов (1-168 часов)
+- Просмотр подробной информации о прохождении (время, возвышение, азимут, расстояние)
 
-### Visualization Page (`/visualization`)
+### Страница визуализации (`/visualization`)
 
-Interactive 3D visualization of satellite orbits:
-- Configure time period (1-24 hours)
-- Select number of satellites to display (5-30)
-- Choose color schemes (default, rainbow, velocity-based)
-- Rotate, zoom, and pan the 3D view
+Интерактивная 3D-визуализация орбит спутников:
+- Настройка периода времени (1-24 часа)
+- Выбор количества спутников для отображения (5-30)
+- Выбор цветовых схем (по умолчанию, радужная, на основе скорости)
+- Вращение, масштабирование и панорамирование 3D-вида
 
-### Coverage Page (`/coverage`)
+### Страница покрытия (`/coverage`)
 
-View global Starlink constellation coverage:
-- Regional coverage statistics
-- Constellation status information
+Просмотр глобального покрытия созвездия Starlink:
+- Региональная статистика покрытия
+- Информация о статусе созвездия
 
-### Settings Page (`/settings`)
+### Страница настроек (`/settings`)
 
-Configure all system settings:
-- Observer location preferences
-- Notification settings (email, Telegram)
-- System configuration (data sources, scheduler)
+Настройка всех системных параметров:
+- Предпочтения местоположения наблюдателя
+- Настройки уведомлений (электронная почта, Telegram)
+- Системная конфигурация (источники данных, планировщик)
 
-### Export Page (`/export`)
+### Страница экспорта (`/export`)
 
-Export satellite data in various formats:
-- JSON or CSV format
-- Select data to include (TLE data, predictions)
-- Choose date range for export
+Экспорт данных спутников в различных форматах:
+- Формат JSON или CSV
+- Выбор данных для включения (данные TLE, прогнозы)
+- Выбор диапазона дат для экспорта
 
-## 📊 API Usage
+## 📊 Использование API
 
-### Core API Endpoints
+### Основные конечные точки API
 
-#### Get Satellite Positions
+#### Получение позиций спутников
 ```bash
-# Get current satellite positions
+# Получение текущих позиций спутников
 curl http://localhost:5000/api/satellites
 ```
 
-#### Get Predicted Passes
+#### Получение прогнозируемых прохождений
 ```bash
-# Get passes for a specific location
+# Получение прохождений для определенного местоположения
 curl "http://localhost:5000/api/passes?lat=40.7128&lon=-74.0060&hours=48"
 ```
 
-#### Get Global Coverage
+#### Получение глобального покрытия
 ```bash
-# Get global coverage data
+# Получение данных о глобальном покрытии
 curl http://localhost:5000/api/coverage
 ```
 
-#### Export Data
+#### Экспорт данных
 ```bash
-# Export data to JSON
+# Экспорт данных в JSON
 curl http://localhost:5000/api/export/json
 
-# Export data to CSV
+# Экспорт данных в CSV
 curl http://localhost:5000/api/export/csv
 ```
 
-#### Orbit Visualization
+#### Визуализация орбит
 ```bash
-# Get interactive 3D orbit visualization data
+# Получение данных для интерактивной 3D-визуализации орбит
 curl "http://localhost:5000/api/visualization/orbits?hours=2&satellites=10"
 ```
 
-#### Clear Cache
+#### Очистка кэша
 ```bash
-# Clear all cached data
+# Очистка всех кэшированных данных
 curl -X POST http://localhost:5000/api/cache/clear
 ```
 
-## ⚙️ Configuration
+## ⚙️ Конфигурация
 
-### Configuration File Structure
+### Структура файла конфигурации
 
 ```json
 {
@@ -172,11 +172,11 @@ curl -X POST http://localhost:5000/api/cache/clear
 }
 ```
 
-## 📧 Notification System
+## 📧 Система уведомлений
 
-### Email Notifications
+### Уведомления по электронной почте
 
-To enable email notifications, configure the email section in `config.json`:
+Для включения уведомлений по электронной почте настройте раздел электронной почты в [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json):
 
 ```json
 {
@@ -193,9 +193,9 @@ To enable email notifications, configure the email section in `config.json`:
 }
 ```
 
-### Telegram Notifications
+### Уведомления через Telegram
 
-To enable Telegram notifications, configure the Telegram section in `config.json`:
+Для включения уведомлений через Telegram настройте раздел Telegram в [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json):
 
 ```json
 {
@@ -209,213 +209,213 @@ To enable Telegram notifications, configure the Telegram section in `config.json
 }
 ```
 
-### Notification Filtering
+### Фильтрация уведомлений
 
-The notification system includes advanced filtering capabilities:
+Система уведомлений включает расширенные возможности фильтрации:
 
-- **Minimum Elevation**: Only notify for passes above a specified elevation angle
-- **Minimum Brightness**: Only notify for satellites brighter than a specified magnitude
-- **Excluded Satellites**: Skip notifications for specific satellite names
-- **Excluded Patterns**: Skip notifications for satellites matching specific patterns
+- **Минимальное возвышение**: Уведомлять только о прохождениях выше указанного угла возвышения
+- **Минимальная яркость**: Уведомлять только о спутниках ярче указанной величины
+- **Исключенные спутники**: Пропускать уведомления для определенных названий спутников
+- **Исключенные шаблоны**: Пропускать уведомления для спутников, соответствующих определенным шаблонам
 
-## 📈 Performance Optimizations
+## 📈 Оптимизация производительности
 
-### Enhanced Caching
+### Расширенное кэширование
 
-The system implements multiple caching layers:
+Система реализует несколько уровней кэширования:
 
-1. **TLE Data Caching**: Satellite data cached with expiration
-2. **API Response Caching**: Web API responses cached to reduce computation
-3. **Prediction Caching**: Pass predictions cached to avoid recalculation
-4. **Data Processor Caching**: Export operations cached with LRU eviction
+1. **Кэширование данных TLE**: Данные спутников кэшируются с истечением срока действия
+2. **Кэширование ответов API**: Ответы веб-API кэшируются для снижения вычислительной нагрузки
+3. **Кэширование прогнозов**: Прогнозы прохождений кэшируются для избежания повторных вычислений
+4. **Кэширование процессора данных**: Операции экспорта кэшируются с вытеснением LRU
 
-### Memory Management
+### Управление памятью
 
-- Periodic cache cleanup to prevent memory leaks
-- Configurable cache sizes and TTL values
-- Automatic removal of expired entries
+- Периодическая очистка кэша для предотвращения утечек памяти
+- Настраиваемые размеры кэша и значения TTL
+- Автоматическое удаление истекших записей
 
-## 🧪 Testing
+## 🧪 Тестирование
 
-### Running Tests
+### Запуск тестов
 
 ```bash
-# Run all tests
+# Запуск всех тестов
 python -m pytest src/tests/ -v
 
-# Run specific test module
+# Запуск определенного модуля тестов
 python src/tests/test_config_manager.py
 
-# Run tests with coverage
+# Запуск тестов с покрытием
 python -m pytest src/tests/ --cov=src --cov-report=html
 
-# Run a specific test class
+# Запуск определенного класса тестов
 python -m pytest src/tests/test_core_tracker.py::TestStarlinkTracker -v
 ```
 
-### Test Coverage
+### Покрытие тестами
 
-The test suite includes:
-- Core tracker functionality tests
-- Configuration manager tests
-- Data processor tests
-- Notification system tests
-- Scheduler tests
-- Web application tests
-- Custom exception tests
-- Enhanced caching tests
+Набор тестов включает:
+- Тесты основной функциональности трекера
+- Тесты менеджера конфигурации
+- Тесты процессора данных
+- Тесты системы уведомлений
+- Тесты планировщика
+- Тесты веб-приложения
+- Тесты пользовательских исключений
+- Расширенные тесты кэширования
 
-## 🛠️ Command Line Usage
+## 🛠️ Использование командной строки
 
-### Tracker Commands
+### Команды трекера
 
 ```bash
-# Update TLE data and show upcoming passes
+# Обновление данных TLE и показ предстоящих прохождений
 python starlink_tracker.py track --update
 
-# Show 3D visualization of orbits
+# Показ 3D-визуализации орбит
 python starlink_tracker.py track --visualize
 
-# Start scheduler for automated tasks
+# Запуск планировщика для автоматизированных задач
 python starlink_tracker.py track --schedule
 
-# Enable debug mode
+# Включение режима отладки
 python starlink_tracker.py track --debug
 
-# Send notifications for upcoming passes
+# Отправка уведомлений о предстоящих прохождениях
 python starlink_tracker.py track --notify
 ```
 
-### Web Interface Commands
+### Команды веб-интерфейса
 
 ```bash
-# Start the web interface
+# Запуск веб-интерфейса
 python starlink_tracker.py web
 
-# Start web interface with debug logging
+# Запуск веб-интерфейса с ведением журнала отладки
 python starlink_tracker.py web --debug
 ```
 
-## 🤖 Scheduler Configuration
+## 🤖 Конфигурация планировщика
 
-The scheduler supports configurable cron expressions:
+Планировщик поддерживает настраиваемые cron-выражения:
 
-- `0 0 */6 * *`: Every 6 hours (TLE updates)
-- `*/30 * * * *`: Every 30 minutes (Prediction updates)
-- `*/15 * * * *`: Every 15 minutes (Notification checks)
+- `0 0 */6 * *`: Каждые 6 часов (обновления TLE)
+- `*/30 * * * *`: Каждые 30 минут (обновления прогнозов)
+- `*/15 * * * *`: Каждые 15 минут (проверки уведомлений)
 
-Customize these in the `schedule` section of `config.json`.
+Настройте их в разделе [schedule](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/src/utils/scheduler.py#L27-L27) файла [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json).
 
-## 📊 Data Export
+## 📊 Экспорт данных
 
-### Export Formats
+### Форматы экспорта
 
-- **JSON**: Structured data export with metadata
-- **CSV**: Tabular data export for spreadsheet applications
+- **JSON**: Структурированный экспорт данных с метаданными
+- **CSV**: Табличный экспорт данных для приложений электронных таблиц
 
-### Export Options
+### Параметры экспорта
 
-- Include TLE data
-- Include prediction results
-- Compress large files automatically
-- Select date ranges for export
+- Включение данных TLE
+- Включение результатов прогнозирования
+- Автоматическое сжатие больших файлов
+- Выбор диапазонов дат для экспорта
 
-## 🔧 Troubleshooting
+## 🔧 Устранение неполадок
 
-### Common Issues
+### Распространенные проблемы
 
-1. **TLE Data Not Updating**: Check internet connection and data source URLs
-2. **Visualization Not Working**: Ensure matplotlib and plotly are installed
-3. **Notifications Not Sending**: Verify configuration and credentials
-4. **Scheduler Not Running**: Check cron expressions and system time
+1. **Данные TLE не обновляются**: Проверьте подключение к интернету и URL источников данных
+2. **Визуализация не работает**: Убедитесь, что установлены matplotlib и plotly
+3. **Уведомления не отправляются**: Проверьте конфигурацию и учетные данные
+4. **Планировщик не работает**: Проверьте cron-выражения и системное время
 
-### Debugging
+### Отладка
 
-Enable debug logging to get detailed information:
+Включите ведение журнала отладки для получения подробной информации:
 
 ```bash
 python starlink_tracker.py track --debug
 python starlink_tracker.py web --debug
 ```
 
-## 📈 Performance Tips
+## 📈 Советы по производительности
 
-1. **Cache Management**: Regularly clear cache if memory usage is high
-2. **Satellite Selection**: Limit number of satellites for visualization
-3. **Update Frequency**: Adjust scheduler intervals based on needs
-4. **Data Retention**: Configure appropriate cache expiration times
+1. **Управление кэшем**: Регулярно очищайте кэш, если использование памяти велико
+2. **Выбор спутников**: Ограничьте количество спутников для визуализации
+3. **Частота обновления**: Настройте интервалы планировщика в соответствии с потребностями
+4. **Хранение данных**: Настройте соответствующие сроки истечения кэша
 
-## 🤝 Contributing
+## 🤝 Участие в разработке
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a pull request
+1. Сделайте форк репозитория
+2. Создайте ветку с вашей функцией (`git checkout -b feature/AmazingFeature`)
+3. Зафиксируйте изменения (`git commit -m 'Add some AmazingFeature'`)
+4. Отправьте ветку (`git push origin feature/AmazingFeature`)
+5. Откройте пул-реквест
 
-## 📄 License
+## 📄 Лицензия
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Этот проект лицензирован по лицензии MIT - смотрите файл [LICENSE](LICENSE) для получения подробной информации.
 
-## Table of Contents
-1. [Installation](#installation)
-2. [Basic Usage](#basic-usage)
-3. [Configuration](#configuration)
-4. [Command Line Interface](#command-line-interface)
-5. [Web Interface](#web-interface)
-6. [API Usage](#api-usage)
-7. [Notification Setup](#notification-setup)
-8. [Data Export](#data-export)
-9. [Advanced Features](#advanced-features)
-10. [Troubleshooting](#troubleshooting)
+## Содержание
+1. [Установка](#установка)
+2. [Базовое использование](#базовое-использование)
+3. [Конфигурация](#конфигурация)
+4. [Интерфейс командной строки](#интерфейс-командной-строки)
+5. [Веб-интерфейс](#веб-интерфейс)
+6. [Использование API](#использование-api)
+7. [Настройка уведомлений](#настройка-уведомлений)
+8. [Экспорт данных](#экспорт-данных)
+9. [Расширенные функции](#расширенные-функции)
+10. [Устранение неполадок](#устранение-неполадок)
 
-## Installation
+## Установка
 
-### Prerequisites
-- Python 3.8 or newer
-- pip package manager
-- Internet connection for downloading TLE data
+### Предварительные требования
+- Python 3.8 или новее
+- Менеджер пакетов pip
+- Подключение к интернету для загрузки данных TLE
 
-### Installation Steps
+### Шаги установки
 
-1. Clone the repository:
+1. Клонируйте репозиторий:
 ```bash
 git clone <repository-url>
 cd starlink_satellite_tracker
 ```
 
-2. Install dependencies:
+2. Установите зависимости:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Verify installation:
+3. Проверьте установку:
 ```bash
 python starlink_tracker.py track --help
 ```
 
-## Basic Usage
+## Базовое использование
 
-### Quick Start
-To quickly see satellite passes over your location:
+### Быстрый старт
+Для быстрого просмотра прохождений спутников над вашим местоположением:
 
 ```bash
 python starlink_tracker.py track
 ```
 
-This will:
-1. Download the latest TLE data (if needed)
-2. Predict passes over the default location (Moscow)
-3. Display the results
+Это выполнит:
+1. Загрузку последних данных TLE (если необходимо)
+2. Прогнозирование прохождений над местоположением по умолчанию (Москва)
+3. Отображение результатов
 
-### Custom Location
-To predict passes for a custom location:
+### Пользовательское местоположение
+Для прогнозирования прохождений для пользовательского местоположения:
 
 ```bash
 python starlink_tracker.py track --update
 ```
 
-Then modify the config.json file to set your location:
+Затем измените файл [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json), чтобы установить ваше местоположение:
 
 ```json
 {
@@ -428,12 +428,12 @@ Then modify the config.json file to set your location:
 }
 ```
 
-## Configuration
+## Конфигурация
 
-### Configuration File Structure
-The main configuration file is `config.json` in the project root. Here's a breakdown of all configuration options:
+### Структура файла конфигурации
+Основной файл конфигурации - [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json) в корне проекта. Вот разбивка всех параметров конфигурации:
 
-#### Data Sources
+#### Источники данных
 ```json
 {
   "data_sources": {
@@ -447,7 +447,7 @@ The main configuration file is `config.json` in the project root. Here's a break
 }
 ```
 
-#### Visualization Settings
+#### Настройки визуализации
 ```json
 {
   "visualization": {
@@ -461,7 +461,7 @@ The main configuration file is `config.json` in the project root. Here's a break
 }
 ```
 
-#### Scheduling
+#### Планирование
 ```json
 {
   "schedule": {
@@ -472,7 +472,7 @@ The main configuration file is `config.json` in the project root. Here's a break
 }
 ```
 
-#### Observer Settings
+#### Настройки наблюдателя
 ```json
 {
   "observer": {
@@ -484,7 +484,7 @@ The main configuration file is `config.json` in the project root. Here's a break
 }
 ```
 
-#### Notifications
+#### Уведомления
 ```json
 {
   "notifications": {
@@ -508,7 +508,7 @@ The main configuration file is `config.json` in the project root. Here's a break
 }
 ```
 
-#### Export Settings
+#### Настройки экспорта
 ```json
 {
   "export": {
@@ -520,106 +520,106 @@ The main configuration file is `config.json` in the project root. Here's a break
 }
 ```
 
-## Command Line Interface
+## Интерфейс командной строки
 
-### Main Commands
+### Основные команды
 
-#### Track Command
+#### Команда Track
 ```bash
 python starlink_tracker.py track [options]
 ```
 
-Options:
-- `--update`: Force update TLE data
-- `--visualize`: Show 3D visualization
-- `--notify`: Send notifications for upcoming passes
-- `--schedule`: Start scheduler for automated tasks
-- `--debug`: Enable debug logging
+Параметры:
+- `--update`: Принудительное обновление данных TLE
+- `--visualize`: Показать 3D-визуализацию
+- `--notify`: Отправить уведомления о предстоящих прохождениях
+- `--schedule`: Запустить планировщик для автоматизированных задач
+- `--debug`: Включить ведение журнала отладки
 
-#### Web Command
+#### Команда Web
 ```bash
 python starlink_tracker.py web
 ```
 
-Starts the web interface on http://localhost:5000
+Запускает веб-интерфейс по адресу http://localhost:5000
 
-### Examples
+### Примеры
 
-#### Update TLE Data and Show Passes
+#### Обновление данных TLE и показ прохождений
 ```bash
 python starlink_tracker.py track --update
 ```
 
-#### Show 3D Visualization
+#### Показ 3D-визуализации
 ```bash
 python starlink_tracker.py track --visualize
 ```
 
-#### Start Automated Scheduler
+#### Запуск автоматизированного планировщика
 ```bash
 python starlink_tracker.py track --schedule
 ```
 
-#### Enable Debug Mode
+#### Включение режима отладки
 ```bash
 python starlink_tracker.py track --debug
 ```
 
-## Web Interface
+## Веб-интерфейс
 
-### Starting the Web Interface
+### Запуск веб-интерфейса
 ```bash
 python starlink_tracker.py web
 ```
 
-Or directly:
+Или напрямую:
 ```bash
 python src/web/web_app.py
 ```
 
-### Web Pages
+### Веб-страницы
 
-#### Dashboard (`/`)
-Main dashboard showing:
-- Current satellite count
-- Next predicted pass
-- System status
+#### Информационная панель (`/`)
+Главная информационная панель, показывающая:
+- Текущее количество спутников
+- Следующее прогнозируемое прохождение
+- Статус системы
 
-#### Passes (`/passes`)
-Detailed view of upcoming satellite passes:
-- Table of passes with times and positions
-- Filter by time period
-- Location-specific predictions
+#### Прохождения (`/passes`)
+Подробный просмотр предстоящих прохождений спутников:
+- Таблица прохождений с временами и позициями
+- Фильтрация по периоду времени
+- Прогнозы для конкретного местоположения
 
-#### Coverage (`/coverage`)
-World map showing:
-- Current Starlink constellation coverage
-- Regional statistics
-- Satellite density visualization
+#### Покрытие (`/coverage`)
+Карта мира, показывающая:
+- Текущее покрытие созвездия Starlink
+- Региональную статистику
+- Визуализацию плотности спутников
 
-#### Settings (`/settings`)
-Configuration options:
-- Observer location settings
-- Notification preferences
-- System configuration
+#### Настройки (`/settings`)
+Параметры конфигурации:
+- Настройки местоположения наблюдателя
+- Предпочтения уведомлений
+- Системная конфигурация
 
-#### Export (`/export`)
-Data export functionality:
-- Export in JSON or CSV format
-- Select data types to include
-- Download exported files
+#### Экспорт (`/export`)
+Функциональность экспорта данных:
+- Экспорт в формате JSON или CSV
+- Выбор типов данных для включения
+- Загрузка экспортированных файлов
 
-### API Endpoints
+### Конечные точки API
 
 #### GET `/api/satellites`
-Returns current satellite positions.
+Возвращает текущие позиции спутников.
 
-Example:
+Пример:
 ```bash
 curl http://localhost:5000/api/satellites
 ```
 
-Response:
+Ответ:
 ```json
 {
   "satellites": [
@@ -634,14 +634,14 @@ Response:
 ```
 
 #### GET `/api/passes`
-Returns predicted satellite passes.
+Возвращает прогнозируемые прохождения спутников.
 
-Example:
+Пример:
 ```bash
 curl "http://localhost:5000/api/passes?lat=40.7128&lon=-74.0060&hours=48"
 ```
 
-Response:
+Ответ:
 ```json
 {
   "passes": [
@@ -663,14 +663,14 @@ Response:
 ```
 
 #### GET `/api/coverage`
-Returns global coverage data.
+Возвращает данные о глобальном покрытии.
 
-Example:
+Пример:
 ```bash
 curl http://localhost:5000/api/coverage
 ```
 
-Response:
+Ответ:
 ```json
 {
   "regions": [
@@ -686,99 +686,99 @@ Response:
 ```
 
 #### GET `/api/export/<format>`
-Exports data in specified format.
+Экспортирует данные в указанном формате.
 
-Example:
+Пример:
 ```bash
 curl http://localhost:5000/api/export/json
 curl http://localhost:5000/api/export/csv
 ```
 
 #### POST `/api/cache/clear`
-Clears API cache.
+Очищает кэш API.
 
-Example:
+Пример:
 ```bash
 curl -X POST http://localhost:5000/api/cache/clear
 ```
 
-## API Usage
+## Использование API
 
-### Python API Examples
+### Примеры API на Python
 
-#### Basic Tracking
+#### Базовое отслеживание
 ```python
 from src.core.main import StarlinkTracker
 
-# Initialize tracker
+# Инициализация трекера
 tracker = StarlinkTracker()
 
-# Update satellite data
+# Обновление данных спутников
 satellites = tracker.update_tle_data()
 
-# Predict passes for New York
+# Прогнозирование прохождений для Нью-Йорка
 passes = tracker.predict_passes(
     latitude=40.7128, 
     longitude=-74.0060,
     hours_ahead=48
 )
 
-# Print results
+# Вывод результатов
 for p in passes[:10]:
     print(f"{p['satellite']}: {p['time']} at {p['altitude']:.1f}°")
 ```
 
-#### Data Processing
+#### Обработка данных
 ```python
 from src.utils.data_processor import DataProcessor
 
-# Initialize processor
+# Инициализация процессора
 processor = DataProcessor()
 
-# Load satellite data
+# Загрузка данных спутников
 satellites = processor.load_satellite_data()
 
-# Analyze constellation
+# Анализ созвездия
 stats = processor.analyze_constellation(satellites)
 print(f"Total satellites: {stats['total_satellites']}")
 
-# Export to CSV
+# Экспорт в CSV
 processor.export_to_csv(satellites, 'starlink_data.csv')
 ```
 
-#### Configuration Management
+#### Управление конфигурацией
 ```python
 from src.utils.config_manager import get_config, get_config_value
 
-# Get complete configuration
+# Получение полной конфигурации
 config = get_config()
 
-# Get specific values
+# Получение определенных значений
 latitude = get_config_value('observer', 'default_latitude', 0.0)
 celestrak_url = get_config_value('data_sources', 'celestrak_url')
 ```
 
-#### Scheduling
+#### Планирование
 ```python
 from src.utils.scheduler import StarlinkScheduler
 from src.core.main import StarlinkTracker
 
-# Initialize tracker and scheduler
+# Инициализация трекера и планировщика
 tracker = StarlinkTracker()
 scheduler = StarlinkScheduler(tracker=tracker)
 
-# Start scheduler
+# Запуск планировщика
 if scheduler.start_scheduler():
     print("Scheduler started successfully")
 else:
     print("Failed to start scheduler")
 ```
 
-## Notification Setup
+## Настройка уведомлений
 
-### Email Notifications
+### Уведомления по электронной почте
 
-1. Enable email notifications in config.json:
+1. Включите уведомления по электронной почте в [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json):
 ```json
 {
   "notifications": {
@@ -794,25 +794,25 @@ else:
 }
 ```
 
-2. For Gmail, you'll need to:
-   - Enable 2-factor authentication
-   - Generate an app password
-   - Use the app password instead of your regular password
+2. Для Gmail вам нужно:
+   - Включить двухфакторную аутентификацию
+   - Сгенерировать пароль приложения
+   - Использовать пароль приложения вместо обычного пароля
 
-### Telegram Notifications
+### Уведомления через Telegram
 
-1. Create a Telegram bot:
-   - Talk to @BotFather on Telegram
-   - Use `/newbot` command
-   - Follow instructions to get your bot token
+1. Создайте Telegram-бота:
+   - Поговорите с @BotFather в Telegram
+   - Используйте команду `/newbot`
+   - Следуйте инструкциям, чтобы получить токен вашего бота
 
-2. Get your chat ID:
-   - Talk to your new bot
-   - Send any message
-   - Visit `https://api.telegram.org/bot<BOT_TOKEN>/getUpdates`
-   - Find your chat ID in the response
+2. Получите ваш ID чата:
+   - Поговорите со своим новым ботом
+   - Отправьте любое сообщение
+   - Посетите `https://api.telegram.org/bot<BOT_TOKEN>/getUpdates`
+   - Найдите ваш ID чата в ответе
 
-3. Configure in config.json:
+3. Настройте в [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json):
 ```json
 {
   "notifications": {
@@ -825,14 +825,14 @@ else:
 }
 ```
 
-### Testing Notifications
+### Тестирование уведомлений
 ```python
 from src.utils.notify import NotificationSystem
 
-# Initialize notification system
+# Инициализация системы уведомлений
 notifier = NotificationSystem()
 
-# Send test notification
+# Отправка тестового уведомления
 success = notifier.notify_upcoming_pass(
     "STARLINK-TEST",
     datetime.now() + timedelta(minutes=30),
@@ -846,22 +846,22 @@ else:
     print("Failed to send notification")
 ```
 
-## Data Export
+## Экспорт данных
 
-### Export Formats
+### Форматы экспорта
 
-#### JSON Export
+#### Экспорт JSON
 ```python
 from src.utils.data_processor import DataProcessor
 
 processor = DataProcessor()
 satellites = processor.load_satellite_data()
 
-# Export to JSON
+# Экспорт в JSON
 processor.export_to_json(satellites, 'starlink_export.json')
 ```
 
-Resulting JSON structure:
+Структура результирующего JSON:
 ```json
 {
   "satellites": [
@@ -877,191 +877,191 @@ Resulting JSON structure:
 }
 ```
 
-#### CSV Export
+#### Экспорт CSV
 ```python
-# Export to CSV
+# Экспорт в CSV
 processor.export_to_csv(satellites, 'starlink_export.csv')
 ```
 
-### Web Export
-Through the web interface:
-1. Navigate to `/export`
-2. Select export format (JSON/CSV)
-3. Click export button
-4. Download the file
+### Веб-экспорт
+Через веб-интерфейс:
+1. Перейдите к `/export`
+2. Выберите формат экспорта (JSON/CSV)
+3. Нажмите кнопку экспорта
+4. Загрузите файл
 
-### API Export
+### API-экспорт
 ```
-# Export via API
+# Экспорт через API
 curl http://localhost:5000/api/export/json -o starlink_data.json
 curl http://localhost:5000/api/export/csv -o starlink_data.csv
 ```
 
-## Advanced Features
+## Расширенные функции
 
-### Custom Scheduling
-The scheduler supports cron expressions for custom automation:
+### Пользовательское планирование
+Планировщик поддерживает cron-выражения для пользовательской автоматизации:
 
 ```json
 {
   "schedule": {
-    "tle_update_cron": "0 0 */6 * *",      // Every 6 hours
-    "prediction_update_cron": "*/30 * * * *", // Every 30 minutes
-    "notification_check_cron": "*/15 * * * *"  // Every 15 minutes
+    "tle_update_cron": "0 0 */6 * *",      // Каждые 6 часов
+    "prediction_update_cron": "*/30 * * * *", // Каждые 30 минут
+    "notification_check_cron": "*/15 * * * *"  // Каждые 15 минут
   }
 }
 ```
 
-Supported cron patterns:
-- `0 0 */6 * *`: Every 6 hours
-- `*/30 * * * *`: Every 30 minutes
-- `*/15 * * * *`: Every 15 minutes
-- `0 0 * * *`: Daily at midnight
-- `0 * * * *`: Hourly
+Поддерживаемые cron-шаблоны:
+- `0 0 */6 * *`: Каждые 6 часов
+- `*/30 * * * *`: Каждые 30 минут
+- `*/15 * * * *`: Каждые 15 минут
+- `0 0 * * *`: Ежедневно в полночь
+- `0 * * * *`: Ежечасно
 
-### Caching System
-The application uses multiple caching layers for performance:
+### Система кэширования
+Приложение использует несколько уровней кэширования для производительности:
 
-1. **TLE Cache**: Memory cache for TLE data (6 hours default)
-2. **Prediction Cache**: Cache for prediction results (15 minutes default)
-3. **API Cache**: Cache for web API responses (varies by endpoint)
-4. **Data Processor Cache**: Cache for processed data
+1. **Кэш TLE**: Кэш данных TLE в памяти (по умолчанию 6 часов)
+2. **Кэш прогнозов**: Кэш результатов прогнозирования (по умолчанию 15 минут)
+3. **Кэш API**: Кэш ответов веб-API (варьируется по конечной точке)
+4. **Кэш процессора данных**: Кэш обработанных данных
 
-Clear caches when needed:
+Очистите кэши при необходимости:
 ```python
-# Clear all caches
+# Очистка всех кэшей
 tracker.clear_caches()
 
-# Clear API cache
+# Очистка кэша API
 curl -X POST http://localhost:5000/api/cache/clear
 ```
 
-### Visualization Customization
-Customize visualization settings in config.json:
+### Настройка визуализации
+Настройте параметры визуализации в [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json):
 
 ```json
 {
   "visualization": {
-    "orbit_points": 200,           // More detailed orbits
-    "show_ground_track": false,    // Hide ground track
-    "color_scheme": "light",       // Light color scheme
-    "plotly_3d": true,             // Enable 3D plots
-    "matplotlib_2d": false         // Disable 2D plots
+    "orbit_points": 200,           // Более детализированные орбиты
+    "show_ground_track": false,    // Скрыть наземный след
+    "color_scheme": "light",       // Светлая цветовая схема
+    "plotly_3d": true,             // Включить 3D-графики
+    "matplotlib_2d": false         // Отключить 2D-графики
   }
 }
 ```
 
-## Troubleshooting
+## Устранение неполадок
 
-### Common Issues
+### Распространенные проблемы
 
-#### TLE Data Download Failures
-**Symptom**: "Failed to download TLE data" error
-**Solutions**:
-1. Check internet connection
-2. Verify Celestrak URL in config.json
-3. Check backup URLs are configured
-4. Ensure firewall allows outbound connections
+#### Сбои загрузки данных TLE
+**Симптом**: Ошибка "Failed to download TLE data"
+**Решения**:
+1. Проверьте подключение к интернету
+2. Проверьте URL Celestrak в [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json)
+3. Проверьте настроены ли резервные URL
+4. Убедитесь, что брандмауэр разрешает исходящие соединения
 
-#### Missing Dependencies
-**Symptom**: ImportError messages
-**Solution**:
+#### Отсутствующие зависимости
+**Симптом**: Сообщения ImportError
+**Решение**:
 ```bash
 pip install -r requirements.txt
 ```
 
-#### Permission Errors
-**Symptom**: "Permission denied" when creating cache directories
-**Solutions**:
-1. Run with appropriate permissions
-2. Change cache directory in config.json to writable location
+#### Ошибки разрешений
+**Симптом**: "Permission denied" при создании каталогов кэша
+**Решения**:
+1. Запустите с соответствующими разрешениями
+2. Измените каталог кэша в [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json) на доступное для записи место
 
-#### Visualization Issues
-**Symptom**: "Matplotlib not installed" error
-**Solution**:
+#### Проблемы с визуализацией
+**Симптом**: Ошибка "Matplotlib not installed"
+**Решение**:
 ```bash
 pip install matplotlib
 ```
 
-#### Email Notification Failures
-**Symptom**: Email notifications not sending
-**Solutions**:
-1. Verify SMTP settings in config.json
-2. Check username/password
-3. For Gmail, ensure app password is used
-4. Check recipient email address
+#### Сбои уведомлений по электронной почте
+**Симптом**: Уведомления по электронной почте не отправляются
+**Решения**:
+1. Проверьте настройки SMTP в [config.json](file:///c%3A/Users/maksi/OneDrive/Documents/GitHub/scientific-publications/projects/starlink_satellite_tracker/config.json)
+2. Проверьте имя пользователя/пароль
+3. Для Gmail убедитесь, что используется пароль приложения
+4. Проверьте адрес электронной почты получателя
 
-#### Telegram Notification Failures
-**Symptom**: Telegram notifications not sending
-**Solutions**:
-1. Verify bot token
-2. Check chat ID
-3. Ensure bot is not blocked
-4. Install python-telegram-bot:
+#### Сбои уведомлений через Telegram
+**Симптом**: Уведомления через Telegram не отправляются
+**Решения**:
+1. Проверьте токен бота
+2. Проверьте ID чата
+3. Убедитесь, что бот не заблокирован
+4. Установите python-telegram-bot:
    ```bash
    pip install python-telegram-bot
    ```
 
-### Debugging
+### Отладка
 
-#### Enable Debug Logging
+#### Включение ведения журнала отладки
 ```bash
 python starlink_tracker.py track --debug
 ```
 
-#### Check Logs
-Logs are output to console by default. For file logging, modify the logging configuration in each module.
+#### Проверка журналов
+Журналы выводятся в консоль по умолчанию. Для ведения журнала в файл измените конфигурацию ведения журнала в каждом модуле.
 
-#### Test Individual Components
+#### Тестирование отдельных компонентов
 ```bash
-# Test configuration
+# Тестирование конфигурации
 python src/utils/config_manager.py
 
-# Test data processor
+# Тестирование процессора данных
 python src/utils/data_processor.py
 
-# Test scheduler
+# Тестирование планировщика
 python src/utils/scheduler.py
 ```
 
-### Performance Tuning
+### Настройка производительности
 
-#### Cache Settings
-Adjust cache TTL values in the code for your needs:
-- Longer TTL for less frequent updates
-- Shorter TTL for rapidly changing data
+#### Настройки кэша
+Настройте значения TTL кэша в коде в соответствии с вашими потребностями:
+- Длинный TTL для менее частых обновлений
+- Короткий TTL для быстро меняющихся данных
 
-#### Satellite Processing Limits
-The system processes a limited number of satellites for performance:
-- Modify satellite limits in prediction functions
-- Adjust orbit_points for visualization detail
+#### Ограничения обработки спутников
+Система обрабатывает ограниченное количество спутников для производительности:
+- Измените ограничения спутников в функциях прогнозирования
+- Настройте orbit_points для детализации визуализации
 
-#### Memory Usage
-Monitor memory usage with large datasets:
-- Clear caches periodically
-- Use compressed export for large files
-- Monitor system resources during operation
+#### Использование памяти
+Отслеживайте использование памяти с большими наборами данных:
+- Периодически очищайте кэши
+- Используйте сжатый экспорт для больших файлов
+- Отслеживайте системные ресурсы во время работы
 
-### Getting Help
+### Получение помощи
 
-#### Documentation
-- README.md: Project overview and quick start
-- PROJECT_STRUCTURE.md: Code organization
-- API_DOCUMENTATION.md: Detailed API reference
-- This USAGE_GUIDE.md: Comprehensive usage instructions
+#### Документация
+- README.md: Обзор проекта и быстрый старт
+- PROJECT_STRUCTURE.md: Организация кода
+- API_DOCUMENTATION.md: Подробная справочная информация по API
+- Этот USAGE_GUIDE.md: Комплексные инструкции по использованию
 
-#### Support
-For issues not covered in this guide:
-1. Check the GitHub issues page
-2. Review existing documentation
-3. Submit a detailed bug report with:
-   - Error messages
-   - Steps to reproduce
-   - System information
-   - Configuration details
+#### Поддержка
+Для проблем, не охваченных этим руководством:
+1. Проверьте страницу проблем на GitHub
+2. Изучите существующую документацию
+3. Отправьте подробный отчет об ошибке с:
+   - Сообщениями об ошибках
+   - Шагами для воспроизведения
+   - Информацией о системе
+   - Деталями конфигурации
 
-#### Contributing
-1. Fork the repository
-2. Create feature branches
-3. Submit pull requests with clear descriptions
-4. Follow coding standards in the project
+#### Участие в разработке
+1. Сделайте форк репозитория
+2. Создайте ветки функций
+3. Отправьте пул-реквесты с четкими описаниями
+4. Следуйте стандартам кодирования в проекте

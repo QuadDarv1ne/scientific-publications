@@ -5,8 +5,10 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue)](https://www.python.org/)
 [![CI](https://github.com/QuadDarv1ne/scientific-publications/actions/workflows/ci.yml/badge.svg)](https://github.com/QuadDarv1ne/scientific-publications/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/QuadDarv1ne/scientific-publications/branch/main/graph/badge.svg)](https://codecov.io/gh/QuadDarv1ne/scientific-publications)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Documentation Status](https://readthedocs.org/projects/heliopy/badge/?version=latest)](https://heliopy.readthedocs.io/en/latest/?badge=latest)
 
 HelioPy — это современная библиотека с открытым исходным кодом для обработки данных солнечных наблюдений, анализа солнечной активности и прогнозирования космической погоды. Библиотека предоставляет единый интерфейс для работы с данными от различных космических миссий и наземных обсерваторий, а также включает инструменты для научного анализа и визуализации.
 

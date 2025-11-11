@@ -41,6 +41,7 @@ ENV/
 .coverage
 htmlcov/
 .tox/
+coverage.xml
 
 # Linting and formatting
 .ruff_cache/

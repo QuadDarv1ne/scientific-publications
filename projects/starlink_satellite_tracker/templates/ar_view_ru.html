@@ -1,0 +1,333 @@
+{% extends "base_ru.html" %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h1>Расширенная реальность</h1>
+        <p class="lead">Просмотр спутников Starlink в реальном времени с помощью камеры вашего устройства</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle"></i> Информация о расширенной реальности</h5>
+                    <p>Эта функция требует доступа к камере и лучше всего просматривается на мобильных устройствах. Наведите камеру на небо, чтобы увидеть положения спутников, наложенные на реальный мир.</p>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Настройки</h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="ar-settings-form">
+                                    <div class="mb-3">
+                                        <label for="ar-latitude" class="form-label">Широта</label>
+                                        <input type="number" class="form-control" id="ar-latitude" step="0.0001" placeholder="55.7558" value="55.7558">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ar-longitude" class="form-label">Долгота</label>
+                                        <input type="number" class="form-control" id="ar-longitude" step="0.0001" placeholder="37.6173" value="37.6173">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ar-hours" class="form-label">Часов вперед</label>
+                                        <select class="form-select" id="ar-hours">
+                                            <option value="1">1 час</option>
+                                            <option value="2" selected>2 часа</option>
+                                            <option value="4">4 часа</option>
+                                            <option value="8">8 часов</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="ar-min-elevation" class="form-label">Минимальная высота (градусы)</label>
+                                        <input type="number" class="form-control" id="ar-min-elevation" min="0" max="90" value="10">
+                                    </div>
+                                    <button type="submit" class="btn btn-primary">Обновить вид</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Управление</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button id="start-ar" class="btn btn-success btn-lg">
+                                        <i class="fas fa-camera"></i> Начать AR просмотр
+                                    </button>
+                                    <button id="stop-ar" class="btn btn-danger btn-lg" disabled>
+                                        <i class="fas fa-stop"></i> Остановить AR просмотр
+                                    </button>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <h6>Инструкции:</h6>
+                                    <ol>
+                                        <li>Нажмите "Начать AR просмотр" для начала</li>
+                                        <li>Разрешите доступ к камере при запросе</li>
+                                        <li>Наведите устройство на небо</li>
+                                        <li>Ищите маркеры спутников, наложенные на изображение с камеры</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">AR просмотр</h5>
+            </div>
+            <div class="card-body">
+                <div id="ar-container" style="position: relative; width: 100%; height: 500px; background-color: #000; border-radius: 0.375rem; overflow: hidden;">
+                    <div id="ar-placeholder" class="d-flex justify-content-center align-items-center h-100">
+                        <div class="text-center text-white">
+                            <i class="fas fa-camera fa-3x mb-3"></i>
+                            <p>AR просмотр появится здесь после запуска</p>
+                        </div>
+                    </div>
+                    <video id="ar-video" style="display: none; width: 100%; height: 100%; object-fit: cover;"></video>
+                    <canvas id="ar-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Обнаруженные спутники</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Спутник</th>
+                                <th>Время</th>
+                                <th>Высота</th>
+                                <th>Азимут</th>
+                                <th>Яркость</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ar-satellites-table">
+                            <tr>
+                                <td colspan="5" class="text-center">Нет обнаруженных спутников в AR просмотре</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Функциональность AR просмотра
+let arActive = false;
+let arStream = null;
+let arAnimationId = null;
+
+// Функция для запуска AR просмотра
+async function startARView() {
+    try {
+        // Получить доступ к камере
+        arStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            } 
+        });
+        
+        // Настроить элемент видео
+        const video = document.getElementById('ar-video');
+        video.srcObject = arStream;
+        video.style.display = 'block';
+        
+        // Скрыть заглушку
+        document.getElementById('ar-placeholder').style.display = 'none';
+        
+        // Начать обработку AR
+        arActive = true;
+        document.getElementById('start-ar').disabled = true;
+        document.getElementById('stop-ar').disabled = false;
+        
+        // Начать цикл анимации
+        animateAR();
+        
+        // Получить данные о спутниках
+        updateARSatellites();
+        
+    } catch (error) {
+        console.error('Ошибка запуска AR просмотра:', error);
+        alert('Не удалось получить доступ к камере. Пожалуйста, убедитесь, что вы предоставили разрешения на доступ к камере.');
+    }
+}
+
+// Функция для остановки AR просмотра
+function stopARView() {
+    arActive = false;
+    
+    // Остановить видеопоток
+    if (arStream) {
+        arStream.getTracks().forEach(track => track.stop());
+        arStream = null;
+    }
+    
+    // Скрыть видео и показать заглушку
+    document.getElementById('ar-video').style.display = 'none';
+    document.getElementById('ar-placeholder').style.display = 'flex';
+    
+    // Остановить анимацию
+    if (arAnimationId) {
+        cancelAnimationFrame(arAnimationId);
+        arAnimationId = null;
+    }
+    
+    // Сбросить состояния кнопок
+    document.getElementById('start-ar').disabled = false;
+    document.getElementById('stop-ar').disabled = true;
+}
+
+// Цикл анимации для AR
+function animateAR() {
+    if (!arActive) return;
+    
+    const video = document.getElementById('ar-video');
+    const canvas = document.getElementById('ar-overlay');
+    const ctx = canvas.getContext('2d');
+    
+    // Установить размер холста в соответствии с видео
+    canvas.width = video.videoWidth || video.width;
+    canvas.height = video.videoHeight || video.height;
+    
+    // Очистить холст
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Нарисовать кадр видео
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Нарисовать элементы AR (маркеры спутников)
+    drawARSatellites(ctx, canvas.width, canvas.height);
+    
+    // Продолжить цикл анимации
+    arAnimationId = requestAnimationFrame(animateAR);
+}
+
+// Функция для рисования маркеров спутников в AR просмотре
+function drawARSatellites(ctx, width, height) {
+    // В реальной реализации это будет использовать фактические данные о положении спутников
+    // и ориентацию устройства для точного размещения маркеров
+    
+    // Для демонстрационных целей рисуем несколько примеров маркеров
+    ctx.fillStyle = 'rgba(255, 255, 0, 0.8)';
+    ctx.strokeStyle = 'rgba(255, 255, 0, 1)';
+    ctx.lineWidth = 2;
+    
+    // Примеры положений спутников (в реальном приложении они будут рассчитываться)
+    const satellites = [
+        { x: width * 0.3, y: height * 0.4, name: 'STARLINK-1234', brightness: 2.1 },
+        { x: width * 0.7, y: height * 0.6, name: 'STARLINK-5678', brightness: 1.8 },
+        { x: width * 0.5, y: height * 0.2, name: 'STARLINK-9012', brightness: 3.2 }
+    ];
+    
+    satellites.forEach(sat => {
+        // Нарисовать маркер спутника
+        ctx.beginPath();
+        ctx.arc(sat.x, sat.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+        
+        // Нарисовать название спутника
+        ctx.fillStyle = 'white';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(sat.name, sat.x, sat.y - 15);
+        
+        // Нарисовать яркость
+        ctx.font = '12px Arial';
+        ctx.fillText(`маг: ${sat.brightness}`, sat.x, sat.y + 25);
+    });
+}
+
+// Функция для получения и отображения спутников в AR
+function updateARSatellites() {
+    const lat = document.getElementById('ar-latitude').value;
+    const lon = document.getElementById('ar-longitude').value;
+    const hours = document.getElementById('ar-hours').value;
+    const minElevation = document.getElementById('ar-min-elevation').value;
+    
+    const tableBody = document.getElementById('ar-satellites-table');
+    tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Загрузка спутников...</td></tr>';
+    
+    fetch(`/api/passes?lat=${lat}&lon=${lon}&hours=${hours}&min_elevation=${minElevation}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.passes && data.passes.length > 0) {
+                tableBody.innerHTML = '';
+                
+                // Показать первые 10 прохождений
+                data.passes.slice(0, 10).forEach(pass => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${pass.satellite}</td>
+                        <td>${new Date(pass.time).toLocaleTimeString()}</td>
+                        <td>${pass.altitude.toFixed(1)}°</td>
+                        <td>${pass.azimuth.toFixed(1)}°</td>
+                        <td>${pass.brightness.toFixed(1)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } else {
+                tableBody.innerHTML = '<tr><td colspan="5" class="text-center">Спутники не найдены</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Ошибка получения спутников для AR:', error);
+            tableBody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Ошибка загрузки спутников</td></tr>';
+        });
+}
+
+// Обработчики событий
+document.getElementById('start-ar').addEventListener('click', startARView);
+document.getElementById('stop-ar').addEventListener('click', stopARView);
+
+document.getElementById('ar-settings-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    updateARSatellites();
+});
+
+// Инициализация
+document.addEventListener('DOMContentLoaded', function() {
+    // Проверить поддержку WebRTC
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        document.getElementById('ar-container').innerHTML = `
+            <div class="d-flex justify-content-center align-items-center h-100">
+                <div class="text-center text-white">
+                    <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
+                    <p>AR просмотр не поддерживается в вашем браузере</p>
+                    <p class="small">Пожалуйста, используйте современный браузер с поддержкой камеры</p>
+                </div>
+            </div>
+        `;
+        document.getElementById('start-ar').disabled = true;
+    }
+});
+</script>
+{% endblock %}

@@ -392,6 +392,13 @@ def statistics():
     template = get_template_name('statistics', language)
     return render_template(template)
 
+@app.route('/ar')
+def ar_view():
+    """Page for augmented reality view."""
+    language = request.args.get('lang', 'en')
+    template = get_template_name('ar_view', language)
+    return render_template(template)
+
 @app.route('/api/satellites')
 @handle_api_errors
 @cached(ttl=600)  # Cache for 10 minutes

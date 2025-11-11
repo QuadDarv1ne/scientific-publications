@@ -53,10 +53,16 @@ docs = [
     "sphinx>=5.0",
     "sphinx-rtd-theme>=1.0",
 ]
+web = ["Flask>=2.2"]
 all = ["heliopy[sunpy,dev,docs]"]
+
+[project.scripts]
+heliopy = "heliopy.cli:main"
+heliopy-web = "heliopy.web_app:main"
 
 [tool.setuptools]
 packages = ["heliopy"]
+package-data = {"heliopy" = ["templates/*.html"]}
 
 [tool.black]
 line-length = 100

@@ -43,12 +43,20 @@ jobs:
     
     - name: Run tests
       run: |
-        pytest --cov=heliopy --cov-report=xml --cov-report=term
+        pytest --cov=heliopy --cov-report=xml --cov-report=html --cov-report=term-missing
     
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: unittests
-        name: codecov-umbrella
+        name: codecov-${{ matrix.os }}-py${{ matrix.python-version }}
         fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+    
+    - name: Upload coverage HTML report
+      uses: actions/upload-artifact@v3
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+      with:
+        name: coverage-report
+        path: htmlcov/
