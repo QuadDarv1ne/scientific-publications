@@ -57,6 +57,12 @@ def info():
     )
 
 
+@app.route("/ping")
+def ping():
+    """Простой health-check маршрут."""
+    return jsonify({"status": "ok"})
+
+
 def main(host: str = "127.0.0.1", port: int = 5000, debug: bool = False) -> int:
     """Точка входа для запуска из CLI.
 

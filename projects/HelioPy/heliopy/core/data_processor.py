@@ -1,5 +1,5 @@
 """
-Обработка и предобработка данных.
+Data processing and preprocessing.
 """
 
 from typing import Optional, Tuple
@@ -10,7 +10,7 @@ from skimage import filters, restoration
 
 
 class DataProcessor:
-    """Класс для обработки и предобработки данных."""
+    """Class for data processing and preprocessing."""
 
     def __init__(self):
         """Инициализация процессора данных."""
@@ -24,21 +24,21 @@ class DataProcessor:
         vmax: Optional[float] = None,
     ) -> np.ndarray:
         """
-        Нормализация данных.
+        Normalize data.
 
         Parameters
         ----------
         data : array
-            Входные данные.
+            Input data.
         method : str
-            Метод нормализации ('minmax', 'zscore', 'log').
+            Normalization method ('minmax', 'zscore', 'log').
         vmin, vmax : float, optional
-            Минимальное и максимальное значения для minmax нормализации.
+            Minimum and maximum values for minmax normalization.
 
         Returns
         -------
         array
-            Нормализованные данные.
+            Normalized data.
         """
         if method == "minmax":
             if vmin is None:
@@ -68,21 +68,21 @@ class DataProcessor:
         data: np.ndarray, method: str = "median", kernel_size: int = 50
     ) -> np.ndarray:
         """
-        Удаление фона из изображения.
+        Remove background from image.
 
         Parameters
         ----------
         data : array
-            Входное изображение.
+            Input image.
         method : str
-            Метод удаления фона ('median', 'gaussian', 'morphological').
+            Background removal method ('median', 'gaussian', 'morphological').
         kernel_size : int
-            Размер ядра для фильтрации.
+            Kernel size for filtering.
 
         Returns
         -------
         array
-            Изображение с удаленным фоном.
+            Image with background removed.
         """
         if method == "median":
             background = ndimage.median_filter(data, size=kernel_size)
@@ -100,21 +100,21 @@ class DataProcessor:
     @staticmethod
     def denoise(data: np.ndarray, method: str = "gaussian", sigma: float = 1.0) -> np.ndarray:
         """
-        Удаление шума из данных.
+        Remove noise from data.
 
         Parameters
         ----------
         data : array
-            Входные данные с шумом.
+            Input data with noise.
         method : str
-            Метод удаления шума ('gaussian', 'bilateral', 'tv').
+            Noise removal method ('gaussian', 'bilateral', 'tv').
         sigma : float
-            Параметр сглаживания.
+            Smoothing parameter.
 
         Returns
         -------
         array
-            Данные без шума.
+            Data without noise.
         """
         if method == "gaussian":
             return filters.gaussian(data, sigma=sigma)
@@ -130,21 +130,21 @@ class DataProcessor:
         data: np.ndarray, exposure_time: float, calibration_factor: float = 1.0
     ) -> np.ndarray:
         """
-        Калибровка потока излучения.
+        Calibrate radiation flux.
 
         Parameters
         ----------
         data : array
-            Сырые данные детектора.
+            Raw detector data.
         exposure_time : float
-            Время экспозиции в секундах.
+            Exposure time in seconds.
         calibration_factor : float
-            Калибровочный коэффициент.
+            Calibration factor.
 
         Returns
         -------
         array
-            Калиброванные данные.
+            Calibrated data.
         """
         return (data / exposure_time) * calibration_factor
 
@@ -153,21 +153,21 @@ class DataProcessor:
         data: np.ndarray, center: Optional[Tuple[int, int]] = None, radius: Optional[float] = None
     ) -> np.ndarray:
         """
-        Коррекция потемнения к краю диска.
+        Correct limb darkening.
 
         Parameters
         ----------
         data : array
-            Входное изображение.
+            Input image.
         center : tuple, optional
-            Центр диска (x, y). Если не указан, вычисляется автоматически.
+            Disk center (x, y). If not specified, computed automatically.
         radius : float, optional
-            Радиус диска. Если не указан, вычисляется автоматически.
+            Disk radius. If not specified, computed automatically.
 
         Returns
         -------
         array
-            Изображение с коррекцией потемнения к краю.
+            Image with limb darkening correction.
         """
         if center is None:
             center = (data.shape[1] // 2, data.shape[0] // 2)
@@ -196,21 +196,21 @@ class DataProcessor:
         images: list, reference_index: int = 0, method: str = "cross_correlation"
     ) -> list:
         """
-        Выравнивание изображений.
+        Align images.
 
         Parameters
         ----------
         images : list
-            Список изображений для выравнивания.
+            List of images to align.
         reference_index : int
-            Индекс опорного изображения.
+            Index of the reference image.
         method : str
-            Метод выравнивания.
+            Alignment method.
 
         Returns
         -------
         list
-            Список выровненных изображений.
+            List of aligned images.
         """
         # Упрощенная реализация - в полной версии можно использовать
         # более сложные алгоритмы регистрации

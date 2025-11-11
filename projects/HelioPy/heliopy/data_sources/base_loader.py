@@ -1,5 +1,5 @@
 """
-Базовый класс для загрузчиков данных.
+Base class for data loaders.
 """
 
 from abc import ABC, abstractmethod
@@ -11,16 +11,16 @@ from tqdm import tqdm
 
 
 class BaseLoader(ABC):
-    """Базовый класс для всех загрузчиков данных."""
+    """Base class for all data loaders."""
 
     def __init__(self, cache_dir: Optional[Path] = None):
         """
-        Инициализация загрузчика.
+        Initialize the loader.
 
         Parameters
         ----------
         cache_dir : Path, optional
-            Директория для кэширования данных.
+            Directory for caching data.
         """
         from heliopy.utils.config import get_config
 
@@ -31,26 +31,26 @@ class BaseLoader(ABC):
 
     @abstractmethod
     def load(self, *args, **kwargs):
-        """Абстрактный метод загрузки данных."""
+        """Abstract method for loading data."""
         pass
 
     def _download_file(self, url: str, filepath: Path, timeout: Optional[int] = None) -> Path:
         """
-        Загрузка файла по URL.
+        Download a file by URL.
 
         Parameters
         ----------
         url : str
-            URL файла.
+            File URL.
         filepath : Path
-            Путь для сохранения файла.
+            Path to save the file.
         timeout : int, optional
-            Таймаут загрузки в секундах.
+            Download timeout in seconds.
 
         Returns
         -------
         Path
-            Путь к загруженному файлу.
+            Path to the downloaded file.
         """
         if filepath.exists():
             return filepath
@@ -78,17 +78,17 @@ class BaseLoader(ABC):
 
     def _get_cached_file(self, filename: str) -> Optional[Path]:
         """
-        Получение пути к закэшированному файлу.
+        Get the path to a cached file.
 
         Parameters
         ----------
         filename : str
-            Имя файла.
+            File name.
 
         Returns
         -------
-        Path или None
-            Путь к файлу, если он существует.
+        Path or None
+            Path to the file if it exists.
         """
         filepath = self.cache_dir / filename
         if filepath.exists():

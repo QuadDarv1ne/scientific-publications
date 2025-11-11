@@ -1,19 +1,19 @@
 """
-HelioPy - Open-source библиотека для анализа солнечной активности и прогнозирования космической погоды.
+HelioPy - Open-source library for solar activity analysis and space weather forecasting.
 
-HelioPy предоставляет единый интерфейс для работы с данными от различных космических миссий
-и наземных обсерваторий, а также включает инструменты для научного анализа и визуализации.
+HelioPy provides a unified interface for working with data from various space missions
+and ground-based observatories, as well as tools for scientific analysis and visualization.
 
-Модули:
-    - core: Основные функции обработки данных
-    - data_sources: Загрузчики данных из различных источников
-    - events: Детекторы солнечных событий
-    - imaging: Обработка изображений
-    - magnetic_fields: Анализ магнитных полей
-    - models: Модели прогнозирования
-    - space_weather: Космическая погода
-    - utils: Вспомогательные утилиты
-    - visualization: Визуализация данных
+Modules:
+    - core: Core data processing functions
+    - data_sources: Data loaders from various sources
+    - events: Solar event detectors
+    - imaging: Image processing
+    - magnetic_fields: Magnetic field analysis
+    - models: Forecasting models
+    - space_weather: Space weather
+    - utils: Utility functions
+    - visualization: Data visualization
 """
 
 __version__ = "0.1.0"

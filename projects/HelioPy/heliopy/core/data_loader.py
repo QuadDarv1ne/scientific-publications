@@ -1,5 +1,5 @@
 """
-Универсальный загрузчик данных.
+Universal data loader.
 """
 
 from datetime import datetime
@@ -14,16 +14,16 @@ from heliopy.utils.config import get_config
 
 
 class DataLoader:
-    """Универсальный класс для загрузки данных из различных источников."""
+    """Universal class for loading data from various sources."""
 
     def __init__(self, cache_dir: Optional[Path] = None):
         """
-        Инициализация загрузчика данных.
+        Initialize the data loader.
 
         Parameters
         ----------
         cache_dir : Path, optional
-            Директория для кэширования данных.
+            Directory for caching data.
         """
         config = get_config()
         self.cache_dir = cache_dir or config.cache_dir
@@ -37,21 +37,21 @@ class DataLoader:
 
     def load_sdo_aia(self, date: Union[str, datetime], wavelength: int, **kwargs) -> "SolarImage":
         """
-        Загрузка данных SDO/AIA.
+        Load SDO/AIA data.
 
         Parameters
         ----------
-        date : str или datetime
-            Дата наблюдения.
+        date : str or datetime
+            Observation date.
         wavelength : int
-            Длина волны в ангстремах (94, 131, 171, 193, 211, 304, 335).
+            Wavelength in angstroms (94, 131, 171, 193, 211, 304, 335).
         **kwargs
-            Дополнительные параметры.
+            Additional parameters.
 
         Returns
         -------
         SolarImage
-            Объект с данными изображения.
+            Object with image data.
         """
         return self.sdo_loader.load_aia(date, wavelength, **kwargs)
 
@@ -59,21 +59,21 @@ class DataLoader:
         self, date: Union[str, datetime], data_type: str = "magnetogram", **kwargs
     ) -> "SolarImage":
         """
-        Загрузка данных SDO/HMI.
+        Load SDO/HMI data.
 
         Parameters
         ----------
-        date : str или datetime
-            Дата наблюдения.
+        date : str or datetime
+            Observation date.
         data_type : str
-            Тип данных ('magnetogram', 'continuum', 'dopplergram').
+            Data type ('magnetogram', 'continuum', 'dopplergram').
         **kwargs
-            Дополнительные параметры.
+            Additional parameters.
 
         Returns
         -------
         SolarImage
-            Объект с данными изображения.
+            Object with image data.
         """
         return self.sdo_loader.load_hmi(date, data_type, **kwargs)
 
@@ -81,75 +81,75 @@ class DataLoader:
         self, date: Union[str, datetime], coronagraph: str = "C2", **kwargs
     ) -> "SolarImage":
         """
-        Загрузка данных SOHO/LASCO.
+        Load SOHO/LASCO data.
 
         Parameters
         ----------
-        date : str или datetime
-            Дата наблюдения.
+        date : str or datetime
+            Observation date.
         coronagraph : str
-            Коронограф ('C2' или 'C3').
+            Coronagraph ('C2' or 'C3').
         **kwargs
-            Дополнительные параметры.
+            Additional parameters.
 
         Returns
         -------
         SolarImage
-            Объект с данными изображения.
+            Object with image data.
         """
         return self.soho_loader.load_lasco(date, coronagraph, **kwargs)
 
     def load_goes(self, date: Union[str, datetime], **kwargs) -> "GOESData":
         """
-        Загрузка данных GOES.
+        Load GOES data.
 
         Parameters
         ----------
-        date : str или datetime
-            Дата наблюдения.
+        date : str or datetime
+            Observation date.
         **kwargs
-            Дополнительные параметры.
+            Additional parameters.
 
         Returns
         -------
         GOESData
-            Объект с данными GOES.
+            Object with GOES data.
         """
         return self.goes_loader.load(date, **kwargs)
 
     def load_ace(self, date: Union[str, datetime], **kwargs) -> "ACEData":
         """
-        Загрузка данных ACE.
+        Load ACE data.
 
         Parameters
         ----------
-        date : str или datetime
-            Дата наблюдения.
+        date : str or datetime
+            Observation date.
         **kwargs
-            Дополнительные параметры.
+            Additional parameters.
 
         Returns
         -------
         ACEData
-            Объект с данными ACE.
+            Object with ACE data.
         """
         return self.ace_loader.load(date, **kwargs)
 
 
-# Функции для удобного доступа (как в README)
+# Convenience functions (as in README)
 def load_sdo_aia(date: Union[str, datetime], wavelength: int, **kwargs):
-    """Удобная функция для загрузки данных SDO/AIA."""
+    """Convenience function for loading SDO/AIA data."""
     loader = DataLoader()
     return loader.load_sdo_aia(date, wavelength, **kwargs)
 
 
 def load_soho_lasco(date: Union[str, datetime], coronagraph: str = "C2", **kwargs):
-    """Удобная функция для загрузки данных SOHO/LASCO."""
+    """Convenience function for loading SOHO/LASCO data."""
     loader = DataLoader()
     return loader.load_soho_lasco(date, coronagraph, **kwargs)
 
 
 def load_goes(date: Union[str, datetime], **kwargs):
-    """Удобная функция для загрузки данных GOES."""
+    """Convenience function for loading GOES data."""
     loader = DataLoader()
     return loader.load_goes(date, **kwargs)

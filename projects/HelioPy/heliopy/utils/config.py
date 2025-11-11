@@ -1,25 +1,25 @@
 """
-Конфигурация библиотеки HelioPy.
+HelioPy library configuration.
 """
 
 import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 import yaml
 
 
 class Config:
-    """Класс для управления конфигурацией библиотеки."""
+    """Class for managing library configuration."""
 
     def __init__(self, config_path: Optional[str] = None):
         """
-        Инициализация конфигурации.
+        Initialize the configuration.
 
         Parameters
         ----------
         config_path : str, optional
-            Путь к файлу конфигурации. Если не указан, используется конфигурация по умолчанию.
+            Path to the configuration file. If not specified, the default configuration is used.
         """
         self._cache_dir = Path.home() / ".heliopy" / "cache"
         self._data_dir = Path.home() / ".heliopy" / "data"
@@ -37,7 +37,7 @@ class Config:
             self._load_defaults()
 
     def _load_defaults(self):
-        """Загрузка конфигурации по умолчанию."""
+        """Load default configuration."""
         self.cache_enabled = True
         self.cache_size_limit_gb = 10
         self.download_timeout = 300
@@ -45,7 +45,7 @@ class Config:
         self.verbose = False
 
     def _load_from_file(self, config_path: str):
-        """Загрузка конфигурации из файла."""
+        """Load configuration from file."""
         with open(config_path) as f:
             config = yaml.safe_load(f)
             for key, value in config.items():
@@ -53,21 +53,21 @@ class Config:
 
     @property
     def cache_dir(self) -> Path:
-        """Путь к директории кэша."""
+        """Path to the cache directory."""
         return self._cache_dir
 
     @property
     def data_dir(self) -> Path:
-        """Путь к директории данных."""
+        """Path to the data directory."""
         return self._data_dir
 
     @property
     def config_dir(self) -> Path:
-        """Путь к директории конфигурации."""
+        """Path to the configuration directory."""
         return self._config_dir
 
-    def save(self, config_path: Optional[str] = None):
-        """Сохранение конфигурации в файл."""
+    def save(self, config_path: Optional[Union[str, Path]] = None):
+        """Save configuration to file."""
         if config_path is None:
             config_path = self._config_dir / "config.yaml"
 
@@ -88,7 +88,7 @@ _config = None
 
 
 def get_config() -> Config:
-    """Получить глобальный экземпляр конфигурации."""
+    """Get the global configuration instance."""
     global _config
     if _config is None:
         _config = Config()
@@ -96,6 +96,6 @@ def get_config() -> Config:
 
 
 def set_config(config: Config):
-    """Установить глобальный экземпляр конфигурации."""
+    """Set the global configuration instance."""
     global _config
     _config = config
