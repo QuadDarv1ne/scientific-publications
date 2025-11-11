@@ -5,7 +5,7 @@ Database models for all entities.
 """
 
 from sqlalchemy import Column, Integer, String, Float, DateTime, Text, Boolean
-from datetime import datetime, UTC, timedelta
+from datetime import datetime, timedelta
 from sqlalchemy.orm import declarative_base
 
 Base = declarative_base()
@@ -63,15 +63,16 @@ class User(Base):
     email = Column(String(120), unique=True, nullable=False)
     password_hash = Column(String(128), nullable=False)
     role = Column(String(30), default='user')
-    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    # Use naive UTC datetimes consistently to avoid offset-aware vs. naive comparison issues
+    created_at = Column(DateTime, default=lambda: datetime.utcnow())
     reset_token = Column(String(128), nullable=True, index=True)
     reset_token_expiry = Column(DateTime, nullable=True)
     is_active = Column(Boolean, default=True)
 
     def set_reset_token(self, token: str, validity_minutes: int = 30):
-        """Assign a password reset token with expiry."""
+        """Assign a password reset token with expiry (stored as naive UTC)."""
         self.reset_token = token
-        self.reset_token_expiry = datetime.now(UTC) + timedelta(minutes=validity_minutes)
+        self.reset_token_expiry = datetime.utcnow() + timedelta(minutes=validity_minutes)
 
     def clear_reset_token(self):
         self.reset_token = None
@@ -80,7 +81,15 @@ class User(Base):
     def reset_token_valid(self) -> bool:
         if not self.reset_token or not self.reset_token_expiry:
             return False
-        return datetime.now(UTC) <= self.reset_token_expiry
+        # Normalize to naive UTC for comparison to avoid mixing aware/naive datetimes
+        now = datetime.utcnow()
+        expiry = self.reset_token_expiry
+        if getattr(expiry, 'tzinfo', None) is not None:
+            try:
+                expiry = expiry.replace(tzinfo=None)
+            except Exception:
+                pass
+        return now <= expiry
 
     def __repr__(self):
         return f"<User(username='{self.username}', email='{self.email}', role='{self.role}')>"
