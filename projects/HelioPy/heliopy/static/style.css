@@ -13,12 +13,22 @@ a{ color:var(--primary); text-decoration:none; }
 a:hover{ text-decoration:underline; }
 nav{ margin-top:24px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
 nav .spacer{ flex:1; }
+nav a[aria-current="page"]{ font-weight:600; text-decoration:underline; text-underline-offset:2px; }
 .button{ display:inline-block; padding:8px 12px; border-radius:8px; background:var(--primary); color:#fff; transition: transform .15s ease, box-shadow .15s ease; }
 .button:hover{ transform: translateY(-1px); box-shadow:0 6px 16px rgba(0,0,0,.15); }
 .card{ background:var(--card); border-radius:10px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+/* Chart container */
+.chart{ height:400px; }
 label{ display:inline-block; margin-right:10px; }
 form{ margin: 8px 0 16px; }
 pre{ background: rgba(127,127,127,.08); padding:12px; border-radius:8px; overflow:auto; }
+
+/* Skip link for keyboard users */
+.skip-link{ position:absolute; top:-40px; left:0; background:var(--primary); color:#fff; padding:8px 12px; border-radius:0 0 8px 0; transition: top .2s ease; z-index:100; }
+.skip-link:focus{ top:0; }
+
+/* Focus outlines for accessibility */
+*:focus{ outline:2px solid var(--accent); outline-offset:3px; }
 
 @keyframes fadeIn{ from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform:none; } }
 

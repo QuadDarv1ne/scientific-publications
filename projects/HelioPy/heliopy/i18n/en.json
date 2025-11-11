@@ -39,4 +39,10 @@
   "chart_flux": "Flux",
   "chart_time": "Time",
   "chart_title_demo": "Synthetic Solar Flux Time Series"
+  ,"skip_to_content": "Skip to main content"
+  ,"nav_label_main": "Main navigation"
+  ,"switch_lang_en": "Switch interface language to English"
+  ,"switch_lang_ru": "Переключить язык интерфейса на русский"
+  ,"external_link_hint": "opens in a new tab"
+  ,"chart_container_label": "Interactive time series chart"
 }

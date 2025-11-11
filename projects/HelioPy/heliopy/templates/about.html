@@ -4,23 +4,27 @@
     <meta charset="UTF-8">
     <title>{{ t.app_name }} — {{ t.about_title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ t.about_desc }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <a href="#main" class="skip-link">{{ t.skip_to_content }}</a>
     <div class="container">
         <h1>{{ t.about_title }}</h1>
         <div class="desc">{{ t.about_desc }}</div>
-        <nav>
-            <a href="{{ url_for('index') }}">{{ t.index_title }}</a>
+        <nav role="navigation" aria-label="{{ t.nav_label_main }}">
+            <a href="{{ url_for('index') }}" aria-current="{{ 'page' if request.endpoint == 'index' else 'false' }}">{{ t.index_title }}</a>
             <span class="spacer"></span>
-            <a class="button" href="{{ url_for('set_lang', lang='en') }}">{{ t.lang_en }}</a>
-            <a class="button" href="{{ url_for('set_lang', lang='ru') }}">{{ t.lang_ru }}</a>
+            <a class="button" href="{{ url_for('set_lang', lang='en') }}" aria-label="{{ t.switch_lang_en }}">{{ t.lang_en }}</a>
+            <a class="button" href="{{ url_for('set_lang', lang='ru') }}" aria-label="{{ t.switch_lang_ru }}">{{ t.lang_ru }}</a>
         </nav>
-        <ul>
-            <li>Source code on GitHub</li>
-            <li>Docs: <a href="https://heliopy.readthedocs.io/en/latest/" target="_blank" rel="noopener">heliopy.readthedocs.io</a></li>
-            <li>Author: Dupley Maxim Igorevich</li>
-        </ul>
+        <main id="main" tabindex="-1">
+            <ul>
+                <li>Source code on GitHub</li>
+                <li>Docs: <a href="https://heliopy.readthedocs.io/en/latest/" target="_blank" rel="noopener noreferrer" aria-label="{{ t.docs_link }} — {{ t.external_link_hint }}">heliopy.readthedocs.io</a></li>
+                <li>Author: Dupley Maxim Igorevich</li>
+            </ul>
+        </main>
         <div class="back">
             <a href="/">{{ t.back_home }}</a>
         </div>

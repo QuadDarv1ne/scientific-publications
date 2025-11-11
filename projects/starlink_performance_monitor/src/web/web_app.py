@@ -22,6 +22,23 @@ import secrets
 from sqlalchemy import create_engine, desc
 from sqlalchemy.orm import sessionmaker
 
+# Add project root to path for imports
+import sys
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+# Database and logging utilities
+from src.database.db_manager import get_database_manager, get_db_session
+from src.utils.logging_config import setup_logging, get_logger
+
+# Models and realtime updater
+from src.monitor.monitor import PerformanceMetric, Base
+from src.database.models import User
+from src.web.realtime_manager import start_realtime_updater, stop_realtime_updater
+
+# Configure logging
+setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
+logger = get_logger(__name__)
+
 # Language translations dictionary
 LANGUAGES = {
     'en': {

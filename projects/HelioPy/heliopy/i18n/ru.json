@@ -39,4 +39,10 @@
   "chart_flux": "Поток",
   "chart_time": "Время",
   "chart_title_demo": "Синтетический временной ряд солнечного потока"
+  ,"skip_to_content": "Перейти к основному содержимому"
+  ,"nav_label_main": "Основная навигация"
+  ,"switch_lang_en": "Switch interface language to English"
+  ,"switch_lang_ru": "Переключить язык интерфейса на русский"
+  ,"external_link_hint": "откроется в новой вкладке"
+  ,"chart_container_label": "Интерактивный график временного ряда"
 }

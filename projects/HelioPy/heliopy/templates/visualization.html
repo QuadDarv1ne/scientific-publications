@@ -4,20 +4,24 @@
     <meta charset="UTF-8">
     <title>{{ t.app_name }} — {{ t.visualization_title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ t.visualization_desc }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
 </head>
 <body>
+    <a href="#main" class="skip-link">{{ t.skip_to_content }}</a>
     <div class="container">
         <h1>{{ t.visualization_title }}</h1>
         <div class="desc">{{ t.visualization_desc }}</div>
-        <nav>
-            <a href="{{ url_for('index') }}">{{ t.index_title }}</a>
+        <nav role="navigation" aria-label="{{ t.nav_label_main }}">
+            <a href="{{ url_for('index') }}" aria-current="{{ 'page' if request.endpoint == 'index' else 'false' }}">{{ t.index_title }}</a>
             <span class="spacer"></span>
-            <a class="button" href="{{ url_for('set_lang', lang='en') }}">{{ t.lang_en }}</a>
-            <a class="button" href="{{ url_for('set_lang', lang='ru') }}">{{ t.lang_ru }}</a>
+            <a class="button" href="{{ url_for('set_lang', lang='en') }}" aria-label="{{ t.switch_lang_en }}">{{ t.lang_en }}</a>
+            <a class="button" href="{{ url_for('set_lang', lang='ru') }}" aria-label="{{ t.switch_lang_ru }}">{{ t.lang_ru }}</a>
         </nav>
-                <div id="chart" class="card" style="height:400px;"></div>
+        <main id="main" tabindex="-1">
+            <div id="chart" class="card chart" role="img" aria-label="{{ t.chart_container_label }}" aria-busy="true"></div>
+        </main>
         <div class="back">
             <a href="/">{{ t.back_home }}</a>
         </div>
@@ -42,6 +46,7 @@
                 const el = document.getElementById('chart');
                 if (window.Plotly) {
                     Plotly.newPlot(el, [trace], layout, {displayModeBar:false});
+                    el.setAttribute('aria-busy','false');
                 } else {
                     el.innerHTML = '<p>Plotly not available. Please check internet connection.</p>';
                 }

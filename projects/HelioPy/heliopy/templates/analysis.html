@@ -4,38 +4,49 @@
     <meta charset="UTF-8">
     <title>{{ t.app_name }} — {{ t.analysis_title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{{ t.analysis_desc }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <a href="#main" class="skip-link">{{ t.skip_to_content }}</a>
     <div class="container">
         <h1>{{ t.analysis_title }}</h1>
         <div class="desc">{{ t.analysis_desc }}</div>
-        <nav>
-            <a href="{{ url_for('index') }}">{{ t.index_title }}</a>
+        <nav role="navigation" aria-label="{{ t.nav_label_main }}">
+            <a href="{{ url_for('index') }}" aria-current="{{ 'page' if request.endpoint == 'index' else 'false' }}">{{ t.index_title }}</a>
             <span class="spacer"></span>
-            <a class="button" href="{{ url_for('set_lang', lang='en') }}">{{ t.lang_en }}</a>
-            <a class="button" href="{{ url_for('set_lang', lang='ru') }}">{{ t.lang_ru }}</a>
+            <a class="button" href="{{ url_for('set_lang', lang='en') }}" aria-label="{{ t.switch_lang_en }}">{{ t.lang_en }}</a>
+            <a class="button" href="{{ url_for('set_lang', lang='ru') }}" aria-label="{{ t.switch_lang_ru }}">{{ t.lang_ru }}</a>
         </nav>
-        <h2>{{ t.flare_peak_flux }}</h2>
-        <form onsubmit="classifyFlare(event)">
-            <label>{{ t.flare_peak_flux }}: <input type="number" step="any" id="flareFlux" value="1e-6"></label>
-            <button type="submit" class="button">{{ t.btn_classify }}</button>
-        </form>
-        <pre id="flareResult"></pre>
-        <h2>{{ t.carrington_rotation }}</h2>
-        <form onsubmit="calcCarrington(event)">
-            <label>{{ t.time_utc }}: <input type="text" id="timeStr" value="2023-10-15 12:00:00"></label>
-            <button type="submit" class="button">{{ t.btn_compute }}</button>
-        </form>
-        <pre id="carringtonResult"></pre>
-        <h2>{{ t.coords_convert }}</h2>
-        <form onsubmit="convertCoords(event)">
-            <label>{{ t.r }}: <input type="number" step="any" id="rVal" value="1"></label>
-            <label>{{ t.theta }}: <input type="number" step="any" id="thetaVal" value="0.5"></label>
-            <label>{{ t.phi }}: <input type="number" step="any" id="phiVal" value="0.2"></label>
-            <button type="submit" class="button">{{ t.btn_convert }}</button>
-        </form>
-        <pre id="coordsResult"></pre>
+        <main id="main" tabindex="-1">
+            <h2>{{ t.flare_peak_flux }}</h2>
+            <form onsubmit="classifyFlare(event)">
+                <label for="flareFlux">{{ t.flare_peak_flux }}</label>
+                <input type="number" step="any" id="flareFlux" value="1e-6" inputmode="decimal">
+                <button type="submit" class="button">{{ t.btn_classify }}</button>
+            </form>
+            <pre id="flareResult" role="status" aria-live="polite"></pre>
+
+            <h2>{{ t.carrington_rotation }}</h2>
+            <form onsubmit="calcCarrington(event)">
+                <label for="timeStr">{{ t.time_utc }}</label>
+                <input type="text" id="timeStr" value="2023-10-15 12:00:00" autocomplete="off">
+                <button type="submit" class="button">{{ t.btn_compute }}</button>
+            </form>
+            <pre id="carringtonResult" role="status" aria-live="polite"></pre>
+
+            <h2>{{ t.coords_convert }}</h2>
+            <form onsubmit="convertCoords(event)">
+                <label for="rVal">{{ t.r }}</label>
+                <input type="number" step="any" id="rVal" value="1" inputmode="decimal">
+                <label for="thetaVal">{{ t.theta }}</label>
+                <input type="number" step="any" id="thetaVal" value="0.5" inputmode="decimal">
+                <label for="phiVal">{{ t.phi }}</label>
+                <input type="number" step="any" id="phiVal" value="0.2" inputmode="decimal">
+                <button type="submit" class="button">{{ t.btn_convert }}</button>
+            </form>
+            <pre id="coordsResult" role="status" aria-live="polite"></pre>
+        </main>
         <div class="back">
             <a href="/">{{ t.back_home }}</a>
         </div>
