@@ -437,52 +437,6 @@ LANGUAGES = {
         'reset_error': 'Ошибка сброса пароля'
     }
 }
-        'active_satellites': 'Активные спутники',
-        'total_satellites': 'Всего спутников',
-        'satellite_positions': 'Позиции спутников',
-        'export_options': 'Опции экспорта',
-        'export_to_csv': 'Экспорт в CSV',
-        'export_to_excel': 'Экспорт в Excel',
-        'export_to_pdf': 'Экспорт в PDF',
-        'compare_periods': 'Сравнить периоды',
-        'advanced_filtering': 'Расширенная фильтрация',
-        'statistical_summary': 'Статистическая сводка',
-        'percentile_95': '95-й процентиль',
-        'average': 'Среднее',
-        'minimum': 'Минимум',
-        'maximum': 'Максимум',
-        'standard_deviation': 'Стандартное отклонение',
-        'connecting_data_stream': 'Подключение к потоку данных...',
-        'line': 'Линия',
-        'bar': 'Столбец',
-        'area': 'Область',
-        'download_distribution': 'Распределение скорости загрузки',
-        
-        'register': 'Регистрация',
-        'create_account': 'Создать аккаунт',
-        'email': 'Email',
-        'confirm_password': 'Повторите пароль',
-        'no_account': 'Нет аккаунта?',
-        'have_account': 'У меня уже есть аккаунт',
-        'forgot_password': 'Забыли пароль?',
-        'password_reset': 'Восстановление пароля',
-        'send_reset_link': 'Отправить ссылку для сброса',
-        'back_to_login': 'Назад к входу',
-        'reset_link': 'Ссылка на сброс',
-        'invalid_or_expired_link': 'Ссылка сброса недействительна или истекла',
-        'set_new_password': 'Установить новый пароль',
-        'password_updated_message': 'Пароль обновлён. Теперь вы можете войти.',
-        
-        'fields_required': 'Заполните все поля',
-        'passwords_mismatch': 'Пароли не совпадают',
-        'password_min_length': 'Пароль должен быть не короче 6 символов',
-        'user_exists': 'Пользователь с таким именем или email уже существует',
-        'registration_success': 'Аккаунт создан. Теперь вы можете войти.',
-        'registration_error': 'Ошибка регистрации',
-        'reset_request_error': 'Ошибка запроса сброса пароля',
-        'reset_error': 'Ошибка сброса пароля'
-    }
-}
 
 # Create Flask app with template folder specified
 template_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
