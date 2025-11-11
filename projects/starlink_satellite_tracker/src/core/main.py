@@ -277,6 +277,7 @@ class StarlinkTracker:
             return False
         
         # Check if lines follow TLE format
+        valid_groups = 0
         for i in range(0, len(lines), 3):
             if i + 2 < len(lines):
                 name_line = lines[i].strip()
@@ -289,13 +290,16 @@ class StarlinkTracker:
                 
                 # Check TLE line formats
                 if not line1.startswith('1 ') or not line2.startswith('2 '):
-                    return False
+                    continue  # Skip invalid groups
                 
-                # Check line lengths
-                if len(line1) != 69 or len(line2) != 69:
-                    return False
+                # Check line lengths (allow some flexibility)
+                if len(line1) < 69 or len(line2) < 69:
+                    continue  # Skip invalid groups
+                
+                # If we get here, we have at least one valid TLE group
+                valid_groups += 1
         
-        return True
+        return valid_groups > 0
     
     def _generate_prediction_cache_key(self, latitude: float, longitude: float, 
                                      hours_ahead: int, min_elevation: float) -> str:
@@ -481,6 +485,12 @@ class StarlinkTracker:
                     name = lines[i].strip()
                     line1 = lines[i+1].strip()
                     line2 = lines[i+2].strip()
+                    
+                    # Validate lines before creating satellite object
+                    if not name or not line1.startswith('1 ') or not line2.startswith('2 '):
+                        self.logger.warning(f"Skipping invalid TLE data group starting with: {name}")
+                        error_count += 1
+                        continue
                     
                     try:
                         satellite = EarthSatellite(line1, line2, name, self.ts)

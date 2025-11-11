@@ -41,7 +41,11 @@ except ImportError:
     # Create a minimal version
     class MinimalTracker:
         def __init__(self):
-            self.ts = None
+            try:
+                from skyfield.api import load
+                self.ts = load.timescale()
+            except:
+                self.ts = None
             pass
         
         def update_tle_data(self, force=False):
@@ -361,6 +365,9 @@ def api_satellites():
     try:
         # Update TLE data if needed
         satellites = tracker_instance.update_tle_data()
+        
+        # Debug: Print number of satellites loaded
+        app.logger.info(f"Loaded {len(satellites)} satellites")
         
         # Return simplified satellite data
         sat_data = []
