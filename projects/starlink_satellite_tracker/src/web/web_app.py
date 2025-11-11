@@ -1973,6 +1973,107 @@ def api_bulk_satellite_data():
         return jsonify({'error': 'Failed to retrieve bulk satellite data'}), 500
 
 
+@app.route('/api/constellation/analysis')
+@handle_api_errors
+def api_constellation_analysis():
+    """API endpoint for constellation analysis and statistics."""
+    try:
+        # Get parameters
+        group_by = request.args.get('group_by', 'inclination')  # inclination, altitude, eccentricity
+        
+        # Update TLE data if needed
+        satellites = tracker_instance.update_tle_data()
+        
+        # Analysis data
+        analysis = {
+            'total_satellites': len(satellites),
+            'groups': {},
+            'statistics': {}
+        }
+        
+        # Group satellites based on parameter
+        groups = {}
+        inclinations = []
+        altitudes = []
+        eccentricities = []
+        
+        for sat in satellites:
+            try:
+                if hasattr(tracker_instance, 'ts') and tracker_instance.ts is not None:
+                    t = tracker_instance.ts.now()
+                    elements = sat.orbit_elements_at(t)
+                    
+                    # Collect data for statistics
+                    inclinations.append(elements.inclination.degrees)
+                    altitudes.append(elements.semi_major_axis.km)
+                    eccentricities.append(elements.eccentricity)
+                    
+                    # Group by selected parameter
+                    if group_by == 'inclination':
+                        # Group by inclination ranges (0-10, 10-20, etc.)
+                        group_key = int(elements.inclination.degrees // 10) * 10
+                        group_label = f"{group_key}-{group_key+10}°"
+                    elif group_by == 'altitude':
+                        # Group by altitude ranges (300-400, 400-500, etc.)
+                        group_key = int(elements.semi_major_axis.km // 100) * 100
+                        group_label = f"{group_key}-{group_key+100} km"
+                    elif group_by == 'eccentricity':
+                        # Group by eccentricity ranges (0.000-0.001, 0.001-0.002, etc.)
+                        group_key = int(elements.eccentricity * 1000) / 1000
+                        group_label = f"{group_key:.3f}-{group_key+0.001:.3f}"
+                    else:
+                        group_label = "Unknown"
+                    
+                    if group_label not in groups:
+                        groups[group_label] = []
+                    groups[group_label].append({
+                        'name': sat.name,
+                        'id': sat.model.satnum,
+                        'inclination': round(elements.inclination.degrees, 2),
+                        'altitude': round(elements.semi_major_axis.km, 2),
+                        'eccentricity': round(elements.eccentricity, 6)
+                    })
+            except Exception as e:
+                app.logger.warning(f"Could not analyze {sat.name}: {e}")
+                continue
+        
+        analysis['groups'] = groups
+        
+        # Calculate statistics
+        if inclinations:
+            analysis['statistics']['inclination'] = {
+                'min': round(min(inclinations), 2),
+                'max': round(max(inclinations), 2),
+                'avg': round(sum(inclinations) / len(inclinations), 2),
+                'median': round(sorted(inclinations)[len(inclinations) // 2], 2)
+            }
+        
+        if altitudes:
+            analysis['statistics']['altitude'] = {
+                'min': round(min(altitudes), 2),
+                'max': round(max(altitudes), 2),
+                'avg': round(sum(altitudes) / len(altitudes), 2),
+                'median': round(sorted(altitudes)[len(altitudes) // 2], 2)
+            }
+        
+        if eccentricities:
+            analysis['statistics']['eccentricity'] = {
+                'min': round(min(eccentricities), 6),
+                'max': round(max(eccentricities), 6),
+                'avg': round(sum(eccentricities) / len(eccentricities), 6),
+                'median': round(sorted(eccentricities)[len(eccentricities) // 2], 6)
+            }
+        
+        return jsonify({
+            'analysis': analysis,
+            'grouped_by': group_by,
+            'generated': datetime.now().isoformat()
+        })
+    except Exception as e:
+        app.logger.error(f"Error in api_constellation_analysis: {e}")
+        return jsonify({'error': 'Failed to perform constellation analysis'}), 500
+
+
 if __name__ == '__main__':
     # Create templates directory
     create_templates_dir()
