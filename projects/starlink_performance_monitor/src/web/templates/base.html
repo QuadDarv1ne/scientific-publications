@@ -168,7 +168,8 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.endpoint == 'performance_history' %}active{% endif %}" href="{{ url_for('performance_history') }}">
+                <!-- Исправлено: endpoint performance_history не существует, заменено на performance -->
+                <a class="nav-link {% if request.endpoint == 'performance' %}active{% endif %}" href="{{ url_for('performance') }}">
                     <i class="fas fa-chart-line"></i> {{ t.performance }}
                 </a>
             </li>
