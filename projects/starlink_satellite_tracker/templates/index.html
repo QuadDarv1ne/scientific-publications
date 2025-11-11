@@ -358,9 +358,11 @@ function fetchPassesData() {
 // Fetch all satellites with pagination
 let currentPage = 1;
 const itemsPerPage = 20;
+let currentFilter = '';
 
 function fetchAllSatellites(page = 1, filter = '') {
     currentPage = page;
+    currentFilter = filter;
     const tableBody = document.getElementById('all-satellites');
     tableBody.innerHTML = `
         <tr>
@@ -407,10 +409,10 @@ function fetchAllSatellites(page = 1, filter = '') {
                         <td>${satellite.id || 'N/A'}</td>
                         <td><span class="badge bg-success">Active</span></td>
                         <td>
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="showSatelliteDetails('${satellite.name}')">
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="showSatelliteDetails('${satellite.name}')" title="View Details">
                                 <i class="fas fa-info-circle"></i>
                             </button>
-                            <button class="btn btn-sm btn-outline-secondary" onclick="trackSatellite('${satellite.name}')">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="trackSatellite('${satellite.name}')" title="Track Satellite">
                                 <i class="fas fa-map-marker-alt"></i>
                             </button>
                         </td>
@@ -443,7 +445,7 @@ function updatePagination(totalItems, currentPage) {
     // Previous page
     const prevItem = document.createElement('li');
     prevItem.className = `page-item ${currentPage === 1 ? 'disabled' : ''}`;
-    prevItem.innerHTML = `<a class="page-link" href="#" ${currentPage !== 1 ? `onclick="fetchAllSatellites(${currentPage - 1}); return false;"` : ''}>Previous</a>`;
+    prevItem.innerHTML = `<a class="page-link" href="#" ${currentPage !== 1 ? `onclick="fetchAllSatellites(${currentPage - 1}, '${currentFilter}'); return false;"` : ''}>Previous</a>`;
     pagination.appendChild(prevItem);
     
     // Pages
@@ -451,7 +453,7 @@ function updatePagination(totalItems, currentPage) {
         if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
             const pageItem = document.createElement('li');
             pageItem.className = `page-item ${i === currentPage ? 'active' : ''}`;
-            pageItem.innerHTML = `<a class="page-link" href="#" onclick="fetchAllSatellites(${i}); return false;">${i}</a>`;
+            pageItem.innerHTML = `<a class="page-link" href="#" onclick="fetchAllSatellites(${i}, '${currentFilter}'); return false;">${i}</a>`;
             pagination.appendChild(pageItem);
         } else if (i === currentPage - 3 || i === currentPage + 3) {
             const ellipsisItem = document.createElement('li');
@@ -464,7 +466,7 @@ function updatePagination(totalItems, currentPage) {
     // Next page
     const nextItem = document.createElement('li');
     nextItem.className = `page-item ${currentPage === totalPages ? 'disabled' : ''}`;
-    nextItem.innerHTML = `<a class="page-link" href="#" ${currentPage !== totalPages ? `onclick="fetchAllSatellites(${currentPage + 1}); return false;"` : ''}>Next</a>`;
+    nextItem.innerHTML = `<a class="page-link" href="#" ${currentPage !== totalPages ? `onclick="fetchAllSatellites(${currentPage + 1}, '${currentFilter}'); return false;"` : ''}>Next</a>`;
     pagination.appendChild(nextItem);
 }
 
@@ -488,7 +490,7 @@ function searchSatellites(query) {
                 let html = '<div class="list-group">';
                 data.results.forEach(sat => {
                     html += `
-                        <a href="#" class="list-group-item list-group-item-action" onclick="showSatelliteInfo('${sat.name}')">
+                        <a href="#" class="list-group-item list-group-item-action" onclick="showSatelliteInfo('${sat.name}'); return false;">
                             <div class="d-flex justify-content-between">
                                 <h6 class="mb-1">${sat.name}</h6>
                                 <small class="text-muted">ID: ${sat.id}</small>
@@ -510,22 +512,26 @@ function searchSatellites(query) {
 
 // Show satellite info (placeholder)
 function showSatelliteInfo(satelliteName) {
-    alert(`Information about satellite ${satelliteName} will be displayed here in a modal window.`);
+    // In a real implementation, this would show a modal with satellite information
+    showToast(`Information about satellite ${satelliteName} would be displayed here.`, 'info');
 }
 
 // Show satellite details
 function showSatelliteDetails(satelliteName) {
-    alert(`Detailed information about satellite ${satelliteName}:\n\nThis function will open a page with detailed information about the satellite.`);
+    // In a real implementation, this would navigate to a detailed satellite page
+    showToast(`Detailed information about satellite ${satelliteName} would be displayed here.`, 'info');
 }
 
 // Track satellite
 function trackSatellite(satelliteName) {
-    alert(`Tracking satellite ${satelliteName}:\n\nThis function will open a page to track the satellite on the map.`);
+    // In a real implementation, this would navigate to the tracking page
+    showToast(`Tracking satellite ${satelliteName} on the map.`, 'info');
 }
 
 // Show pass details
 function showPassDetails(satelliteName) {
-    alert(`Pass details for satellite ${satelliteName}:\n\nThis function will open a page with detailed information about the satellite pass.`);
+    // In a real implementation, this would show detailed pass information
+    showToast(`Pass details for satellite ${satelliteName} would be displayed here.`, 'info');
 }
 
 // Clear cache function
@@ -534,15 +540,15 @@ document.getElementById('clear-cache-btn').addEventListener('click', function() 
         fetch('/api/cache/clear', { method: 'POST' })
             .then(response => response.json())
             .then(data => {
-                alert(data.message || 'Cache cleared successfully!');
+                showToast(data.message || 'Cache cleared successfully!', 'success');
                 // Refresh data after clearing cache
                 fetchSatelliteData();
                 fetchPassesData();
-                fetchAllSatellites(currentPage);
+                fetchAllSatellites(currentPage, currentFilter);
             })
             .catch(error => {
                 console.error('Error clearing cache:', error);
-                alert('Error clearing cache');
+                showToast('Error clearing cache', 'error');
             });
     }
 });
@@ -559,12 +565,11 @@ document.getElementById('refresh-btn').addEventListener('click', function() {
         Promise.all([
             fetchSatelliteData(),
             fetchPassesData(),
-            fetchAllSatellites(currentPage)
+            fetchAllSatellites(currentPage, currentFilter)
         ]).then(() => {
             setTimeout(() => {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
-                // Show notification as toast instead of alert for better UX
                 showToast('Data refreshed successfully!', 'success');
             }, 500);
         }).catch(() => {
@@ -595,7 +600,7 @@ document.getElementById('refresh-satellites-btn').addEventListener('click', func
 function showToast(message, type) {
     // Create temporary notification element
     const toast = document.createElement('div');
-    toast.className = `position-fixed top-0 end-0 m-3 p-3 bg-${type === 'success' ? 'success' : 'danger'} text-white rounded shadow`;
+    toast.className = `position-fixed top-0 end-0 m-3 p-3 bg-${type === 'success' ? 'success' : type === 'error' ? 'danger' : type === 'info' ? 'info' : 'secondary'} text-white rounded shadow`;
     toast.style.zIndex = '1050';
     toast.innerHTML = message;
     toast.style.transition = 'opacity 0.3s';
@@ -629,10 +634,14 @@ document.getElementById('satellite-search').addEventListener('keypress', functio
     }
 });
 
-// Satellite filter input handler
+// Satellite filter input handler with debounce
+let filterTimeout;
 document.getElementById('satellite-filter').addEventListener('input', function() {
     const filter = this.value.trim();
-    fetchAllSatellites(1, filter);
+    clearTimeout(filterTimeout);
+    filterTimeout = setTimeout(() => {
+        fetchAllSatellites(1, filter);
+    }, 300); // Debounce for 300ms
 });
 
 // Load initial data

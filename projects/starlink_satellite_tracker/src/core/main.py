@@ -137,7 +137,8 @@ class TLECache:
         # Clear file cache
         try:
             for filename in os.listdir(self.cache_dir):
-                if filename.startswith("tle_cache_") and filename.endswith(".txt"):
+                if (filename.startswith("tle_cache_") and filename.endswith(".txt")) or \
+                   (filename.startswith("starlink_tle_") and filename.endswith(".txt")):
                     os.remove(os.path.join(self.cache_dir, filename))
             self.logger.debug("TLE file cache cleared")
         except Exception as e:
@@ -185,7 +186,12 @@ class StarlinkTracker:
         
         # File-based cache for prediction results
         self.prediction_cache_dir = os.path.join(self.config['data_sources']['tle_cache_path'], 'predictions')
-        os.makedirs(self.prediction_cache_dir, exist_ok=True)
+        try:
+            os.makedirs(self.prediction_cache_dir, exist_ok=True)
+            self.logger.info(f"Prediction cache directory ensured: {self.prediction_cache_dir}")
+        except Exception as e:
+            self.logger.error(f"Failed to create prediction cache directory: {e}")
+            raise
     
     def _generate_prediction_cache_key(self, latitude: float, longitude: float, 
                                      hours_ahead: int, min_elevation: float) -> str:

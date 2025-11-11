@@ -13,6 +13,9 @@ from datetime import datetime
 # Add the project directory to the path so we can import our modules
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
+# Import the custom exception
+from core.main import PredictionError
+
 class TestStarlinkTracker(unittest.TestCase):
     def setUp(self):
         """Set up test fixtures before each test method."""
@@ -149,7 +152,7 @@ class TestStarlinkTracker(unittest.TestCase):
         from core.main import StarlinkTracker
         tracker = StarlinkTracker(self.test_config)
         
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(PredictionError) as context:
             tracker.predict_passes(55.7558, 37.6173)
         
         self.assertIn("No satellites loaded", str(context.exception))
@@ -173,13 +176,13 @@ class TestStarlinkTracker(unittest.TestCase):
         tracker.ts = mock_ts
         
         # Test invalid latitude
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(PredictionError) as context:
             tracker.predict_passes(100, 37.6173)  # Latitude > 90
         
         self.assertIn("Invalid latitude", str(context.exception))
         
         # Test invalid longitude
-        with self.assertRaises(ValueError) as context:
+        with self.assertRaises(PredictionError) as context:
             tracker.predict_passes(55.7558, 200)  # Longitude > 180
         
         self.assertIn("Invalid longitude", str(context.exception))
