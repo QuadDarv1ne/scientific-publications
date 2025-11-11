@@ -14,7 +14,6 @@ import time
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 import hashlib
-import math
 
 
 class StarlinkTrackerError(Exception):
@@ -193,6 +192,111 @@ class StarlinkTracker:
             self.logger.error(f"Failed to create prediction cache directory: {e}")
             raise
     
+    def _get_connection_params(self):
+        """Get connection parameters for enhanced network resilience."""
+        return [
+            {'timeout': 30, 'retries': 3, 'verify': True},
+            {'timeout': 45, 'retries': 2, 'verify': True},
+            {'timeout': 60, 'retries': 1, 'verify': False},  # Last resort: disable SSL verification
+            {'timeout': 90, 'retries': 1, 'verify': True, 'headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}}  # Browser-like request
+        ]
+    
+    def _download_with_auth(self, source_config: Dict[str, Any]) -> Optional[str]:
+        """Download data from an authenticated source."""
+        try:
+            source_name = source_config.get('name', 'Unknown')
+            url = source_config.get('url', '')
+            auth_method = source_config.get('auth_method', 'login')
+            
+            self.logger.info(f"Downloading from authenticated source: {source_name}")
+            
+            if auth_method == 'login':
+                # Space-Track.org authentication
+                username = source_config.get('username', '')
+                password = source_config.get('password', '')
+                
+                if not username or not password:
+                    self.logger.warning(f"Missing credentials for {source_name}")
+                    return None
+                
+                # Create session
+                session = requests.Session()
+                
+                # Set headers to mimic a browser
+                session.headers.update({
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Accept-Encoding': 'gzip, deflate',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1',
+                })
+                
+                # Login
+                login_url = "https://www.space-track.org/ajaxauth/login"
+                login_data = {
+                    'identity': username,
+                    'password': password
+                }
+                
+                # Try multiple times with different strategies
+                for attempt in range(3):
+                    try:
+                        login_response = session.post(login_url, data=login_data, timeout=30)
+                        login_response.raise_for_status()
+                        
+                        # Download data
+                        response = session.get(url, timeout=60)
+                        response.raise_for_status()
+                        
+                        return response.text
+                    except requests.exceptions.RequestException as e:
+                        self.logger.warning(f"Attempt {attempt + 1} failed for {source_name}: {e}")
+                        if attempt < 2:  # Don't sleep on the last attempt
+                            time.sleep(2 ** attempt)  # Exponential backoff
+                        continue
+                
+                return None
+            else:
+                self.logger.warning(f"Unsupported authentication method for {source_name}: {auth_method}")
+                return None
+                
+        except Exception as e:
+            self.logger.error(f"Error downloading from authenticated source {source_config.get('name', 'Unknown')}: {e}")
+            return None
+    
+    def _is_valid_tle_data(self, data: str) -> bool:
+        """Validate TLE data format."""
+        if not data or not isinstance(data, str):
+            return False
+        
+        lines = data.strip().split('\n')
+        
+        # Check if we have at least 3 lines (name + 2 TLE lines)
+        if len(lines) < 3:
+            return False
+        
+        # Check if lines follow TLE format
+        for i in range(0, len(lines), 3):
+            if i + 2 < len(lines):
+                name_line = lines[i].strip()
+                line1 = lines[i+1].strip()
+                line2 = lines[i+2].strip()
+                
+                # Basic validation
+                if not name_line or not line1 or not line2:
+                    continue
+                
+                # Check TLE line formats
+                if not line1.startswith('1 ') or not line2.startswith('2 '):
+                    return False
+                
+                # Check line lengths
+                if len(line1) != 69 or len(line2) != 69:
+                    return False
+        
+        return True
+    
     def _generate_prediction_cache_key(self, latitude: float, longitude: float, 
                                      hours_ahead: int, min_elevation: float) -> str:
         """Generate a cache key for prediction results."""
@@ -239,7 +343,7 @@ class StarlinkTracker:
             self.logger.warning(f"Error writing prediction cache file: {e}")
     
     def update_tle_data(self, force=False) -> List[EarthSatellite]:
-        """Download latest TLE data from Celestrak."""
+        """Download latest TLE data from multiple sources with enhanced connectivity."""
         try:
             cache_file = os.path.join(
                 self.config['data_sources']['tle_cache_path'], 
@@ -263,35 +367,86 @@ class StarlinkTracker:
             if 'backup_urls' in self.config['data_sources']:
                 urls_to_try.extend(self.config['data_sources']['backup_urls'])
             
-            # Try each URL until one works
+            # Try each URL with different connection parameters
             for url in urls_to_try:
-                try:
-                    # Check TLE cache first
-                    cached_tle = self.tle_cache.get(url)
-                    if cached_tle and not force:
-                        self.logger.info(f"Using cached TLE data from memory cache for {url}")
-                        # Save to file
+                for params in self._get_connection_params():
+                    try:
+                        # Check TLE cache first
+                        cached_tle = self.tle_cache.get(url)
+                        if cached_tle and not force:
+                            self.logger.info(f"Using cached TLE data from memory cache for {url}")
+                            # Save to file
+                            with open(cache_file, 'w', encoding='utf-8') as f:
+                                f.write(cached_tle or '')
+                            return self._load_tle_from_file(cache_file)
+                        
+                        self.logger.info(f"Downloading latest TLE data from {url} with params {params}")
+                        
+                        # Try different HTTP methods and headers
+                        headers = {
+                            'User-Agent': 'Starlink-Satellite-Tracker/1.0',
+                            'Accept': 'text/plain',
+                            'Connection': 'keep-alive'
+                        }
+                        
+                        # Use custom headers if provided in params
+                        if 'headers' in params:
+                            headers.update(params['headers'])
+                        
+                        # Attempt with GET request
+                        response = requests.get(url, timeout=params['timeout'], 
+                                              headers=headers, verify=params['verify'])
+                        
+                        # If GET fails, try with different headers
+                        if response.status_code != 200:
+                            headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                            response = requests.get(url, timeout=params['timeout'], 
+                                                  headers=headers, verify=params['verify'])
+                        
+                        # If still failing, try POST request (some servers prefer it)
+                        if response.status_code != 200:
+                            response = requests.post(url, timeout=params['timeout'], 
+                                                   headers=headers, verify=params['verify'])
+                        
+                        response.raise_for_status()
+                        
+                        # Validate TLE data format
+                        if not self._is_valid_tle_data(response.text):
+                            self.logger.warning(f"Invalid TLE format received from {url}")
+                            continue
+                        
+                        # Cache the TLE data
+                        self.tle_cache.put(url, response.text)
+                        
                         with open(cache_file, 'w', encoding='utf-8') as f:
-                            f.write(cached_tle)
+                            f.write(response.text)
+                        
                         return self._load_tle_from_file(cache_file)
-                    
-                    self.logger.info(f"Downloading latest TLE data from {url}")
-                    response = requests.get(url, timeout=30)
-                    response.raise_for_status()
-                    
-                    # Cache the TLE data
-                    self.tle_cache.put(url, response.text)
-                    
-                    with open(cache_file, 'w', encoding='utf-8') as f:
-                        f.write(response.text)
-                    
-                    return self._load_tle_from_file(cache_file)
-                except requests.exceptions.RequestException as e:
-                    self.logger.warning(f"Network error downloading TLE data from {url}: {e}")
-                    continue
-                except Exception as e:
-                    self.logger.warning(f"Failed to download TLE data from {url}: {e}")
-                    continue
+                    except requests.exceptions.RequestException as e:
+                        self.logger.warning(f"Network error downloading TLE data from {url} with params {params}: {e}")
+                        continue
+                    except Exception as e:
+                        self.logger.warning(f"Failed to download TLE data from {url} with params {params}: {e}")
+                        continue
+            
+            # Try authenticated sources if available
+            if 'additional_sources' in self.config['data_sources']:
+                for source in self.config['data_sources']['additional_sources']:
+                    if source.get('requires_auth', False):
+                        try:
+                            self.logger.info(f"Attempting authenticated download from {source['name']}")
+                            auth_data = self._download_with_auth(source)
+                            if auth_data and self._is_valid_tle_data(auth_data):
+                                # Cache the TLE data
+                                self.tle_cache.put(source['url'], auth_data)
+                                
+                                with open(cache_file, 'w', encoding='utf-8') as f:
+                                    f.write(auth_data)
+                                
+                                return self._load_tle_from_file(cache_file)
+                        except Exception as e:
+                            self.logger.warning(f"Failed to download from authenticated source {source['name']}: {e}")
+                            continue
             
             # If all sources failed, try to use cached data if available
             if os.path.exists(cache_file):
@@ -509,11 +664,6 @@ class StarlinkTracker:
                 # Get position vectors
                 x1, y1, z1 = geocentric1.position.km
                 x2, y2, z2 = geocentric2.position.km
-                
-                # Calculate distance traveled in 1 second
-                dist1 = math.sqrt(x1**2 + y1**2 + z1**2)
-                dist2 = math.sqrt(x2**2 + y2**2 + z2**2)
-                velocity = abs(dist2 - dist1)  # km/s
                 
                 # For orbital velocity, we should calculate the magnitude of the velocity vector
                 vx = (x2 - x1)  # km/s

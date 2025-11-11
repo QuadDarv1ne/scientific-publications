@@ -5,7 +5,31 @@
     "max_cache_days": 7,
     "backup_urls": [
       "https://celestrak.org/NORAD/elements/starlink.txt",
-      "https://www.celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=csv"
+      "https://www.celestrak.org/NORAD/elements/gp.php?GROUP=starlink&FORMAT=csv",
+      "https://www.space-track.org/basicspacedata/query/class/tle_latest/ORDINAL/1/EPOCH/%3Enow-30/NORAD_CAT_ID/44741/format/tle",
+      "https://nasa-public-data.s3.amazonaws.com/iss-telemetry/tle.txt",
+      "https://www.celestrak.com/NORAD/elements/gp.php?GROUP=active&FORMAT=tle",
+      "https://www.celestrak.com/NORAD/elements/gp.php?GROUP=starlink&FORMAT=tle"
+    ],
+    "additional_sources": [
+      {
+        "name": "Space-Track.org",
+        "url": "https://www.space-track.org/basicspacedata/query/class/tle_latest/ORDINAL/1/EPOCH/%3Enow-30/NORAD_CAT_ID/44741/format/tle",
+        "requires_auth": true,
+        "auth_method": "login",
+        "username": "",
+        "password": ""
+      },
+      {
+        "name": "NASA TLE",
+        "url": "https://nasa-public-data.s3.amazonaws.com/iss-telemetry/tle.txt",
+        "requires_auth": false
+      },
+      {
+        "name": "Celestrak Active Satellites",
+        "url": "https://www.celestrak.com/NORAD/elements/gp.php?GROUP=active&FORMAT=tle",
+        "requires_auth": false
+      }
     ]
   },
   "visualization": {
