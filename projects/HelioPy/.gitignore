@@ -42,6 +42,10 @@ ENV/
 htmlcov/
 .tox/
 
+# Linting and formatting
+.ruff_cache/
+.mypy_cache/
+
 # Documentation
 docs/_build/
 docs/_static/
