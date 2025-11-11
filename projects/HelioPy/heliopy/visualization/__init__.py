@@ -2,10 +2,10 @@
 Visualization модули - визуализация данных и результатов анализа.
 """
 
-from heliopy.visualization.plotter import Plotter
 from heliopy.visualization.animation import AnimationCreator
-from heliopy.visualization.map_visualizer import MapVisualizer
 from heliopy.visualization.interactive import InteractiveVisualizer
+from heliopy.visualization.map_visualizer import MapVisualizer
+from heliopy.visualization.plotter import Plotter
 
 __all__ = [
     "Plotter",
@@ -13,4 +13,3 @@ __all__ = [
     "MapVisualizer",
     "InteractiveVisualizer",
 ]
-

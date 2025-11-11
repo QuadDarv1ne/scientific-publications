@@ -10,6 +10,7 @@ import logging.handlers
 import os
 import json
 from typing import Optional
+import threading
 
 
 def setup_logging(
@@ -69,10 +70,36 @@ def setup_logging(
         if log_dir and not os.path.exists(log_dir):
             os.makedirs(log_dir, exist_ok=True)
             
-        # Create rotating file handler
-        file_handler = logging.handlers.RotatingFileHandler(
-            log_file, maxBytes=max_bytes, backupCount=backup_count
-        )
+        # Create rotating file handler that closes its stream after emitting
+        # This avoids keeping the logfile handle open (important for Windows
+        # where TemporaryDirectory cleanup may fail if the file is still open).
+        class AutoClosingRotatingFileHandler(logging.handlers.RotatingFileHandler):
+            """RotatingFileHandler which closes file after each emit.
+
+            Uses delay=True so the file is opened only when needed and closed
+            immediately after writing. This keeps behavior compatible with
+            normal RotatingFileHandler while allowing temporary directories
+            to be removed on Windows.
+            """
+            def __init__(self, filename, *args, **kwargs):
+                kwargs.setdefault('delay', True)
+                super().__init__(filename, *args, maxBytes=max_bytes, backupCount=backup_count, **kwargs)
+
+            def emit(self, record):
+                # Use the parent implementation to format and write. Then
+                # ensure the stream is closed so other processes can remove
+                # the file (or the directory containing it) without permission errors.
+                try:
+                    super().emit(record)
+                finally:
+                    try:
+                        # Close the underlying stream if open
+                        if getattr(self, 'stream', None):
+                            self.close()
+                    except Exception:
+                        pass
+
+        file_handler = AutoClosingRotatingFileHandler(log_file)
         file_handler.setLevel(log_level)
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)

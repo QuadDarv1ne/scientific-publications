@@ -44,6 +44,17 @@ starlink_performance_monitor/
 
 ## Quick Start
 
+### 🐳 Docker (рекомендуется)
+
+Быстрый старт с Docker:
+```bash
+docker-compose up -d
+```
+
+Полная документация по Docker: **[DOCKER.md](DOCKER.md)**
+
+### 📦 Локальная установка
+
 1. Install dependencies:
    ```bash
    pip install -r requirements.txt
@@ -134,6 +145,24 @@ Starlink Performance Monitor — это комплексное решение д
 - **Custom views**: Настройка виджетов и метрик
 - **Multi-location**: Поддержка нескольких точек мониторинга
 - **User management**: Роли и права доступа для командной работы
+
+### 📊 Prometheus Metrics Exporter
+- **Prometheus format**: Экспорт метрик в формате Prometheus
+- **HTTP endpoint**: Метрики доступны на http://localhost:9817/metrics
+- **Grafana integration**: Готовые дашборды для Grafana
+- **Real-time updates**: Обновление метрик каждые 3 секунды
+- **Standard metrics**: download_mbps, upload_mbps, ping_ms, packet_loss_percent
+- **Starlink-specific**: SNR, obstruction_ratio, throughput
+
+## 🌟 Похожие проекты
+
+Этот проект вдохновлен и совместим с:
+
+- 🛰️ **[Starlink Monitoring System](https://github.com/danopstech/starlink)** - Комплексная система мониторинга с Docker Compose, Prometheus, Grafana
+- 📡 **[Starlink Prometheus Exporter](https://github.com/danopstech/starlink_exporter)** - Go-экспортер метрик Starlink dish через gRPC
+- 🌐 **[Satellite Map](https://satellitemap.space/)** - Визуализация спутников Starlink в реальном времени
+
+Наш проект дополняет эти решения расширенной аналитикой, ML-прогнозированием и интеграцией с метеоданными.
 
 ## ⚙️ Требования
 
@@ -373,9 +402,33 @@ python manual_test.py --type speed
 python manual_test.py --type ping
 ```
 
+Запуск Prometheus exporter
+
+```bash
+# Запуск Prometheus exporter на порту 9817 (стандартный порт как у starlink_exporter)
+python src/exporters/prometheus_exporter.py --port 9817
+
+# С кастомным интервалом обновления (по умолчанию 3 секунды)
+python src/exporters/prometheus_exporter.py --interval 5
+
+# Метрики доступны на http://localhost:9817/metrics
+```
+
+Интеграция с Prometheus
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'starlink'
+    scrape_interval: 3s
+    scrape_timeout: 3s
+    static_configs:
+      - targets: ['localhost:9817']
+```
+
 Команды Docker
 
-```
+```bash
 # Просмотр логов
 docker-compose logs -f app
 

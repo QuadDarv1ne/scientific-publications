@@ -40,16 +40,51 @@ except ImportError:
     TRACKER_AVAILABLE = False
     # Create a minimal version
     class MinimalTracker:
+    
         def __init__(self):
             try:
                 from skyfield.api import load
                 self.ts = load.timescale()
-            except:
+            except ImportError:
                 self.ts = None
-            pass
+            # Initialize search index
+            self._satellite_index = {}
+            self._last_update = None
         
         def update_tle_data(self, force=False):
             return []
+        
+        def _build_search_index(self, satellites):
+            """Build an index for faster satellite searching."""
+            self._satellite_index = {}
+            for sat in satellites:
+                try:
+                    # Index by name (case-insensitive)
+                    name_lower = sat.name.lower()
+                    if name_lower not in self._satellite_index:
+                        self._satellite_index[name_lower] = []
+                    self._satellite_index[name_lower].append(sat)
+                    
+                    # Index by NORAD ID
+                    try:
+                        norad_id = str(sat.model.satnum)
+                        if norad_id not in self._satellite_index:
+                            self._satellite_index[norad_id] = []
+                        self._satellite_index[norad_id].append(sat)
+                    except AttributeError:
+                        # Handle case where sat.model might not be available
+                        pass
+                    
+                    # Index by name parts
+                    for part in sat.name.split('-'):
+                        part_lower = part.lower()
+                        if part_lower and part_lower not in self._satellite_index:
+                            self._satellite_index[part_lower] = []
+                        self._satellite_index[part_lower].append(sat)
+                except Exception as e:
+                    # Log error but continue indexing other satellites
+                    app.logger.warning(f"Error indexing satellite {getattr(sat, 'name', 'Unknown')}: {e}")
+                    continue
         
         def predict_passes(self, latitude, longitude, altitude=0, hours_ahead=24, min_elevation=10):
             # Return sample data
@@ -546,11 +581,46 @@ def api_search():
         # Update TLE data if needed
         satellites = tracker_instance.update_tle_data()
         
-        # Search for matching satellites
+        # Build search index if not already built or if using full tracker
+        if hasattr(tracker_instance, '_build_search_index') and satellites:
+            # Check if we need to rebuild the index (every 5 minutes)
+            if (not hasattr(tracker_instance, '_last_update') or 
+                tracker_instance._last_update is None or 
+                (datetime.now() - tracker_instance._last_update).total_seconds() > 300):  # 5 minutes
+                tracker_instance._build_search_index(satellites)
+                tracker_instance._last_update = datetime.now()
+        
+        # Search for matching satellites using index
         matches = []
         query_lower = query.lower()
         
-        for sat in satellites:
+        # Use index for faster searching if available
+        satellite_index = getattr(tracker_instance, '_satellite_index', None)
+        if satellite_index and hasattr(satellite_index, 'items'):
+            # Try to find matches in index first
+            potential_matches = set()
+            
+            # Check direct index matches
+            if query_lower in satellite_index:
+                potential_matches.update(satellite_index[query_lower])
+            
+            # Check for partial matches in index
+            try:
+                for key, sats in satellite_index.items():
+                    if query_lower in key or key in query_lower:
+                        potential_matches.update(sats)
+            except Exception:
+                # Fallback to linear search if index is corrupted
+                satellite_list = satellites
+            else:
+                # Convert to list for processing
+                satellite_list = list(potential_matches)
+        else:
+            # Fallback to linear search
+            satellite_list = satellites
+        
+        # Process matches
+        for sat in satellite_list:
             sat_name = sat.name
             sat_name_lower = sat_name.lower()
             sat_id = str(sat.model.satnum)
@@ -879,6 +949,84 @@ def api_statistics():
         app.logger.error(f"Error in api_statistics: {e}")
         return jsonify({
             'error': 'Failed to calculate satellite statistics'
+        }), 500
+
+@app.route('/api/anomalies')
+@handle_api_errors
+def api_anomalies():
+    """API endpoint for satellite anomaly detection."""
+    try:
+        # Get recent anomalies from tracker
+        anomalies = getattr(tracker_instance, 'anomaly_history', [])
+        
+        # Filter by time range (last 24 hours by default)
+        hours = int(request.args.get('hours', 24))
+        cutoff_time = datetime.now() - timedelta(hours=hours)
+        
+        recent_anomalies = [
+            anomaly for anomaly in anomalies
+            if anomaly.get('timestamp', datetime.min) >= cutoff_time
+        ]
+        
+        # Sort by timestamp (newest first)
+        recent_anomalies.sort(key=lambda x: x.get('timestamp', datetime.min), reverse=True)
+        
+        # Limit results
+        limit = min(int(request.args.get('limit', 50)), 100)
+        recent_anomalies = recent_anomalies[:limit]
+        
+        return jsonify({
+            'anomalies': recent_anomalies,
+            'count': len(recent_anomalies),
+            'total_count': len(anomalies),
+            'period_hours': hours,
+            'generated': datetime.now().isoformat()
+        })
+    except Exception as e:
+        app.logger.error(f"Error in api_anomalies: {e}")
+        return jsonify({
+            'error': 'Failed to retrieve satellite anomalies'
+        }), 500
+
+@app.route('/api/predictions/ml')
+@handle_api_errors
+def api_ml_predictions():
+    """API endpoint for ML-based satellite pass predictions."""
+    try:
+        from utils.data_processor import DataProcessor
+        
+        # Get location parameters from request or use defaults
+        lat = float(request.args.get('lat', DEFAULT_LATITUDE))
+        lon = float(request.args.get('lon', DEFAULT_LONGITUDE))
+        hours = int(request.args.get('hours', 24))
+        
+        # Validate parameters
+        if not (-90 <= lat <= 90):
+            return jsonify({'error': 'Invalid latitude. Must be between -90 and 90.'}), 400
+        if not (-180 <= lon <= 180):
+            return jsonify({'error': 'Invalid longitude. Must be between -180 and 180.'}), 400
+        if not (1 <= hours <= 168):  # Max 1 week
+            return jsonify({'error': 'Invalid hours. Must be between 1 and 168.'}), 400
+        
+        # Predict passes
+        passes = tracker_instance.predict_passes(lat, lon, hours_ahead=hours)
+        
+        # Initialize data processor
+        processor = DataProcessor()
+        
+        # Generate ML predictions
+        ml_predictions = processor._generate_ml_predictions(passes)
+        
+        return jsonify({
+            'ml_predictions': ml_predictions,
+            'location': {'latitude': lat, 'longitude': lon},
+            'period_hours': hours,
+            'generated': datetime.now().isoformat()
+        })
+    except Exception as e:
+        app.logger.error(f"Error in api_ml_predictions: {e}")
+        return jsonify({
+            'error': 'Failed to generate ML-based predictions'
         }), 500
 
 @app.errorhandler(404)

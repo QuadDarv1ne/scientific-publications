@@ -6,7 +6,7 @@ Enhanced alerting system with escalation policies.
 
 import json
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from typing import Dict, Any, List, Optional
 import sys
 import os
@@ -47,7 +47,7 @@ class Alert:
         self.value = alert_data.get('value')
         self.threshold = alert_data.get('threshold')
         self.escalation_level = alert_data.get('escalation_level', 0)
-        self.first_occurrence = alert_data.get('first_occurrence', datetime.utcnow())
+        self.first_occurrence = alert_data.get('first_occurrence', datetime.now(UTC))
         self.last_notification = alert_data.get('last_notification', None)
         self.notification_count = alert_data.get('notification_count', 0)
         

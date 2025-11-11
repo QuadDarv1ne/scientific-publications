@@ -10,14 +10,10 @@ __author__ = "Dupley Maxim Igorevich"
 __license__ = "Custom License by Programming School Maestro7IT"
 
 # Основные импорты
-from heliopy import core
-from heliopy import events
-from heliopy import imaging
-from heliopy import space_weather
-from heliopy import visualization
+from heliopy import core, events, imaging, space_weather, visualization
 
 # Удобные функции для быстрого доступа
-from heliopy.core.data_loader import load_sdo_aia, load_soho_lasco, load_goes
+from heliopy.core.data_loader import load_goes, load_sdo_aia, load_soho_lasco
 from heliopy.space_weather.forecast_models import forecast_geoeffectiveness
 
 __all__ = [
@@ -31,4 +27,3 @@ __all__ = [
     "load_goes",
     "forecast_geoeffectiveness",
 ]
-

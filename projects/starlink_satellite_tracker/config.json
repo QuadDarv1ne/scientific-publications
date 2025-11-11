@@ -65,6 +65,11 @@
       "bot_token": "",
       "chat_id": ""
     },
+    "pushover": {
+      "enabled": false,
+      "user_key": "",
+      "api_token": ""
+    },
     "min_elevation": 10,
     "min_brightness": -1,
     "min_velocity": 0,
@@ -79,5 +84,12 @@
     "include_tle_data": true,
     "include_predictions": true,
     "compress_large_files": true
+  },
+  "advanced": {
+    "enable_ml_predictions": false,
+    "enable_anomaly_detection": false,
+    "enable_augmented_reality": false,
+    "max_satellites_displayed": 100,
+    "prediction_accuracy": "high"
   }
 }

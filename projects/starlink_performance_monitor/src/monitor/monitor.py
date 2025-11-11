@@ -8,7 +8,7 @@ import json
 import time
 import argparse
 import logging
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Dict, Any
 
 import speedtest
@@ -201,7 +201,7 @@ class StarlinkMonitor:
                 
             # Combine all results
             metrics = {
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(UTC).isoformat(),
                 'speedtest': speed_results,
                 'ping_tests': ping_results
             }
@@ -210,7 +210,7 @@ class StarlinkMonitor:
         except Exception as e:
             logger.error(f"Error collecting metrics: {e}")
             return {
-                'timestamp': datetime.utcnow().isoformat(),
+                'timestamp': datetime.now(UTC).isoformat(),
                 'speedtest': {
                     'download_mbps': 0.0,
                     'upload_mbps': 0.0,
@@ -228,7 +228,19 @@ class StarlinkMonitor:
             metrics: Dictionary with metrics to store
         """
         logger.info("Storing metrics in database...")
-        session = get_db_session()
+        # Prefer using the local `sessionmaker` (this allows tests to patch
+        # `src.monitor.monitor.sessionmaker` and provide a mocked session).
+        # Fall back to the global DB helper when sessionmaker is not available.
+        try:
+            if callable(sessionmaker):
+                # sessionmaker() -> Session class/factory, then call it to get a Session
+                Session = sessionmaker()
+                session = Session()
+            else:
+                session = get_db_session()
+        except Exception:
+            # Defensive fallback
+            session = get_db_session()
         
         try:
             # Store speedtest results

@@ -9,7 +9,7 @@ import json
 import tempfile
 import os
 from unittest.mock import patch, MagicMock
-from datetime import datetime
+from datetime import datetime, UTC
 
 # Fix import paths to use src directory
 from src.monitor.monitor import StarlinkMonitor, PerformanceMetric
@@ -149,7 +149,7 @@ class TestStarlinkMonitor(unittest.TestCase):
         
         # Mock metrics data
         metrics = {
-            'timestamp': datetime.utcnow().isoformat(),
+            'timestamp': datetime.now(UTC).isoformat(),
             'speedtest': {
                 'download_mbps': 100.0,
                 'upload_mbps': 50.0,

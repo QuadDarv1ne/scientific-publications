@@ -12,6 +12,7 @@ from datetime import datetime, timedelta
 import logging
 from typing import Dict, Any, List, Optional
 import hashlib
+import math
 
 # Import our configuration manager
 from utils.config_manager import get_config
@@ -100,6 +101,9 @@ class DataProcessor:
             'compress_large_files': True
         })
         self.data_directory = self.config.get('data_sources', {}).get('tle_cache_path', 'data/tle_cache/')
+        
+        # Load advanced configuration
+        self.advanced_config = self.config.get('advanced', {})
         
         # Initialize cache with 60-minute TTL
         self.cache = DataCache(max_size=100, ttl_minutes=60)
@@ -369,6 +373,7 @@ class DataProcessor:
             elevations = [p.get('altitude', 0) for p in passes]
             brightnesses = [p.get('brightness', 0) for p in passes]
             distances = [p.get('distance', 0) for p in passes]
+            velocities = [p.get('velocity', 0) for p in passes]
             
             # Calculate statistics
             stats = {
@@ -378,8 +383,13 @@ class DataProcessor:
                 'min_elevation': min(elevations) if elevations else 0,
                 'average_brightness': sum(brightnesses) / total_passes if brightnesses else 0,
                 'average_distance': sum(distances) / total_passes if distances else 0,
+                'average_velocity': sum(velocities) / total_passes if velocities else 0,
                 'analysis_date': datetime.now().isoformat()
             }
+            
+            # Add ML-based predictions if enabled
+            if self.advanced_config.get('enable_ml_predictions', False):
+                stats['ml_predictions'] = self._generate_ml_predictions(passes)
             
             # Cache the statistics
             self.cache.put(cache_key, stats)
@@ -404,6 +414,72 @@ class DataProcessor:
         self.cache.clear()
         self._last_cleanup = datetime.now()
         self.logger.info("Data processor cache cleared")
+    
+    def _generate_ml_predictions(self, passes: List[Dict[str, Any]]) -> Dict[str, Any]:
+        """Generate simple ML-based predictions for satellite passes."""
+        try:
+            if not passes:
+                return {}
+            
+            # Simple prediction model based on historical patterns
+            # In a real implementation, this would use scikit-learn or similar
+            
+            # Calculate average time between passes
+            if len(passes) > 1:
+                times = [p.get('time') for p in passes if p.get('time')]
+                if len(times) > 1:
+                    # Sort times
+                    sorted_times = sorted(times)
+                    # Calculate average interval
+                    intervals = []
+                    for i in range(1, len(sorted_times)):
+                        intervals.append((sorted_times[i] - sorted_times[i-1]).total_seconds())
+                    avg_interval = sum(intervals) / len(intervals) if intervals else 3600  # Default to 1 hour
+                else:
+                    avg_interval = 3600  # Default to 1 hour
+            else:
+                avg_interval = 3600  # Default to 1 hour
+            
+            # Predict next 5 passes
+            predictions = []
+            last_pass_time = passes[-1].get('time', datetime.now()) if passes else datetime.now()
+            
+            for i in range(5):
+                next_pass_time = last_pass_time + timedelta(seconds=avg_interval * (i + 1))
+                # Simple model: assume similar characteristics to recent passes
+                sample_pass = passes[-1] if passes else {
+                    'satellite': 'PREDICTED_SATELLITE',
+                    'altitude': 45.0,
+                    'azimuth': 180.0,
+                    'distance': 400.0,
+                    'brightness': 2.0,
+                    'velocity': 7.5
+                }
+                
+                predictions.append({
+                    'satellite': sample_pass.get('satellite', 'PREDICTED_SATELLITE'),
+                    'predicted_time': next_pass_time,
+                    'predicted_altitude': sample_pass.get('altitude', 45.0),
+                    'predicted_azimuth': sample_pass.get('azimuth', 180.0),
+                    'predicted_distance': sample_pass.get('distance', 400.0),
+                    'predicted_brightness': sample_pass.get('brightness', 2.0),
+                    'predicted_velocity': sample_pass.get('velocity', 7.5),
+                    'confidence': max(0.5, 1.0 - (i * 0.1))  # Decreasing confidence
+                })
+            
+            return {
+                'model_type': 'simple_pattern_matching',
+                'average_interval_seconds': avg_interval,
+                'predictions': predictions,
+                'generated': datetime.now().isoformat()
+            }
+        except Exception as e:
+            self.logger.error(f"Error generating ML predictions: {e}")
+            return {
+                'model_type': 'simple_pattern_matching',
+                'error': str(e),
+                'predictions': []
+            }
 
 
 def main():

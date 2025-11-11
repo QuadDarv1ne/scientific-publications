@@ -8,7 +8,7 @@ import unittest
 import json
 import tempfile
 import os
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Dict, Any
 from unittest.mock import patch, MagicMock
 
@@ -83,7 +83,7 @@ class TestAlertSystem(unittest.TestCase):
         metric.upload_mbps = 20.0
         metric.ping_ms = 50.0
         metric.packet_loss_percent = 1.0
-        metric.timestamp = datetime.utcnow()
+        metric.timestamp = datetime.now(UTC)
         
         thresholds: Dict[str, float] = {
             "download_mbps": 50.0,
@@ -105,7 +105,7 @@ class TestAlertSystem(unittest.TestCase):
         metric.upload_mbps = 5.0     # Below threshold of 10
         metric.ping_ms = 150.0       # Above threshold of 100
         metric.packet_loss_percent = 10.0  # Above threshold of 5
-        metric.timestamp = datetime.utcnow()
+        metric.timestamp = datetime.now(UTC)
         
         thresholds: Dict[str, float] = {
             "download_mbps": 50.0,
@@ -132,7 +132,7 @@ class TestAlertSystem(unittest.TestCase):
             'type': 'download_speed',
             'severity': 'warning',
             'message': 'Download speed 25.00 Mbps is below threshold 50 Mbps',
-            'timestamp': datetime.utcnow(),
+            'timestamp': datetime.now(UTC),
             'value': 25.0,
             'threshold': 50.0
         }
@@ -149,7 +149,7 @@ class TestAlertSystem(unittest.TestCase):
             'type': 'download_speed',
             'severity': 'warning',
             'message': 'Download speed 25.00 Mbps is below threshold 50 Mbps',
-            'timestamp': datetime.utcnow(),
+            'timestamp': datetime.now(UTC),
             'value': 25.0,
             'threshold': 50.0
         }

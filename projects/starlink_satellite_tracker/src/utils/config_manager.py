@@ -102,17 +102,32 @@ class ConfigManager:
                     "bot_token": "",
                     "chat_id": ""
                 },
+                "pushover": {
+                    "enabled": False,
+                    "user_key": "",
+                    "api_token": ""
+                },
                 "min_elevation": 10,
                 "min_brightness": -1,
+                "min_velocity": 0,
                 "advance_notice_minutes": 30,
                 "excluded_satellites": [],
-                "excluded_patterns": ["DEBRIS", "TEST"]
+                "excluded_patterns": ["DEBRIS", "TEST"],
+                "included_satellites": [],
+                "included_patterns": []
             },
             "export": {
                 "default_format": "json",
                 "include_tle_data": True,
                 "include_predictions": True,
                 "compress_large_files": True
+            },
+            "advanced": {
+                "enable_ml_predictions": False,
+                "enable_anomaly_detection": False,
+                "enable_augmented_reality": False,
+                "max_satellites_displayed": 100,
+                "prediction_accuracy": "high"
             }
         }
     

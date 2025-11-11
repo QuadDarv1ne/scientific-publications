@@ -8,7 +8,7 @@ import sys
 import os
 import tempfile
 import json
-from datetime import datetime
+from datetime import datetime, UTC
 
 import importlib.util
 import sys
@@ -26,8 +26,8 @@ def test_alert_class():
     alert_data = {
         'type': 'download_speed',
         'severity': 'warning',
-        'message': 'Download speed is below threshold',
-        'timestamp': datetime.utcnow(),
+        'message': 'Low download speed detected',
+        'timestamp': datetime.now(UTC),
         'value': 25.0,
         'threshold': 50.0
     }

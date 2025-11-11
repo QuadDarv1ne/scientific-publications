@@ -8,7 +8,6 @@ import smtplib
 import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-import requests
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, Any, Optional
@@ -25,6 +24,15 @@ except ImportError:
     Bot = None  # Define Bot as None to avoid undefined variable
     logging.warning("python-telegram-bot not installed. Telegram notifications disabled.")
 
+# Try to import requests for Pushover, but handle if not available
+try:
+    import requests
+    PUSHOVER_AVAILABLE = True
+except ImportError:
+    PUSHOVER_AVAILABLE = False
+    requests = None  # Define requests as None to avoid undefined variable
+    logging.warning("requests not available. Pushover notifications disabled.")
+
 
 class NotificationSystem:
     def __init__(self, config: Optional[Dict[str, Any]] = None):
@@ -32,6 +40,7 @@ class NotificationSystem:
         self.config = config or get_config()
         self.email_config = self.config.get('notifications', {}).get('email', {})
         self.telegram_config = self.config.get('notifications', {}).get('telegram', {})
+        self.pushover_config = self.config.get('notifications', {}).get('pushover', {})
         self.notification_config = self.config.get('notifications', {})
         self.logger = logging.getLogger(__name__)
         
@@ -117,6 +126,55 @@ class NotificationSystem:
             
         except Exception as e:
             self.logger.error(f"Failed to send Telegram notification: {e}")
+            return False
+    
+    def send_pushover_notification(self, message: str, title: str = "Starlink Tracker") -> bool:
+        """Send Pushover notification about satellite pass."""
+        if not self.pushover_config.get('enabled', False):
+            self.logger.info("Pushover notifications are disabled")
+            return False
+            
+        if not PUSHOVER_AVAILABLE:
+            self.logger.warning("Requests library not available for Pushover")
+            return False
+            
+        try:
+            # Validate inputs
+            if not message:
+                self.logger.error("Message is required for Pushover notification")
+                return False
+                
+            # Validate Pushover configuration
+            user_key = self.pushover_config.get('user_key')
+            api_token = self.pushover_config.get('api_token')
+            
+            if not user_key or not api_token:
+                self.logger.error("Pushover configuration is incomplete")
+                return False
+            
+            # Send Pushover notification
+            pushover_url = "https://api.pushover.net/1/messages.json"
+            data = {
+                "token": api_token,
+                "user": user_key,
+                "message": message,
+                "title": title
+            }
+            
+            if requests is not None:
+                response = requests.post(pushover_url, data=data)
+                if response.status_code == 200:
+                    self.logger.info("Pushover notification sent")
+                    return True
+                else:
+                    self.logger.error(f"Failed to send Pushover notification: {response.text}")
+                    return False
+            else:
+                self.logger.error("Requests library not available for Pushover notification")
+                return False
+                
+        except Exception as e:
+            self.logger.error(f"Failed to send Pushover notification: {e}")
             return False
     
     def should_notify_for_pass(self, satellite_name: str, max_elevation: float, 
@@ -227,6 +285,10 @@ Look up and enjoy the show! 🌌
             if self.telegram_config.get('enabled', False):
                 telegram_success = self.send_telegram_notification(message)
                 success = success and telegram_success
+            
+            if self.pushover_config.get('enabled', False):
+                pushover_success = self.send_pushover_notification(message, "Starlink Satellite Pass")
+                success = success and pushover_success
             
             if success:
                 self.logger.info(f"Notification sent successfully for {satellite_name}")
