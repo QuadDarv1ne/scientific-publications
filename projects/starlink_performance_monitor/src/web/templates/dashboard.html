@@ -2,11 +2,11 @@
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Dashboard</h1>
+    <h1 class="h2">{{ t.dashboard }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
-                <i class="fas fa-sync-alt"></i> Refresh
+                <i class="fas fa-sync-alt"></i> {{ t.refresh }}
             </button>
         </div>
     </div>
@@ -17,36 +17,36 @@
     <div class="col-md-3">
         <div class="card metric-card text-white bg-primary">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-download"></i> Download Speed</h5>
+                <h5 class="card-title"><i class="fas fa-download"></i> {{ t.download_speed }}</h5>
                 <h2 class="card-text" id="downloadSpeed">-- Mbps</h2>
-                <small>Last updated: <span id="downloadTime">--</span></small>
+                <small>{{ t.last_updated }}: <span id="downloadTime">--</span></small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card metric-card text-white bg-success">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-upload"></i> Upload Speed</h5>
+                <h5 class="card-title"><i class="fas fa-upload"></i> {{ t.upload_speed }}</h5>
                 <h2 class="card-text" id="uploadSpeed">-- Mbps</h2>
-                <small>Last updated: <span id="uploadTime">--</span></small>
+                <small>{{ t.last_updated }}: <span id="uploadTime">--</span></small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card metric-card text-white bg-info">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-stopwatch"></i> Ping</h5>
+                <h5 class="card-title"><i class="fas fa-stopwatch"></i> {{ t.ping }}</h5>
                 <h2 class="card-text" id="pingTime">-- ms</h2>
-                <small>Last updated: <span id="pingTimeTime">--</span></small>
+                <small>{{ t.last_updated }}: <span id="pingTimeTime">--</span></small>
             </div>
         </div>
     </div>
     <div class="col-md-3">
         <div class="card metric-card text-white bg-warning">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-exclamation-triangle"></i> Packet Loss</h5>
+                <h5 class="card-title"><i class="fas fa-exclamation-triangle"></i> {{ t.packet_loss }}</h5>
                 <h2 class="card-text" id="packetLoss">-- %</h2>
-                <small>Last updated: <span id="packetLossTime">--</span></small>
+                <small>{{ t.last_updated }}: <span id="packetLossTime">--</span></small>
             </div>
         </div>
     </div>
@@ -57,7 +57,7 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Performance History (24h)</h5>
+                <h5 class="card-title">{{ t.performance_history }} (24h)</h5>
             </div>
             <div class="card-body">
                 <canvas id="performanceChart" height="100"></canvas>
@@ -70,7 +70,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Download Speed Distribution</h5>
+                <h5 class="card-title">{{ t.download_distribution }}</h5>
             </div>
             <div class="card-body">
                 <canvas id="downloadDistribution" height="100"></canvas>
@@ -80,7 +80,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Ping Performance</h5>
+                <h5 class="card-title">{{ t.ping_performance }}</h5>
             </div>
             <div class="card-body">
                 <canvas id="pingChart" height="100"></canvas>
@@ -93,7 +93,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Packet Loss Over Time</h5>
+                <h5 class="card-title">{{ t.packet_loss_over_time }}</h5>
             </div>
             <div class="card-body">
                 <canvas id="packetLossChart" height="100"></canvas>
@@ -103,7 +103,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Performance Summary</h5>
+                <h5 class="card-title">{{ t.performance_summary }}</h5>
             </div>
             <div class="card-body">
                 <canvas id="summaryChart" height="100"></canvas>
@@ -159,13 +159,13 @@
                     data: {
                         labels: timestamps,
                         datasets: [{
-                            label: 'Download Speed (Mbps)',
+                            label: '{{ t.download_speed }} (Mbps)',
                             data: downloadSpeeds,
                             borderColor: 'rgb(54, 162, 235)',
                             backgroundColor: 'rgba(54, 162, 235, 0.2)',
                             tension: 0.1
                         }, {
-                            label: 'Upload Speed (Mbps)',
+                            label: '{{ t.upload_speed }} (Mbps)',
                             data: uploadSpeeds,
                             borderColor: 'rgb(75, 192, 192)',
                             backgroundColor: 'rgba(75, 192, 192, 0.2)',
@@ -190,7 +190,7 @@
                     data: {
                         labels: timestamps,
                         datasets: [{
-                            label: 'Ping (ms)',
+                            label: '{{ t.ping }} (ms)',
                             data: pingTimes,
                             borderColor: 'rgb(255, 99, 132)',
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',
@@ -215,7 +215,7 @@
                     data: {
                         labels: timestamps,
                         datasets: [{
-                            label: 'Packet Loss (%)',
+                            label: '{{ t.packet_loss }} (%)',
                             data: packetLoss,
                             borderColor: 'rgb(255, 159, 64)',
                             backgroundColor: 'rgba(255, 159, 64, 0.2)',
@@ -252,7 +252,7 @@
                     data: {
                         labels: binLabels,
                         datasets: [{
-                            label: 'Frequency',
+                            label: '{{ t.frequency }}',
                             data: downloadBins,
                             backgroundColor: 'rgba(54, 162, 235, 0.6)',
                             borderColor: 'rgb(54, 162, 235)',
@@ -281,9 +281,9 @@
                 new Chart(ctx5, {
                     type: 'radar',
                     data: {
-                        labels: ['Download (Mbps)', 'Upload (Mbps)', 'Ping (ms)', 'Packet Loss (%)'],
+                        labels: ['{{ t.download_speed }} (Mbps)', '{{ t.upload_speed }} (Mbps)', '{{ t.ping }} (ms)', '{{ t.packet_loss }} (%)'],
                         datasets: [{
-                            label: 'Performance Metrics',
+                            label: '{{ t.performance }}',
                             data: [avgDownload, avgUpload, avgPing, avgPacketLoss],
                             fill: true,
                             backgroundColor: 'rgba(255, 99, 132, 0.2)',

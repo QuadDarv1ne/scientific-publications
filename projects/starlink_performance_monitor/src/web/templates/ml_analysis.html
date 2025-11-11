@@ -2,14 +2,14 @@
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">ML Analysis</h1>
+    <h1 class="h2">{{ t.ml_analysis }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" id="refreshBtn">
-                <i class="fas fa-sync-alt"></i> Refresh
+                <i class="fas fa-sync-alt"></i> {{ t.refresh }}
             </button>
             <button type="button" class="btn btn-sm btn-outline-primary" id="autoRefreshBtn" data-active="true">
-                <i class="fas fa-pause"></i> Auto Refresh
+                <i class="fas fa-pause"></i> {{ t.auto_refresh }}
             </button>
         </div>
     </div>
@@ -20,7 +20,7 @@
     <div class="col-12">
         <div class="alert alert-info d-flex align-items-center" role="alert" id="statusIndicator">
             <i class="fas fa-info-circle me-2"></i>
-            <div id="statusMessage">Loading ML analysis data...</div>
+            <div id="statusMessage">{{ t.loading_ml_data }}</div>
         </div>
     </div>
 </div>
@@ -30,22 +30,22 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Anomaly Detection</h5>
+                <h5 class="card-title">{{ t.anomaly_detection }}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped table-hover">
                         <thead>
                             <tr>
-                                <th>Method</th>
-                                <th>Total Anomalies</th>
-                                <th>Anomaly Percentage</th>
-                                <th>Last Updated</th>
+                                <th>{{ t.method }}</th>
+                                <th>{{ t.total_anomalies }}</th>
+                                <th>{{ t.anomaly_percentage }}</th>
+                                <th>{{ t.last_updated }}</th>
                             </tr>
                         </thead>
                         <tbody id="anomalyDetectionTableBody">
                             <tr>
-                                <td colspan="4" class="text-center">Loading anomaly detection data...</td>
+                                <td colspan="4" class="text-center">{{ t.loading_ml_data }}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -60,21 +60,21 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Performance Forecasting</h5>
+                <h5 class="card-title">{{ t.performance_forecasting }}</h5>
             </div>
             <div class="card-body">
                 <ul class="nav nav-tabs" id="forecastTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="download-tab" data-bs-toggle="tab" data-bs-target="#download" type="button" role="tab">Download Speed</button>
+                        <button class="nav-link active" id="download-tab" data-bs-toggle="tab" data-bs-target="#download" type="button" role="tab">{{ t.download_speed }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">Upload Speed</button>
+                        <button class="nav-link" id="upload-tab" data-bs-toggle="tab" data-bs-target="#upload" type="button" role="tab">{{ t.upload_speed }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="ping-tab" data-bs-toggle="tab" data-bs-target="#ping" type="button" role="tab">Ping</button>
+                        <button class="nav-link" id="ping-tab" data-bs-toggle="tab" data-bs-target="#ping" type="button" role="tab">{{ t.ping }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="packetloss-tab" data-bs-toggle="tab" data-bs-target="#packetloss" type="button" role="tab">Packet Loss</button>
+                        <button class="nav-link" id="packetloss-tab" data-bs-toggle="tab" data-bs-target="#packetloss" type="button" role="tab">{{ t.packet_loss }}</button>
                     </li>
                 </ul>
                 <div class="tab-content" id="forecastTabContent">
@@ -101,18 +101,18 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Detailed Anomaly Results</h5>
+                <h5 class="card-title">{{ t.detailed_anomaly_results }}</h5>
             </div>
             <div class="card-body">
                 <ul class="nav nav-tabs" id="anomalyTabs" role="tablist">
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="isolation-forest-tab" data-bs-toggle="tab" data-bs-target="#isolation-forest" type="button" role="tab">Isolation Forest</button>
+                        <button class="nav-link active" id="isolation-forest-tab" data-bs-toggle="tab" data-bs-target="#isolation-forest" type="button" role="tab">{{ t.isolation_forest }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="dbscan-tab" data-bs-toggle="tab" data-bs-target="#dbscan" type="button" role="tab">DBSCAN</button>
+                        <button class="nav-link" id="dbscan-tab" data-bs-toggle="tab" data-bs-target="#dbscan" type="button" role="tab">{{ t.dbscan }}</button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="elliptic-envelope-tab" data-bs-toggle="tab" data-bs-target="#elliptic-envelope" type="button" role="tab">Elliptic Envelope</button>
+                        <button class="nav-link" id="elliptic-envelope-tab" data-bs-toggle="tab" data-bs-target="#elliptic-envelope" type="button" role="tab">{{ t.elliptic_envelope }}</button>
                     </li>
                 </ul>
                 <div class="tab-content" id="anomalyTabContent">
@@ -121,17 +121,17 @@
                             <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Timestamp</th>
-                                        <th>Download (Mbps)</th>
-                                        <th>Upload (Mbps)</th>
-                                        <th>Ping (ms)</th>
-                                        <th>Packet Loss (%)</th>
-                                        <th>Anomaly Score</th>
+                                        <th>{{ t.timestamp }}</th>
+                                        <th>{{ t.download_speed }} (Mbps)</th>
+                                        <th>{{ t.upload_speed }} (Mbps)</th>
+                                        <th>{{ t.ping }} (ms)</th>
+                                        <th>{{ t.packet_loss }} (%)</th>
+                                        <th>{{ t.anomaly_detection }}</th>
                                     </tr>
                                 </thead>
                                 <tbody id="isolationForestAnomaliesTableBody">
                                     <tr>
-                                        <td colspan="6" class="text-center">Loading anomaly data...</td>
+                                        <td colspan="6" class="text-center">{{ t.loading_ml_data }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -142,16 +142,16 @@
                             <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Timestamp</th>
-                                        <th>Download (Mbps)</th>
-                                        <th>Upload (Mbps)</th>
-                                        <th>Ping (ms)</th>
-                                        <th>Packet Loss (%)</th>
+                                        <th>{{ t.timestamp }}</th>
+                                        <th>{{ t.download_speed }} (Mbps)</th>
+                                        <th>{{ t.upload_speed }} (Mbps)</th>
+                                        <th>{{ t.ping }} (ms)</th>
+                                        <th>{{ t.packet_loss }} (%)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="dbscanAnomaliesTableBody">
                                     <tr>
-                                        <td colspan="5" class="text-center">Loading anomaly data...</td>
+                                        <td colspan="5" class="text-center">{{ t.loading_ml_data }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -162,16 +162,16 @@
                             <table class="table table-striped table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Timestamp</th>
-                                        <th>Download (Mbps)</th>
-                                        <th>Upload (Mbps)</th>
-                                        <th>Ping (ms)</th>
-                                        <th>Packet Loss (%)</th>
+                                        <th>{{ t.timestamp }}</th>
+                                        <th>{{ t.download_speed }} (Mbps)</th>
+                                        <th>{{ t.upload_speed }} (Mbps)</th>
+                                        <th>{{ t.ping }} (ms)</th>
+                                        <th>{{ t.packet_loss }} (%)</th>
                                     </tr>
                                 </thead>
                                 <tbody id="ellipticEnvelopeAnomaliesTableBody">
                                     <tr>
-                                        <td colspan="5" class="text-center">Loading anomaly data...</td>
+                                        <td colspan="5" class="text-center">{{ t.loading_ml_data }}</td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -225,7 +225,7 @@
         const tableBody = document.getElementById('anomalyDetectionTableBody');
         
         if (!mlAnalysisData || !mlAnalysisData.summary || !mlAnalysisData.summary.anomaly_detection) {
-            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">No anomaly detection data available</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="4" class="text-center">{{ t.no_anomaly_data_available }}</td></tr>';
             return;
         }
         
@@ -247,9 +247,9 @@
     // Update anomaly details tables
     function updateAnomalyDetails() {
         if (!mlAnalysisData || !mlAnalysisData.full_analysis || !mlAnalysisData.full_analysis.anomaly_detection) {
-            document.getElementById('isolationForestAnomaliesTableBody').innerHTML = '<tr><td colspan="6" class="text-center">No anomaly data available</td></tr>';
-            document.getElementById('dbscanAnomaliesTableBody').innerHTML = '<tr><td colspan="5" class="text-center">No anomaly data available</td></tr>';
-            document.getElementById('ellipticEnvelopeAnomaliesTableBody').innerHTML = '<tr><td colspan="5" class="text-center">No anomaly data available</td></tr>';
+            document.getElementById('isolationForestAnomaliesTableBody').innerHTML = '<tr><td colspan="6" class="text-center">{{ t.no_anomaly_data_available }}</td></tr>';
+            document.getElementById('dbscanAnomaliesTableBody').innerHTML = '<tr><td colspan="5" class="text-center">{{ t.no_anomaly_data_available }}</td></tr>';
+            document.getElementById('ellipticEnvelopeAnomaliesTableBody').innerHTML = '<tr><td colspan="5" class="text-center">{{ t.no_anomaly_data_available }}</td></tr>';
             return;
         }
         
@@ -272,7 +272,7 @@
                 isoForestBody.appendChild(row);
             });
         } else {
-            isoForestBody.innerHTML = '<tr><td colspan="6" class="text-center">No anomalies detected</td></tr>';
+            isoForestBody.innerHTML = '<tr><td colspan="6" class="text-center">{{ t.no_anomalies_detected }}</td></tr>';
         }
         
         // Update DBSCAN anomalies
@@ -291,7 +291,7 @@
                 dbscanBody.appendChild(row);
             });
         } else {
-            dbscanBody.innerHTML = '<tr><td colspan="5" class="text-center">No anomalies detected</td></tr>';
+            dbscanBody.innerHTML = '<tr><td colspan="5" class="text-center">{{ t.no_anomalies_detected }}</td></tr>';
         }
         
         // Update Elliptic Envelope anomalies
@@ -310,7 +310,7 @@
                 ellipticBody.appendChild(row);
             });
         } else {
-            ellipticBody.innerHTML = '<tr><td colspan="5" class="text-center">No anomalies detected</td></tr>';
+            ellipticBody.innerHTML = '<tr><td colspan="5" class="text-center">{{ t.no_anomalies_detected }}</td></tr>';
         }
     }
 
@@ -413,7 +413,7 @@
     // Fetch ML analysis data
     async function fetchMLAnalysis() {
         try {
-            updateStatus('Loading ML analysis data...', 'info');
+            updateStatus('{{ t.loading_ml_data }}', 'info');
             const response = await axios.get('/api/ml-analysis');
             mlAnalysisData = response.data;
             
@@ -421,13 +421,13 @@
                 updateAnomalyDetectionTable();
                 updateAnomalyDetails();
                 updateForecastCharts();
-                updateStatus('ML analysis data loaded successfully', 'success');
+                updateStatus('{{ t.ml_loaded_success }}', 'success');
             } else {
-                updateStatus('No ML analysis data available', 'warning');
+                updateStatus('{{ t.ml_no_data }}', 'warning');
             }
         } catch (error) {
             console.error('Error fetching ML analysis data:', error);
-            updateStatus('Error loading ML analysis data', 'danger');
+            updateStatus('{{ t.ml_error }}', 'danger');
         }
     }
 

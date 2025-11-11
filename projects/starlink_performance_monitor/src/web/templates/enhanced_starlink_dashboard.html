@@ -84,7 +84,7 @@
     <div class="col-md-3">
         <div class="card mb-4 shadow-sm metric-card">
             <div class="card-body text-center">
-                <h5 class="card-title"><i class="fas fa-satellite text-info"></i> SNR</h5>
+                <h5 class="card-title"><i class="fas fa-satellite text-info"></i> {{ t.snr }}</h5>
                 <h2 class="display-6"><span id="snr">0</span> <small class="text-muted">dB</small></h2>
                 <div class="progress mt-2" style="height: 5px;">
                     <div class="progress-bar bg-info" role="progressbar" style="width: 0%" id="snrProgress"></div>
@@ -96,7 +96,7 @@
     <div class="col-md-3">
         <div class="card mb-4 shadow-sm metric-card">
             <div class="card-body text-center">
-                <h5 class="card-title"><i class="fas fa-eye-slash text-secondary"></i> Obstruction</h5>
+                <h5 class="card-title"><i class="fas fa-eye-slash text-secondary"></i> {{ t.obstruction }}</h5>
                 <h2 class="display-6"><span id="obstruction">0</span> <small class="text-muted">%</small></h2>
                 <div class="progress mt-2" style="height: 5px;">
                     <div class="progress-bar bg-secondary" role="progressbar" style="width: 0%" id="obstructionProgress"></div>
@@ -108,7 +108,7 @@
     <div class="col-md-3">
         <div class="card mb-4 shadow-sm metric-card">
             <div class="card-body text-center">
-                <h5 class="card-title"><i class="fas fa-arrow-down text-primary"></i> Dish Downlink</h5>
+                <h5 class="card-title"><i class="fas fa-arrow-down text-primary"></i> {{ t.dish_downlink }}</h5>
                 <h2 class="display-6"><span id="dishDownlink">0</span> <small class="text-muted">Mbps</small></h2>
                 <div class="progress mt-2" style="height: 5px;">
                     <div class="progress-bar bg-primary" role="progressbar" style="width: 0%" id="dishDownlinkProgress"></div>
@@ -120,7 +120,7 @@
     <div class="col-md-3">
         <div class="card mb-4 shadow-sm metric-card">
             <div class="card-body text-center">
-                <h5 class="card-title"><i class="fas fa-arrow-up text-success"></i> Dish Uplink</h5>
+                <h5 class="card-title"><i class="fas fa-arrow-up text-success"></i> {{ t.dish_uplink }}</h5>
                 <h2 class="display-6"><span id="dishUplink">0</span> <small class="text-muted">Mbps</small></h2>
                 <div class="progress mt-2" style="height: 5px;">
                     <div class="progress-bar bg-success" role="progressbar" style="width: 0%" id="dishUplinkProgress"></div>
@@ -148,7 +148,7 @@
     <div class="col-md-6">
         <div class="card mb-4 shadow-sm">
             <div class="card-header">
-                <h5 class="card-title mb-0"><i class="fas fa-satellite"></i> Starlink Dish Metrics</h5>
+                <h5 class="card-title mb-0"><i class="fas fa-satellite"></i> {{ t.starlink_dish_metrics }}</h5>
             </div>
             <div class="card-body">
                 <canvas id="dishChart" height="80"></canvas>
@@ -164,7 +164,7 @@
             <div class="card-body">
                 <div id="alertsContainer">
                     <div class="alert alert-info" role="alert">
-                        <i class="fas fa-info-circle"></i> No alerts at this time
+                        <i class="fas fa-info-circle"></i> {{ t.no_alerts }}
                     </div>
                 </div>
             </div>
@@ -227,13 +227,13 @@
         data: {
             labels: [],
             datasets: [{
-                label: 'SNR (dB)',
+                label: '{{ t.snr }} (dB)',
                 data: [],
                 borderColor: 'rgb(255, 159, 64)',
                 backgroundColor: 'rgba(255, 159, 64, 0.2)',
                 tension: 0.1
             }, {
-                label: 'Obstruction (%)',
+                label: '{{ t.obstruction }} (%)',
                 data: [],
                 borderColor: 'rgb(153, 102, 255)',
                 backgroundColor: 'rgba(153, 102, 255, 0.2)',
@@ -315,7 +315,7 @@
         if (data.download_mbps < 50) {
             alertsHtml += `
                 <div class="alert alert-warning" role="alert">
-                    <i class="fas fa-exclamation-triangle"></i> Low download speed detected: ${data.download_mbps.toFixed(2)} Mbps
+                    <i class="fas fa-exclamation-triangle"></i> {{ t.low_download_speed_detected }}: ${data.download_mbps.toFixed(2)} Mbps
                 </div>
             `;
         }
@@ -323,7 +323,7 @@
         if (data.ping_ms > 50) {
             alertsHtml += `
                 <div class="alert alert-warning" role="alert">
-                    <i class="fas fa-exclamation-triangle"></i> High latency detected: ${data.ping_ms.toFixed(2)} ms
+                    <i class="fas fa-exclamation-triangle"></i> {{ t.high_latency_detected }}: ${data.ping_ms.toFixed(2)} ms
                 </div>
             `;
         }
@@ -331,7 +331,7 @@
         if (data.packet_loss_percent > 5) {
             alertsHtml += `
                 <div class="alert alert-danger" role="alert">
-                    <i class="fas fa-exclamation-circle"></i> High packet loss detected: ${data.packet_loss_percent.toFixed(2)}%
+                    <i class="fas fa-exclamation-circle"></i> {{ t.high_packet_loss_detected }}: ${data.packet_loss_percent.toFixed(2)}%
                 </div>
             `;
         }
@@ -339,7 +339,7 @@
         if (data.obstruction_fraction > 0.1) {
             alertsHtml += `
                 <div class="alert alert-warning" role="alert">
-                    <i class="fas fa-exclamation-triangle"></i> High obstruction detected: ${(data.obstruction_fraction * 100).toFixed(2)}%
+                    <i class="fas fa-exclamation-triangle"></i> {{ t.high_obstruction_detected }}: ${(data.obstruction_fraction * 100).toFixed(2)}%
                 </div>
             `;
         }

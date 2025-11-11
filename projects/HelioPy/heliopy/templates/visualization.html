@@ -5,6 +5,7 @@
     <title>{{ t.app_name }} — {{ t.visualization_title }}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
 </head>
 <body>
     <div class="container">
@@ -16,14 +17,40 @@
             <a class="button" href="{{ url_for('set_lang', lang='en') }}">{{ t.lang_en }}</a>
             <a class="button" href="{{ url_for('set_lang', lang='ru') }}">{{ t.lang_ru }}</a>
         </nav>
-        <ul>
-            <li>{{ t.feature_4 }}</li>
-            <li>3D CME</li>
-            <li>Maps</li>
-        </ul>
+                <div id="chart" class="card" style="height:400px;"></div>
         <div class="back">
             <a href="/">{{ t.back_home }}</a>
         </div>
     </div>
+        <script>
+        async function renderChart(){
+            try{
+                const res = await fetch('/api/plot/timeseries');
+                const data = await res.json();
+                const times = data.times.map(ts => new Date(ts*1000));
+                const trace = {
+                    x: times,
+                    y: data.flux,
+                    mode: 'lines',
+                    line: {color: '#1976d2'}
+                };
+                const layout = {
+                    title: data.labels.title,
+                    xaxis: {title: data.labels.x},
+                    yaxis: {title: data.labels.y}
+                };
+                const el = document.getElementById('chart');
+                if (window.Plotly) {
+                    Plotly.newPlot(el, [trace], layout, {displayModeBar:false});
+                } else {
+                    el.innerHTML = '<p>Plotly not available. Please check internet connection.</p>';
+                }
+            }catch(e){
+                const el = document.getElementById('chart');
+                el.innerHTML = '<pre>'+String(e)+'</pre>';
+            }
+        }
+        window.addEventListener('DOMContentLoaded', renderChart);
+        </script>
 </body>
 </html>

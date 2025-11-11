@@ -62,7 +62,7 @@ heliopy-web = "heliopy.web_app:main"
 
 [tool.setuptools]
 packages = ["heliopy"]
-package-data = {"heliopy" = ["templates/*.html"]}
+package-data = {"heliopy" = ["templates/*.html", "static/*.css", "i18n/*.json"]}
 
 [tool.black]
 line-length = 100

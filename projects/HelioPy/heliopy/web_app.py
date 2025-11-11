@@ -23,93 +23,25 @@ BASE_DIR = Path(__file__).parent
 # Определяем путь к шаблонам и статике внутри установленного пакета
 TEMPLATE_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
+import json
+
+def _load_translations() -> dict:
+    translations = {}
+    for code in ["en", "ru"]:
+        path = BASE_DIR / "i18n" / f"{code}.json"
+        try:
+            with path.open("r", encoding="utf-8") as f:
+                translations[code] = json.load(f)
+        except Exception:
+            translations[code] = {}
+    return translations
+
+TRANSLATIONS = _load_translations()
+
+# Flask application (redefine after STATIC_DIR introduction if needed)
 app = Flask(__name__, template_folder=str(TEMPLATE_DIR), static_folder=str(STATIC_DIR))
-
-# Секрет для сессий (для хранения языка)
 if not app.secret_key:
-    app.secret_key = "heliopy-dev-secret-key"
-
-# -------------------- I18N --------------------
-TRANSLATIONS = {
-    "en": {
-        "app_name": "HelioPy",
-        "welcome": "Welcome to HelioPy web interface!",
-        "tagline": "Analysis of solar activity and space weather.",
-        "features_title": "Features:",
-        "feature_1": "Data ingestion and processing from solar missions",
-        "feature_2": "Solar flare and CME analysis",
-        "feature_3": "Space weather forecasting",
-        "feature_4": "Visualization and interactive charts",
-        "nav_analysis": "Analysis",
-        "nav_visualization": "Visualization",
-        "nav_api_docs": "API & Docs",
-        "nav_about": "About",
-        "lang_en": "English",
-        "lang_ru": "Русский",
-        "index_title": "Home",
-        "analysis_title": "Solar Data Analysis",
-        "analysis_desc": "Run basic analysis operations via API.",
-        "flare_peak_flux": "Peak flux (W/m²)",
-        "btn_classify": "Classify",
-        "carrington_rotation": "Carrington rotation",
-        "time_utc": "Time (UTC)",
-        "btn_compute": "Compute",
-        "coords_convert": "Coordinate Conversion",
-        "r": "r",
-        "theta": "theta (rad)",
-        "phi": "phi (rad)",
-        "btn_convert": "Convert",
-        "back_home": "← Back to home",
-        "visualization_title": "Visualization",
-        "visualization_desc": "Interactive charts, maps and event animations.",
-        "api_docs_title": "API and Documentation",
-        "api_docs_desc": "Available API endpoints and documentation links.",
-        "api_info": "/api/info — Library information",
-        "api_data": "/api/data — Data retrieval (example)",
-        "docs_link": "HelioPy documentation",
-        "about_title": "About HelioPy",
-        "about_desc": "HelioPy is an open-source library for solar activity and space weather analysis.",
-    },
-    "ru": {
-        "app_name": "HelioPy",
-        "welcome": "Добро пожаловать в веб-интерфейс HelioPy!",
-        "tagline": "Анализ солнечной активности и космической погоды.",
-        "features_title": "Возможности:",
-        "feature_1": "Загрузка и обработка данных солнечных миссий",
-        "feature_2": "Анализ солнечных вспышек и корональных выбросов массы",
-        "feature_3": "Прогнозирование космической погоды",
-        "feature_4": "Визуализация и интерактивные графики",
-        "nav_analysis": "Анализ",
-        "nav_visualization": "Визуализация",
-        "nav_api_docs": "API и документация",
-        "nav_about": "О проекте",
-        "lang_en": "English",
-        "lang_ru": "Русский",
-        "index_title": "Главная",
-        "analysis_title": "Анализ солнечных данных",
-        "analysis_desc": "Выполняйте базовые операции анализа через API.",
-        "flare_peak_flux": "Пиковый поток (W/m²)",
-        "btn_classify": "Классифицировать",
-        "carrington_rotation": "Вращение Кэррингтона",
-        "time_utc": "Время (UTC)",
-        "btn_compute": "Вычислить",
-        "coords_convert": "Преобразование координат",
-        "r": "r",
-        "theta": "theta (рад)",
-        "phi": "phi (рад)",
-        "btn_convert": "Преобразовать",
-        "back_home": "← На главную",
-        "visualization_title": "Визуализация",
-        "visualization_desc": "Интерактивные графики, карты и анимации событий.",
-        "api_docs_title": "API и документация",
-        "api_docs_desc": "Описание доступных API и ссылки на документацию.",
-        "api_info": "/api/info — Информация о библиотеке",
-        "api_data": "/api/data — Получение данных (пример)",
-        "docs_link": "Документация HelioPy",
-        "about_title": "О проекте HelioPy",
-        "about_desc": "HelioPy — библиотека для анализа солнечной активности и космической погоды.",
-    },
-}
+    app.secret_key = "heliopy-dev-key"
 
 
 def get_locale() -> str:
@@ -247,6 +179,33 @@ def api_coords_convert():
         return jsonify({"x": x, "y": y, "z": z})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+
+@app.route("/api/plot/timeseries")
+def api_plot_timeseries():
+    """Синтетический временной ряд для демонстрации визуализации.
+
+    Возвращает массив точек времени и поток (условные значения), а также
+    локализованные подписи для осей и заголовок.
+    """
+    import math
+    import time as _time
+    lang = get_locale()
+    tdict = TRANSLATIONS.get(lang, TRANSLATIONS.get("en", {}))
+    # Генерация синтетических данных (sin+noise)
+    n = 50
+    base = _time.time()
+    times = [base + i * 360 for i in range(n)]  # шаг 6 минут
+    flux = [1e-6 + 5e-7 * math.sin(i / 5.0) + (1e-7 * math.sin(i / 2.0)) for i in range(n)]
+    return jsonify({
+        "times": times,
+        "flux": flux,
+        "labels": {
+            "x": tdict.get("chart_time", "Time"),
+            "y": tdict.get("chart_flux", "Flux"),
+            "title": tdict.get("chart_title_demo", "Synthetic Solar Flux Time Series")
+        }
+    })
 
 
 if __name__ == "__main__":  # Локальный запуск

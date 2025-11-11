@@ -1,18 +1,18 @@
 {% extends "base.html" %}
 
-{% block title %}Reports - Starlink Monitor{% endblock %}
+{% block title %}{{ t.reports }} - {{ t.site_name }}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Reports</h1>
+    <h1 class="h2">{{ t.reports }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" id="generateReport">
-                <i class="fas fa-file-medical"></i> Generate Report
+                <i class="fas fa-file-medical"></i> {{ t.generate_report }}
             </button>
         </div>
         <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
-            <i class="fas fa-download"></i> Export Format
+            <i class="fas fa-download"></i> {{ t.export_format }}
         </button>
         <ul class="dropdown-menu">
             <li><a class="dropdown-item" href="#" data-format="pdf">PDF</a></li>
@@ -27,61 +27,61 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Generate New Report</h5>
+                <h5 class="card-title">{{ t.generate_new_report }}</h5>
             </div>
             <div class="card-body">
                 <form>
                     <div class="row">
                         <div class="col-md-4">
-                            <label for="reportType" class="form-label">Report Type</label>
+                            <label for="reportType" class="form-label">{{ t.report_type }}</label>
                             <select class="form-select" id="reportType">
-                                <option value="daily">Daily Report</option>
-                                <option value="weekly">Weekly Report</option>
-                                <option value="monthly">Monthly Report</option>
-                                <option value="custom">Custom Period</option>
+                                <option value="daily">{{ t.daily_report }}</option>
+                                <option value="weekly">{{ t.weekly_report }}</option>
+                                <option value="monthly">{{ t.monthly_report }}</option>
+                                <option value="custom">{{ t.custom_report }}</option>
                             </select>
                         </div>
                         <div class="col-md-4">
-                            <label for="reportStartDate" class="form-label">Start Date</label>
+                            <label for="reportStartDate" class="form-label">{{ t.start_date }}</label>
                             <input type="date" class="form-control" id="reportStartDate">
                         </div>
                         <div class="col-md-4">
-                            <label for="reportEndDate" class="form-label">End Date</label>
+                            <label for="reportEndDate" class="form-label">{{ t.end_date }}</label>
                             <input type="date" class="form-control" id="reportEndDate">
                         </div>
                     </div>
                     <div class="row mt-3">
                         <div class="col-md-6">
-                            <label for="reportMetrics" class="form-label">Metrics to Include</label>
+                            <label for="reportMetrics" class="form-label">{{ t.metrics_to_include }}</label>
                             <div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="includeSpeed" checked>
                                     <label class="form-check-label" for="includeSpeed">
-                                        Speed Test Results
+                                        {{ t.speed_test_results }}
                                     </label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="includePing" checked>
                                     <label class="form-check-label" for="includePing">
-                                        Ping Statistics
+                                        {{ t.ping_statistics }}
                                     </label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="includeWeather" checked>
                                     <label class="form-check-label" for="includeWeather">
-                                        Weather Correlation
+                                        {{ t.weather_correlation }}
                                     </label>
                                 </div>
                                 <div class="form-check">
                                     <input class="form-check-input" type="checkbox" id="includeAlerts" checked>
                                     <label class="form-check-label" for="includeAlerts">
-                                        Alert History
+                                        {{ t.alert_history }}
                                     </label>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label for="reportFormat" class="form-label">Output Format</label>
+                            <label for="reportFormat" class="form-label">{{ t.output_format }}</label>
                             <select class="form-select" id="reportFormat">
                                 <option value="pdf">PDF Document</option>
                                 <option value="excel">Excel Spreadsheet</option>
@@ -90,7 +90,7 @@
                             </select>
                             <div class="mt-3">
                                 <button type="button" class="btn btn-primary" id="generateBtn">
-                                    <i class="fas fa-cogs"></i> Generate Report
+                                    <i class="fas fa-cogs"></i> {{ t.generate_report }}
                                 </button>
                             </div>
                         </div>
@@ -106,19 +106,19 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Recent Reports</h5>
+                <h5 class="card-title">{{ t.recent_reports }}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Report Name</th>
-                                <th>Type</th>
-                                <th>Date Range</th>
-                                <th>Generated</th>
-                                <th>Size</th>
-                                <th>Actions</th>
+                                <th>{{ t.report_name }}</th>
+                                <th>{{ t.type }}</th>
+                                <th>{{ t.date_range }}</th>
+                                <th>{{ t.generated }}</th>
+                                <th>{{ t.size }}</th>
+                                <th>{{ t.actions }}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -129,8 +129,8 @@
                                 <td>Nov 9, 2025 08:00</td>
                                 <td>2.4 MB</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary">View</button>
-                                    <button class="btn btn-sm btn-outline-secondary">Download</button>
+                                    <button class="btn btn-sm btn-outline-primary">{{ t.view }}</button>
+                                    <button class="btn btn-sm btn-outline-secondary">{{ t.download }}</button>
                                 </td>
                             </tr>
                             <tr>
@@ -140,8 +140,8 @@
                                 <td>Nov 8, 2025 08:00</td>
                                 <td>1.1 MB</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary">View</button>
-                                    <button class="btn btn-sm btn-outline-secondary">Download</button>
+                                    <button class="btn btn-sm btn-outline-primary">{{ t.view }}</button>
+                                    <button class="btn btn-sm btn-outline-secondary">{{ t.download }}</button>
                                 </td>
                             </tr>
                             <tr>
@@ -151,8 +151,8 @@
                                 <td>Nov 1, 2025 08:00</td>
                                 <td>5.7 MB</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary">View</button>
-                                    <button class="btn btn-sm btn-outline-secondary">Download</button>
+                                    <button class="btn btn-sm btn-outline-primary">{{ t.view }}</button>
+                                    <button class="btn btn-sm btn-outline-secondary">{{ t.download }}</button>
                                 </td>
                             </tr>
                         </tbody>
@@ -168,13 +168,13 @@
     <div class="col-md-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title">Report Preview</h5>
+                <h5 class="card-title">{{ t.report_preview }}</h5>
             </div>
             <div class="card-body">
                 <div class="text-center">
                     <i class="fas fa-file-alt fa-5x text-muted mb-3"></i>
-                    <p>Select a report to preview or generate a new report.</p>
-                    <button class="btn btn-outline-primary">View Sample Report</button>
+                    <p>{{ t.select_report_to_preview }}</p>
+                    <button class="btn btn-outline-primary">{{ t.view_sample_report }}</button>
                 </div>
             </div>
         </div>
