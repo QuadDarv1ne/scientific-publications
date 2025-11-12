@@ -8,6 +8,7 @@ from typing import Optional, Union
 
 from heliopy.data_sources.ace_loader import ACELoader
 from heliopy.data_sources.goes_loader import GOESLoader
+from heliopy.data_sources.helioviewer_loader import HelioviewerLoader
 from heliopy.data_sources.sdo_loader import SDOLoader
 from heliopy.data_sources.soho_loader import SOHOLoader
 from heliopy.utils.config import get_config
@@ -34,6 +35,7 @@ class DataLoader:
         self.soho_loader = SOHOLoader(cache_dir=self.cache_dir)
         self.goes_loader = GOESLoader(cache_dir=self.cache_dir)
         self.ace_loader = ACELoader(cache_dir=self.cache_dir)
+        self.helioviewer_loader = HelioviewerLoader(cache_dir=self.cache_dir)
 
     def load_sdo_aia(self, date: Union[str, datetime], wavelength: int, **kwargs) -> "SolarImage":
         """
@@ -135,6 +137,39 @@ class DataLoader:
         """
         return self.ace_loader.load(date, **kwargs)
 
+    def load_helioviewer(
+        self, date: Union[str, datetime], source_id: int = 14, **kwargs
+    ) -> "SolarImage":
+        """
+        Load Helioviewer data.
+
+        Parameters
+        ----------
+        date : str or datetime
+            Observation date.
+        source_id : int
+            Source ID (default is SDO/AIA 193Å).
+        **kwargs
+            Additional parameters.
+
+        Returns
+        -------
+        SolarImage
+            Object with image data.
+        """
+        return self.helioviewer_loader.load_image(date, source_id, **kwargs)
+
+    def get_helioviewer_sources(self) -> dict:
+        """
+        Get available Helioviewer data sources.
+
+        Returns
+        -------
+        dict
+            Dictionary with information about data sources.
+        """
+        return self.helioviewer_loader.get_data_sources()
+
 
 # Convenience functions (as in README)
 def load_sdo_aia(date: Union[str, datetime], wavelength: int, **kwargs):
@@ -153,3 +188,8 @@ def load_goes(date: Union[str, datetime], **kwargs):
     """Convenience function for loading GOES data."""
     loader = DataLoader()
     return loader.load_goes(date, **kwargs)
+
+def load_helioviewer(date: Union[str, datetime], source_id: int = 14, **kwargs):
+    """Convenience function for loading Helioviewer data."""
+    loader = DataLoader()
+    return loader.load_helioviewer(date, source_id, **kwargs)

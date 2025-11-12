@@ -1,35 +1,35 @@
 {% extends "base.html" %}
 
-{% block title %}Performance History - Starlink Monitor{% endblock %}
+{% block title %}{{ t.performance_history }} - {{ t.site_name }}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
-    <h1 class="h2 page-heading">Performance History</h1>
+    <h1 class="h2 page-heading">{{ t.performance_history }}</h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" id="timeRangeBtn" data-range="24h">
-                <i class="fas fa-clock"></i> Last 24 Hours
+                <i class="fas fa-clock"></i> {{ t.last_24_hours }}
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary" data-range="7d">
-                Last 7 Days
+                {{ t.last_7_days }}
             </button>
             <button type="button" class="btn btn-sm btn-outline-secondary" data-range="30d">
-                Last 30 Days
+                {{ t.last_30_days }}
             </button>
         </div>
         <div class="dropdown me-2">
             <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                <i class="fas fa-download"></i> Export
+                <i class="fas fa-download"></i> {{ t.export }}
             </button>
             <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#" id="exportCSV">CSV</a></li>
-                <li><a class="dropdown-item" href="#" id="exportJSON">JSON</a></li>
-                <li><a class="dropdown-item" href="#" id="exportPDF">PDF</a></li>
-                <li><a class="dropdown-item" href="#" id="exportExcel">Excel</a></li>
+                <li><a class="dropdown-item" href="#" id="exportCSV">{{ t.csv }}</a></li>
+                <li><a class="dropdown-item" href="#" id="exportJSON">{{ t.json }}</a></li>
+                <li><a class="dropdown-item" href="#" id="exportPDF">{{ t.pdf }}</a></li>
+                <li><a class="dropdown-item" href="#" id="exportExcel">{{ t.excel }}</a></li>
             </ul>
         </div>
         <button type="button" class="btn btn-sm btn-outline-primary" id="comparePeriods">
-            <i class="fas fa-balance-scale"></i> Compare
+            <i class="fas fa-balance-scale"></i> {{ t.compare }}
         </button>
     </div>
 </div>
@@ -40,7 +40,7 @@
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white">
                 <h5 class="card-title mb-0 d-flex justify-content-between align-items-center">
-                    <span>Advanced Filters</span>
+                    <span>{{ t.advanced_filters }}</span>
                     <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse" aria-expanded="true" aria-controls="filterCollapse">
                         <i class="fas fa-chevron-up"></i>
                     </button>
@@ -50,54 +50,54 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-3">
-                            <label for="metricType" class="form-label fw-bold">Metric Type</label>
+                            <label for="metricType" class="form-label fw-bold">{{ t.metric_type }}</label>
                             <select class="form-select" id="metricType">
-                                <option value="all">All Metrics</option>
-                                <option value="download">Download Speed</option>
-                                <option value="upload">Upload Speed</option>
-                                <option value="ping">Ping</option>
-                                <option value="packetloss">Packet Loss</option>
+                                <option value="all">{{ t.all_metrics }}</option>
+                                <option value="download">{{ t.download_speed }}</option>
+                                <option value="upload">{{ t.upload_speed }}</option>
+                                <option value="ping">{{ t.ping }}</option>
+                                <option value="packetloss">{{ t.packet_loss }}</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="serverFilter" class="form-label fw-bold">Server</label>
+                            <label for="serverFilter" class="form-label fw-bold">{{ t.server }}</label>
                             <select class="form-select" id="serverFilter">
-                                <option value="all">All Servers</option>
+                                <option value="all">{{ t.all_servers }}</option>
                                 <option value="starlink">Starlink</option>
                                 <option value="google">Google DNS</option>
                                 <option value="cloudflare">Cloudflare</option>
                             </select>
                         </div>
                         <div class="col-md-3">
-                            <label for="dateRange" class="form-label fw-bold">Date Range</label>
-                            <input type="text" class="form-control" id="dateRange" placeholder="Select date range">
+                            <label for="dateRange" class="form-label fw-bold">{{ t.date_range }}</label>
+                            <input type="text" class="form-control" id="dateRange" placeholder="{{ t.select_date_range }}">
                         </div>
                         <div class="col-md-3">
-                            <label for="performanceThreshold" class="form-label fw-bold">Performance Threshold</label>
+                            <label for="performanceThreshold" class="form-label fw-bold">{{ t.performance_threshold }}</label>
                             <select class="form-select" id="performanceThreshold">
-                                <option value="all">All Data</option>
-                                <option value="poor">Poor Performance (&lt; 25th percentile)</option>
-                                <option value="good">Good Performance (&gt; 75th percentile)</option>
-                                <option value="outlier">Outliers (&gt; 95th percentile)</option>
+                                <option value="all">{{ t.all_data }}</option>
+                                <option value="poor">{{ t.poor_performance }}</option>
+                                <option value="good">{{ t.good_performance }}</option>
+                                <option value="outlier">{{ t.outliers }}</option>
                             </select>
                         </div>
                     </div>
                     <div class="row g-3 mt-2">
                         <div class="col-md-3">
-                            <label for="minDownload" class="form-label">Min Download (Mbps)</label>
-                            <input type="number" class="form-control" id="minDownload" placeholder="0">
+                            <label for="minDownload" class="form-label">{{ t.min_download }}</label>
+                            <input type="number" class="form-control" id="minDownload" placeholder="0" inputmode="decimal">
                         </div>
                         <div class="col-md-3">
-                            <label for="maxPing" class="form-label">Max Ping (ms)</label>
-                            <input type="number" class="form-control" id="maxPing" placeholder="1000">
+                            <label for="maxPing" class="form-label">{{ t.max_ping }}</label>
+                            <input type="number" class="form-control" id="maxPing" placeholder="1000" inputmode="decimal">
                         </div>
                         <div class="col-md-3">
-                            <label for="maxPacketLoss" class="form-label">Max Packet Loss (%)</label>
-                            <input type="number" class="form-control" id="maxPacketLoss" placeholder="100" step="0.1">
+                            <label for="maxPacketLoss" class="form-label">{{ t.max_packet_loss }}</label>
+                            <input type="number" class="form-control" id="maxPacketLoss" placeholder="100" step="0.1" inputmode="decimal">
                         </div>
                         <div class="col-md-3 d-flex align-items-end">
                             <button class="btn btn-primary w-100" id="applyFilters">
-                                <i class="fas fa-filter"></i> Apply Filters
+                                <i class="fas fa-filter"></i> {{ t.apply_filters }}
                             </button>
                         </div>
                     </div>
@@ -112,11 +112,11 @@
     <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Performance Trends</h5>
+                <h5 class="card-title mb-0">{{ t.performance_trends }}</h5>
                 <div class="btn-group btn-group-sm" role="group">
-                    <button type="button" class="btn btn-outline-primary" id="chartTypeLine">Line</button>
-                    <button type="button" class="btn btn-outline-primary" id="chartTypeBar">Bar</button>
-                    <button type="button" class="btn btn-outline-primary" id="chartTypeArea">Area</button>
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeLine">{{ t.line }}</button>
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeBar">{{ t.bar }}</button>
+                    <button type="button" class="btn btn-outline-primary" id="chartTypeArea">{{ t.area }}</button>
                 </div>
             </div>
             <div class="card-body">
@@ -132,24 +132,24 @@
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white">
-                <h5 class="card-title mb-0">Statistical Summary</h5>
+                <h5 class="card-title mb-0">{{ t.statistical_summary }}</h5>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-striped">
                         <thead>
                             <tr>
-                                <th>Metric</th>
-                                <th>Min</th>
-                                <th>Avg</th>
-                                <th>Max</th>
-                                <th>Std Dev</th>
-                                <th>95th %</th>
+                                <th>{{ t.metric }}</th>
+                                <th>{{ t.minimum }}</th>
+                                <th>{{ t.average }}</th>
+                                <th>{{ t.maximum }}</th>
+                                <th>{{ t.std_dev }}</th>
+                                <th>{{ t.percentile_95 }}</th>
                             </tr>
                         </thead>
                         <tbody id="statsTable">
                             <tr>
-                                <td>Download (Mbps)</td>
+                                <td>{{ t.download_mbps }}</td>
                                 <td id="downloadMin">--</td>
                                 <td id="downloadAvg">--</td>
                                 <td id="downloadMax">--</td>
@@ -157,7 +157,7 @@
                                 <td id="download95">--</td>
                             </tr>
                             <tr>
-                                <td>Upload (Mbps)</td>
+                                <td>{{ t.upload_mbps }}</td>
                                 <td id="uploadMin">--</td>
                                 <td id="uploadAvg">--</td>
                                 <td id="uploadMax">--</td>
@@ -165,7 +165,7 @@
                                 <td id="upload95">--</td>
                             </tr>
                             <tr>
-                                <td>Ping (ms)</td>
+                                <td>{{ t.ping_ms }}</td>
                                 <td id="pingMin">--</td>
                                 <td id="pingAvg">--</td>
                                 <td id="pingMax">--</td>
@@ -173,7 +173,7 @@
                                 <td id="ping95">--</td>
                             </tr>
                             <tr>
-                                <td>Packet Loss (%)</td>
+                                <td>{{ t.packet_loss_percent_label }}</td>
                                 <td id="packetLossMin">--</td>
                                 <td id="packetLossAvg">--</td>
                                 <td id="packetLossMax">--</td>
@@ -189,7 +189,7 @@
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white">
-                <h5 class="card-title mb-0">Performance Distribution</h5>
+                <h5 class="card-title mb-0">{{ t.performance_distribution }}</h5>
             </div>
             <div class="card-body">
                 <div class="chart-container" style="height: 300px;">
@@ -204,7 +204,7 @@
     <div class="col-12">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="card-title mb-0">Raw Data</h5>
+                <h5 class="card-title mb-0">{{ t.raw_data }}</h5>
                 <div class="btn-group btn-group-sm" role="group">
                     <button type="button" class="btn btn-outline-secondary" id="prevPage">
                         <i class="fas fa-chevron-left"></i>
@@ -219,13 +219,13 @@
                     <table class="table table-striped table-hover" id="dataTable">
                         <thead>
                             <tr>
-                                <th>Timestamp</th>
-                                <th>Download (Mbps)</th>
-                                <th>Upload (Mbps)</th>
-                                <th>Ping (ms)</th>
-                                <th>Packet Loss (%)</th>
-                                <th>Server</th>
-                                <th>Performance Index</th>
+                                <th>{{ t.timestamp }}</th>
+                                <th>{{ t.download_mbps }}</th>
+                                <th>{{ t.upload_mbps }}</th>
+                                <th>{{ t.ping_ms }}</th>
+                                <th>{{ t.packet_loss_percent_label }}</th>
+                                <th>{{ t.server }}</th>
+                                <th>{{ t.performance_index }}</th>
                             </tr>
                         </thead>
                         <tbody id="dataBody">
@@ -235,14 +235,14 @@
                 </div>
                 <div class="d-flex justify-content-between align-items-center mt-3">
                     <div>
-                        Showing <span id="startRow">0</span> to <span id="endRow">0</span> of <span id="totalRows">0</span> entries
+                        {{ t.showing }} <span id="startRow">0</span> {{ t.to }} <span id="endRow">0</span> {{ t.of }} <span id="totalRows">0</span> {{ t.entries }}
                     </div>
                     <div>
                         <select class="form-select form-select-sm d-inline-block w-auto" id="rowsPerPage">
-                            <option value="10">10 rows</option>
-                            <option value="25" selected>25 rows</option>
-                            <option value="50">50 rows</option>
-                            <option value="100">100 rows</option>
+                            <option value="10">10 {{ t.rows }}</option>
+                            <option value="25" selected>25 {{ t.rows }}</option>
+                            <option value="50">50 {{ t.rows }}</option>
+                            <option value="100">100 {{ t.rows }}</option>
                         </select>
                     </div>
                 </div>
@@ -256,23 +256,23 @@
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Performance Comparison</h5>
+                <h5 class="modal-title">{{ t.performance_comparison }}</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6>Period 1</h6>
+                        <h6>{{ t.period_1 }}</h6>
                         <div class="mb-3">
-                            <label class="form-label">Date Range</label>
-                            <input type="text" class="form-control" id="period1Range" placeholder="Select date range">
+                            <label class="form-label">{{ t.date_range }}</label>
+                            <input type="text" class="form-control" id="period1Range" placeholder="{{ t.select_date_range }}">
                         </div>
                     </div>
                     <div class="col-md-6">
-                        <h6>Period 2</h6>
+                        <h6>{{ t.period_2 }}</h6>
                         <div class="mb-3">
-                            <label class="form-label">Date Range</label>
-                            <input type="text" class="form-control" id="period2Range" placeholder="Select date range">
+                            <label class="form-label">{{ t.date_range }}</label>
+                            <input type="text" class="form-control" id="period2Range" placeholder="{{ t.select_date_range }}">
                         </div>
                     </div>
                 </div>
@@ -283,8 +283,8 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="runComparison">Compare</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ t.close }}</button>
+                <button type="button" class="btn btn-primary" id="runComparison">{{ t.compare }}</button>
             </div>
         </div>
     </div>
@@ -295,6 +295,7 @@
 <script>
     // Initialize performance page
     document.addEventListener('DOMContentLoaded', function() {
+        const rangeLabels = { '24h': '{{ t.last_24_hours }}', '7d': '{{ t.last_7_days }}', '30d': '{{ t.last_30_days }}' };
         // Set up time range buttons
         document.querySelectorAll('[data-range]').forEach(button => {
             button.addEventListener('click', function() {
@@ -303,7 +304,7 @@
                 });
                 this.classList.add('active');
                 document.getElementById('timeRangeBtn').innerHTML = 
-                    `<i class="fas fa-clock"></i> Last ${this.dataset.range}`;
+                    `<i class=\"fas fa-clock\"></i> ${rangeLabels[this.dataset.range] || rangeLabels['24h']}`;
                 loadData(this.dataset.range);
             });
         });
@@ -425,21 +426,21 @@
             data: {
                 labels: timestamps,
                 datasets: [{
-                    label: 'Download Speed (Mbps)',
+                    label: '{{ t.download_mbps }}',
                     data: downloadSpeeds,
                     borderColor: 'rgb(54, 162, 235)',
                     backgroundColor: currentChartType === 'area' ? 'rgba(54, 162, 235, 0.2)' : 'transparent',
                     tension: 0.1,
                     fill: currentChartType === 'area'
                 }, {
-                    label: 'Upload Speed (Mbps)',
+                    label: '{{ t.upload_mbps }}',
                     data: uploadSpeeds,
                     borderColor: 'rgb(75, 192, 192)',
                     backgroundColor: currentChartType === 'area' ? 'rgba(75, 192, 192, 0.2)' : 'transparent',
                     tension: 0.1,
                     fill: currentChartType === 'area'
                 }, {
-                    label: 'Ping (ms)',
+                    label: '{{ t.ping_ms }}',
                     data: pingTimes,
                     borderColor: 'rgb(255, 99, 132)',
                     backgroundColor: currentChartType === 'area' ? 'rgba(255, 99, 132, 0.2)' : 'transparent',
@@ -447,7 +448,7 @@
                     yAxisID: 'y1',
                     fill: currentChartType === 'area'
                 }, {
-                    label: 'Packet Loss (%)',
+                    label: '{{ t.packet_loss_percent_label }}',
                     data: packetLoss,
                     borderColor: 'rgb(255, 159, 64)',
                     backgroundColor: currentChartType === 'area' ? 'rgba(255, 159, 64, 0.2)' : 'transparent',
@@ -466,7 +467,7 @@
                         position: 'left',
                         title: {
                             display: true,
-                            text: 'Speed (Mbps)'
+                            text: '{{ t.speed_mbps }}'
                         }
                     },
                     y1: {
@@ -475,7 +476,7 @@
                         position: 'right',
                         title: {
                             display: true,
-                            text: 'Ping (ms)'
+                            text: '{{ t.ping_ms }}'
                         },
                         grid: {
                             drawOnChartArea: false
@@ -487,7 +488,7 @@
                         position: 'right',
                         title: {
                             display: true,
-                            text: 'Packet Loss (%)'
+                            text: '{{ t.packet_loss_percent_label }}'
                         },
                         grid: {
                             drawOnChartArea: false
@@ -696,12 +697,12 @@
     
     function exportData(format) {
         // In a real implementation, this would export the data
-        alert(`Exporting data as ${format.toUpperCase()}. In a real implementation, this would download the file.`);
+    alert(`${'{{ t.exporting_data }}'} ${format.toUpperCase()}.`);
     }
     
     function runComparison() {
         // In a real implementation, this would compare two periods
-        alert('Comparing periods. In a real implementation, this would show a comparison chart.');
+    alert('{{ t.comparing_periods }}');
         bootstrap.Modal.getInstance(document.getElementById('compareModal')).hide();
     }
 </script>

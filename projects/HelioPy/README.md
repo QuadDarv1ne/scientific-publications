@@ -22,6 +22,7 @@ HelioPy — это современная библиотека с открыты
   - GOES (XRS)
   - ACE (SWEPAM, MAG)
   - DSCOVR
+  - Helioviewer (много источников данных)
 - **Автоматическая загрузка и кэширование** данных
 - **Единый формат данных** для всех источников
 - **Предобработка данных**: калибровка, нормализация, коррекция искажений
@@ -162,7 +163,30 @@ fig = visualization.plot_solar_image(
 print("Изображение сохранено в sdo_image.png")
 ```
 
-Пример 2: Обнаружение солнечных вспышек
+Пример 2: Загрузка данных с Helioviewer
+
+```python
+from heliopy import load_helioviewer
+
+# Получение списка доступных источников данных
+sources = data_loader.get_helioviewer_sources()
+
+# Загрузка изображения с Helioviewer для определенной даты
+# SDO/AIA 193Å (source_id = 14)
+date = "2023-10-15T12:00:00"
+helio_data = load_helioviewer(date, source_id=14)
+
+# Создание визуализации
+fig = visualization.plot_solar_image(
+    helio_data,
+    title=f"Helioviewer SDO/AIA 193Å - {date}",
+    save_path="helio_image.png"
+)
+
+print("Изображение сохранено в helio_image.png")
+```
+
+Пример 3: Обнаружение солнечных вспышек
 
 ```python
 from heliopy import flare_detector, space_weather
@@ -182,7 +206,7 @@ impact_forecast = space_weather.forecast_geoeffectiveness(flares[-1])
 print(f"\nПрогноз воздействия: {impact_forecast.summary}")
 ```
 
-Пример 3: Отслеживание CME
+Пример 4: Отслеживание CME
 
 ```python
 from heliopy import cme_detector, visualization
@@ -251,6 +275,7 @@ HelioPy/
 │   │   ├── stereo_loader.py         # Данные с STEREO
 │   │   ├── goes_loader.py           # Данные с GOES (вспышки)
 │   │   ├── ace_loader.py            # Данные с ACE (солнечный ветер)
+│   │   ├── helioviewer_loader.py    # Данные с Helioviewer
 │   │   └── omni_loader.py           # Данные из OMNI базы
 │   │
 │   ├── models/
@@ -278,6 +303,7 @@ HelioPy/
 │   ├── basic_usage.ipynb           # Базовые примеры использования
 │   ├── flare_analysis.ipynb        # Анализ солнечных вспышек
 │   ├── cme_tracking.ipynb          # Отслеживание корональных выбросов
+│   ├── helioviewer_usage.ipynb     # Работа с данными Helioviewer
 │   ├── space_weather_forecast.ipynb # Прогноз космической погоды
 │   └── magnetic_field_modeling.ipynb # Моделирование магнитных полей
 │

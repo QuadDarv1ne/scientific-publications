@@ -13,4 +13,5 @@ tqdm>=4.60.0
 requests>=2.25.0
 beautifulsoup4>=4.9.0
 PyYAML>=5.4.0
+hvpy>=0.1.0
 

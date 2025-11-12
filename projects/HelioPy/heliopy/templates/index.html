@@ -24,6 +24,7 @@
         <nav role="navigation" aria-label="{{ t.nav_label_main }}">
             <a href="{{ url_for('analysis') }}" aria-current="{{ 'page' if request.endpoint == 'analysis' else 'false' }}">{{ t.nav_analysis }}</a>
             <a href="{{ url_for('visualization') }}" aria-current="{{ 'page' if request.endpoint == 'visualization' else 'false' }}">{{ t.nav_visualization }}</a>
+            <a href="{{ url_for('helioviewer') }}" aria-current="{{ 'page' if request.endpoint == 'helioviewer' else 'false' }}">Helioviewer</a>
             <a href="{{ url_for('api_docs') }}" aria-current="{{ 'page' if request.endpoint == 'api_docs' else 'false' }}">{{ t.nav_api_docs }}</a>
             <a href="{{ url_for('about') }}" aria-current="{{ 'page' if request.endpoint == 'about' else 'false' }}">{{ t.nav_about }}</a>
             <span class="spacer"></span>

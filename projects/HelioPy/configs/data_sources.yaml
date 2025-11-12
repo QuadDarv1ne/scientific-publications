@@ -16,3 +16,7 @@ ace:
   base_url: "https://www.swpc.noaa.gov/products/ace-real-time-solar-wind"
   cache_dir: "ace"
 
+helioviewer:
+  base_url: "https://api.helioviewer.org/v2/"
+  cache_dir: "helioviewer"
+

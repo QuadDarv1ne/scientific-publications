@@ -45,4 +45,6 @@
   ,"switch_lang_ru": "Переключить язык интерфейса на русский"
   ,"external_link_hint": "откроется в новой вкладке"
   ,"chart_container_label": "Интерактивный график временного ряда"
+  ,"helioviewer_title": "Helioviewer"
+  ,"helioviewer_desc": "Данные солнечных наблюдений с Helioviewer API"
 }

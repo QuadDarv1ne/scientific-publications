@@ -18,6 +18,7 @@ import heliopy
 from heliopy.events.flare_detector import FlareDetector
 from heliopy.utils.time_utils import TimeUtils
 from heliopy.utils.math_utils import MathUtils
+from heliopy.core.data_loader import DataLoader
 
 BASE_DIR = Path(__file__).parent
 # Определяем путь к шаблонам и статике внутри установленного пакета
@@ -78,6 +79,11 @@ def analysis():
 @app.route("/visualization")
 def visualization():
     return render_template("visualization.html")
+
+
+@app.route("/helioviewer")
+def helioviewer():
+    return render_template("helioviewer.html")
 
 
 @app.route("/api-docs")
@@ -172,11 +178,43 @@ def api_coords_convert():
     """
     try:
         data = request.get_json(force=True, silent=True) or {}
-        r = float(data.get("r"))
-        theta = float(data.get("theta"))
-        phi = float(data.get("phi"))
+        r = float(data.get("r", 0))
+        theta = float(data.get("theta", 0))
+        phi = float(data.get("phi", 0))
         x, y, z = MathUtils.spherical_to_cartesian(r, theta, phi)
         return jsonify({"x": x, "y": y, "z": z})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+
+@app.route("/api/helioviewer/sources")
+def api_helioviewer_sources():
+    """Получение списка доступных источников данных Helioviewer."""
+    try:
+        # В реальной реализации здесь будет загрузка данных
+        # Для демонстрации возвращаем структуру данных
+        sources = {
+            "SDO": {
+                "AIA": {
+                    "193Å": {"source_id": 14},
+                    "171Å": {"source_id": 13},
+                    "211Å": {"source_id": 15},
+                    "304Å": {"source_id": 16},
+                    "1600Å": {"source_id": 17},
+                    "1700Å": {"source_id": 18},
+                    "4500Å": {"source_id": 19},
+                }
+            },
+            "SOHO": {
+                "EIT": {
+                    "171Å": {"source_id": 6},
+                    "195Å": {"source_id": 7},
+                    "284Å": {"source_id": 8},
+                    "304Å": {"source_id": 9},
+                }
+            }
+        }
+        return jsonify(sources)
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 

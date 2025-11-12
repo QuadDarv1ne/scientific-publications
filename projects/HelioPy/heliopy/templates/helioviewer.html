@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="{{ 'en' if lang_code not in ['en','ru'] else lang_code }}">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ t.app_name }} — Helioviewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Helioviewer solar data visualization">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+</head>
+<body>
+    <a href="#main" class="skip-link">{{ t.skip_to_content }}</a>
+    <div class="container">
+        <h1>Helioviewer Data</h1>
+        <div class="desc">Visualization of solar data from Helioviewer API</div>
+        <nav role="navigation" aria-label="{{ t.nav_label_main }}">
+            <a href="{{ url_for('index') }}" aria-current="{{ 'page' if request.endpoint == 'index' else 'false' }}">{{ t.index_title }}</a>
+            <span class="spacer"></span>
+            <a class="button" href="{{ url_for('set_lang', lang='en') }}" aria-label="{{ t.switch_lang_en }}">{{ t.lang_en }}</a>
+            <a class="button" href="{{ url_for('set_lang', lang='ru') }}" aria-label="{{ t.switch_lang_ru }}">{{ t.lang_ru }}</a>
+        </nav>
+        <main id="main" tabindex="-1">
+            <div class="card">
+                <h2>Available Data Sources</h2>
+                <div id="sources" class="sources-list">
+                    <p>Loading data sources...</p>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h2>Solar Image Visualization</h2>
+                <div id="image-container" class="image-container">
+                    <p>Select a data source to load an image.</p>
+                </div>
+            </div>
+        </main>
+        <div class="back">
+            <a href="/">{{ t.back_home }}</a>
+        </div>
+    </div>
+    
+    <script>
+    async function loadSources() {
+        try {
+            const res = await fetch('/api/helioviewer/sources');
+            const sources = await res.json();
+            const container = document.getElementById('sources');
+            
+            let html = '<div class="sources-grid">';
+            for (const obs in sources) {
+                html += `<h3>${obs}</h3>`;
+                for (const inst in sources[obs]) {
+                    html += `<h4>${inst}</h4><ul>`;
+                    for (const wave in sources[obs][inst]) {
+                        const info = sources[obs][inst][wave];
+                        html += `<li><button onclick="loadImage(${info.source_id})">${wave} (ID: ${info.source_id})</button></li>`;
+                    }
+                    html += '</ul>';
+                }
+            }
+            html += '</div>';
+            
+            container.innerHTML = html;
+        } catch (e) {
+            document.getElementById('sources').innerHTML = '<p>Error loading data sources: ' + String(e) + '</p>';
+        }
+    }
+    
+    async function loadImage(sourceId) {
+        try {
+            const container = document.getElementById('image-container');
+            container.innerHTML = '<p>Loading image...</p>';
+            
+            // In a real implementation, this would fetch actual image data
+            container.innerHTML = `
+                <div class="image-placeholder">
+                    <p>Solar image from Helioviewer (Source ID: ${sourceId})</p>
+                    <div class="placeholder-image">
+                        <div class="sun-circle"></div>
+                    </div>
+                    <p class="image-info">Date: 2023-10-15 | Instrument: AIA | Wavelength: ${getWavelength(sourceId)}Å</p>
+                </div>
+            `;
+        } catch (e) {
+            document.getElementById('image-container').innerHTML = '<p>Error loading image: ' + String(e) + '</p>';
+        }
+    }
+    
+    function getWavelength(sourceId) {
+        const wavelengths = {
+            14: '193',
+            13: '171',
+            15: '211',
+            16: '304',
+            17: '1600',
+            18: '1700',
+            19: '4500'
+        };
+        return wavelengths[sourceId] || 'Unknown';
+    }
+    
+    window.addEventListener('DOMContentLoaded', loadSources);
+    </script>
+    
+    <style>
+    .sources-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 20px;
+    }
+    
+    .sources-grid h3, .sources-grid h4 {
+        margin: 5px 0;
+    }
+    
+    .sources-grid ul {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .sources-grid li {
+        margin: 5px 0;
+    }
+    
+    .sources-grid button {
+        background: #1976d2;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .sources-grid button:hover {
+        background: #1565c0;
+    }
+    
+    .image-container {
+        text-align: center;
+    }
+    
+    .placeholder-image {
+        width: 400px;
+        height: 400px;
+        margin: 20px auto;
+        background: #000;
+        border-radius: 50%;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .sun-circle {
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, #ffeb3b 0%, #ff9800 70%, #000 100%);
+        border-radius: 50%;
+    }
+    
+    .image-info {
+        font-style: italic;
+        color: #666;
+    }
+    </style>
+</body>
+</html>

@@ -53,6 +53,7 @@ HelioPy предоставляет инструменты для:
    installation
    quickstart
    examples
+   helioviewer
 
 .. toctree::
    :maxdepth: 2

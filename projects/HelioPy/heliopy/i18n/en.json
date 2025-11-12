@@ -45,4 +45,6 @@
   ,"switch_lang_ru": "Переключить язык интерфейса на русский"
   ,"external_link_hint": "opens in a new tab"
   ,"chart_container_label": "Interactive time series chart"
+  ,"helioviewer_title": "Helioviewer"
+  ,"helioviewer_desc": "Solar observation data from Helioviewer API"
 }

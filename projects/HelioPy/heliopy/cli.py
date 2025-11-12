@@ -14,6 +14,41 @@ def cmd_info(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_helioviewer(args: argparse.Namespace) -> int:
+    print("Helioviewer data sources:")
+    # В реальной реализации здесь будет загрузка данных
+    # Для демонстрации выводим структуру данных
+    sources = {
+        "SDO": {
+            "AIA": {
+                "193Å": {"source_id": 14},
+                "171Å": {"source_id": 13},
+                "211Å": {"source_id": 15},
+                "304Å": {"source_id": 16},
+                "1600Å": {"source_id": 17},
+                "1700Å": {"source_id": 18},
+                "4500Å": {"source_id": 19},
+            }
+        },
+        "SOHO": {
+            "EIT": {
+                "171Å": {"source_id": 6},
+                "195Å": {"source_id": 7},
+                "284Å": {"source_id": 8},
+                "304Å": {"source_id": 9},
+            }
+        }
+    }
+    
+    for observatory, instruments in sources.items():
+        print(f"  {observatory}:")
+        for instrument, wavelengths in instruments.items():
+            print(f"    {instrument}:")
+            for wavelength, info in wavelengths.items():
+                print(f"      {wavelength} (ID: {info['source_id']})")
+    return 0
+
+
 def cmd_analyze(args: argparse.Namespace) -> int:
     # Демонстрационный анализ: вычислим номер вращения Кэррингтона и преобразования координат
     when = args.time or datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -55,6 +90,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_web.add_argument("--port", type=int, default=5000, help="Порт для Flask (по умолчанию 5000)")
     p_web.add_argument("--debug", action="store_true", help="Включить режим отладки")
     p_web.set_defaults(func=cmd_web)
+    
+    p_helio = sub.add_parser("helioviewer", help="Показать доступные источники данных Helioviewer")
+    p_helio.set_defaults(func=cmd_helioviewer)
 
     return parser
 
