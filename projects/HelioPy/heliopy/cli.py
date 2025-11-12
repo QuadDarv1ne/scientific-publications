@@ -49,6 +49,17 @@ def cmd_helioviewer(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_psp(args: argparse.Namespace) -> int:
+    print("Parker Solar Probe data types:")
+    print("  SWEAP (Solar Wind Electrons Alphas and Protons):")
+    print("    - spc: Solar Probe Cup (плазма солнечного ветра)")
+    print("    - spe: Solar Probe Electrons (электроны)")
+    print("  FIELDS (электромагнитные поля):")
+    print("    - mag_rtn: Магнитное поле в координатах RTN")
+    print("    - mag_sc: Магнитное поле в координатах космического аппарата")
+    return 0
+
+
 def cmd_analyze(args: argparse.Namespace) -> int:
     # Демонстрационный анализ: вычислим номер вращения Кэррингтона и преобразования координат
     when = args.time or datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -93,6 +104,9 @@ def build_parser() -> argparse.ArgumentParser:
     
     p_helio = sub.add_parser("helioviewer", help="Показать доступные источники данных Helioviewer")
     p_helio.set_defaults(func=cmd_helioviewer)
+    
+    p_psp = sub.add_parser("psp", help="Показать доступные типы данных Parker Solar Probe")
+    p_psp.set_defaults(func=cmd_psp)
 
     return parser
 

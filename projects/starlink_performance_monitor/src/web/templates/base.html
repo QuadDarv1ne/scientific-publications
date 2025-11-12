@@ -128,6 +128,9 @@
             * { animation: none !important; transition: none !important; }
             body { opacity: 1; }
         }
+
+        /* Ensure dropdowns appear above map and other layered content */
+        .dropdown-menu { z-index: 2000; }
     </style>
 </head>
 <body>
@@ -310,6 +313,14 @@
         }
         window.addEventListener('resize', syncInitialState);
         document.addEventListener('DOMContentLoaded', syncInitialState);
+
+        // Initialize all Bootstrap dropdowns defensively
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+            toggles.forEach(function(el){
+                try { bootstrap.Dropdown.getOrCreateInstance(el); } catch (e) {}
+            });
+        });
     </script>
 </body>
 </html>

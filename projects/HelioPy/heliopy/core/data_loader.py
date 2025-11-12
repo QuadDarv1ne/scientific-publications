@@ -6,6 +6,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional, Union
 
+import pandas as pd
+
 from heliopy.data_sources.ace_loader import ACELoader
 from heliopy.data_sources.goes_loader import GOESLoader
 from heliopy.data_sources.helioviewer_loader import HelioviewerLoader
@@ -37,6 +39,7 @@ class DataLoader:
         self.goes_loader = GOESLoader(cache_dir=self.cache_dir)
         self.ace_loader = ACELoader(cache_dir=self.cache_dir)
         self.helioviewer_loader = HelioviewerLoader(cache_dir=self.cache_dir)
+        self.psp_loader = PSPLoader(cache_dir=self.cache_dir)
 
     def load_sdo_aia(self, date: Union[str, datetime], wavelength: int, **kwargs) -> "SolarImage":
         """
@@ -171,6 +174,50 @@ class DataLoader:
         """
         return self.helioviewer_loader.get_data_sources()
 
+    def load_psp_sweap(
+        self, date: Union[str, datetime], data_type: str = "spc", **kwargs
+    ) -> pd.DataFrame:
+        """
+        Load PSP SWEAP data.
+
+        Parameters
+        ----------
+        date : str or datetime
+            Observation date.
+        data_type : str
+            Data type ('spc' or 'spe').
+        **kwargs
+            Additional parameters.
+
+        Returns
+        -------
+        DataFrame
+            SWEAP data.
+        """
+        return self.psp_loader.load_sweap(date, data_type, **kwargs)
+
+    def load_psp_fld(
+        self, date: Union[str, datetime], data_type: str = "mag_rtn", **kwargs
+    ) -> pd.DataFrame:
+        """
+        Load PSP FIELDS data.
+
+        Parameters
+        ----------
+        date : str or datetime
+            Observation date.
+        data_type : str
+            Data type ('mag_rtn' or 'mag_sc').
+        **kwargs
+            Additional parameters.
+
+        Returns
+        -------
+        DataFrame
+            FIELDS data.
+        """
+        return self.psp_loader.load_fld(date, data_type, **kwargs)
+
 
 # Convenience functions (as in README)
 def load_sdo_aia(date: Union[str, datetime], wavelength: int, **kwargs):
@@ -194,3 +241,13 @@ def load_helioviewer(date: Union[str, datetime], source_id: int = 14, **kwargs):
     """Convenience function for loading Helioviewer data."""
     loader = DataLoader()
     return loader.load_helioviewer(date, source_id, **kwargs)
+
+def load_psp_sweap(date: Union[str, datetime], data_type: str = "spc", **kwargs):
+    """Convenience function for loading PSP SWEAP data."""
+    loader = DataLoader()
+    return loader.load_psp_sweap(date, data_type, **kwargs)
+
+def load_psp_fld(date: Union[str, datetime], data_type: str = "mag_rtn", **kwargs):
+    """Convenience function for loading PSP FIELDS data."""
+    loader = DataLoader()
+    return loader.load_psp_fld(date, data_type, **kwargs)

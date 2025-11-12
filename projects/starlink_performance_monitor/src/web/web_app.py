@@ -382,6 +382,8 @@ LANGUAGES = {
         'active_satellite': 'Active Satellite',
         'inactive_satellite': 'Inactive Satellite',
         'moving_satellite': 'Moving Satellite',
+    'legend': 'Legend',
+    'close': 'Close',
 
         # Settings extras
         'timezone_utc': 'UTC',
@@ -738,6 +740,8 @@ LANGUAGES = {
     'active_satellite': 'Активный спутник',
     'inactive_satellite': 'Неактивный спутник',
     'moving_satellite': 'Движущийся спутник',
+    'legend': 'Легенда',
+    'close': 'Закрыть',
 
     # Settings extras
     'timezone_utc': 'UTC',

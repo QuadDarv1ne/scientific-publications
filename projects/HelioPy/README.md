@@ -23,6 +23,7 @@ HelioPy — это современная библиотека с открыты
   - ACE (SWEPAM, MAG)
   - DSCOVR
   - Helioviewer (много источников данных)
+  - Parker Solar Probe (SWEAP, FIELDS)
 - **Автоматическая загрузка и кэширование** данных
 - **Единый формат данных** для всех источников
 - **Предобработка данных**: калибровка, нормализация, коррекция искажений
@@ -206,7 +207,24 @@ impact_forecast = space_weather.forecast_geoeffectiveness(flares[-1])
 print(f"\nПрогноз воздействия: {impact_forecast.summary}")
 ```
 
-Пример 4: Отслеживание CME
+Пример 4: Анализ данных Parker Solar Probe
+
+```python
+from heliopy import load_psp_sweap, load_psp_fld
+
+# Загрузка данных солнечного ветра
+sweap_data = load_psp_sweap("2023-10-15", data_type="spc")
+
+# Загрузка магнитного поля
+fld_data = load_psp_fld("2023-10-15", data_type="mag_rtn")
+
+# Анализ параметров солнечного ветра
+print(f"Средняя плотность: {sweap_data['density'].mean():.2f} частиц/см³")
+print(f"Средняя скорость: {sweap_data['velocity'].mean():.2f} км/с")
+print(f"Среднее магнитное поле: {fld_data['Btot'].mean():.2f} нТл")
+```
+
+Пример 5: Отслеживание CME
 
 ```python
 from heliopy import cme_detector, visualization
@@ -276,6 +294,7 @@ HelioPy/
 │   │   ├── goes_loader.py           # Данные с GOES (вспышки)
 │   │   ├── ace_loader.py            # Данные с ACE (солнечный ветер)
 │   │   ├── helioviewer_loader.py    # Данные с Helioviewer
+│   │   ├── psp_loader.py            # Данные с Parker Solar Probe
 │   │   └── omni_loader.py           # Данные из OMNI базы
 │   │
 │   ├── models/
@@ -304,6 +323,7 @@ HelioPy/
 │   ├── flare_analysis.ipynb        # Анализ солнечных вспышек
 │   ├── cme_tracking.ipynb          # Отслеживание корональных выбросов
 │   ├── helioviewer_usage.ipynb     # Работа с данными Helioviewer
+│   ├── psp_data_analysis.ipynb     # Анализ данных Parker Solar Probe
 │   ├── space_weather_forecast.ipynb # Прогноз космической погоды
 │   └── magnetic_field_modeling.ipynb # Моделирование магнитных полей
 │
