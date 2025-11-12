@@ -375,7 +375,27 @@ LANGUAGES = {
         'moving_satellites': 'Moving',
         'in_coverage': 'In Coverage',
         'switched_to_2d': 'Switched to 2D map view',
-        'switched_to_3d': 'Switched to 3D globe view'
+        'switched_to_3d': 'Switched to 3D globe view',
+        'initialized_success': 'initialized successfully',
+        'data_loaded_success': 'data loaded successfully',
+        'error_loading_satellite_data': 'Error loading satellite data',
+        'active_satellite': 'Active Satellite',
+        'inactive_satellite': 'Inactive Satellite',
+        'moving_satellite': 'Moving Satellite',
+
+        # Settings extras
+        'timezone_utc': 'UTC',
+        'timezone_eastern': 'Eastern Time (US & Canada)',
+        'timezone_london': 'London',
+        'timezone_tokyo': 'Tokyo',
+        'timezone_moscow': 'Moscow',
+        'sqlite_embedded': 'SQLite (Embedded)',
+        'postgresql': 'PostgreSQL',
+        'mysql': 'MySQL',
+        'placeholder_bot_token': 'YOUR_BOT_TOKEN_HERE',
+        'placeholder_chat_id': 'YOUR_CHAT_ID_HERE',
+        'smtp_placeholder': 'smtp.gmail.com',
+        'email_placeholder': 'your.email@gmail.com'
     },
     'ru': {
         'dashboard': 'Панель управления',
@@ -711,7 +731,27 @@ LANGUAGES = {
     'moving_satellites': 'Движение',
     'in_coverage': 'В зоне покрытия',
     'switched_to_2d': 'Переключено на 2D карту',
-    'switched_to_3d': 'Переключено на 3D глобус'
+    'switched_to_3d': 'Переключено на 3D глобус',
+    'initialized_success': 'успешно инициализирована',
+    'data_loaded_success': 'данные успешно загружены',
+    'error_loading_satellite_data': 'Ошибка загрузки данных спутников',
+    'active_satellite': 'Активный спутник',
+    'inactive_satellite': 'Неактивный спутник',
+    'moving_satellite': 'Движущийся спутник',
+
+    # Settings extras
+    'timezone_utc': 'UTC',
+    'timezone_eastern': 'Североамериканское восточное время',
+    'timezone_london': 'Лондон',
+    'timezone_tokyo': 'Токио',
+    'timezone_moscow': 'Москва',
+    'sqlite_embedded': 'SQLite (встроенная)',
+    'postgresql': 'PostgreSQL',
+    'mysql': 'MySQL',
+    'placeholder_bot_token': 'ВАШ_ТОКЕН_БОТА_ЗДЕСЬ',
+    'placeholder_chat_id': 'ВАШ_CHAT_ID_ЗДЕСЬ',
+    'smtp_placeholder': 'smtp.gmail.com',
+    'email_placeholder': 'your.email@gmail.com'
     }
 }
 

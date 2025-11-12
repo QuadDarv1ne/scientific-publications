@@ -119,8 +119,8 @@
                 </div>
                 <div class="mt-3">
                     <h6>{{ t.constellation_health }}</h6>
-                    <div class="progress" style="height: 20px;">
-                        <div class="progress-bar bg-success" role="progressbar" id="healthProgress" style="width: 0%">0%</div>
+                    <div class="progress const-health-progress">
+                        <div class="progress-bar bg-success" role="progressbar" id="healthProgress" aria-label="{{ t.constellation_health }}">0%</div>
                     </div>
                 </div>
             </div>
@@ -185,22 +185,22 @@
             div.innerHTML = `
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #007bff;"></div>
-                    <span>Active Satellite</span>
+                    <span>{{ t.active_satellite }}</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #dc3545;"></div>
-                    <span>Inactive Satellite</span>
+                    <span>{{ t.inactive_satellite }}</span>
                 </div>
                 <div class="legend-item">
                     <div class="legend-color" style="background-color: #28a745;"></div>
-                    <span>Moving Satellite</span>
+                    <span>{{ t.moving_satellite }}</span>
                 </div>
             `;
             return div;
         };
         legend.addTo(map);
         
-    updateStatus('{{ t.satellite_map }} {{ t.initialized_success|default("initialized successfully") }}', 'success');
+    updateStatus('{{ t.satellite_map }} {{ t.initialized_success }}', 'success');
     }
     
     // Load satellite data
@@ -221,10 +221,10 @@
             // Update network statistics
             updateNetworkStats(satelliteData);
             
-            updateStatus('{{ t.satellite_map }} {{ t.data_loaded_success|default("data loaded successfully") }}', 'success');
+            updateStatus('{{ t.satellite_map }} {{ t.data_loaded_success }}', 'success');
         } catch (error) {
             console.error('Error loading satellite data:', error);
-            updateStatus('{{ t.error_loading_satellite_data|default("Error loading satellite data") }}', 'danger');
+            updateStatus('{{ t.error_loading_satellite_data }}', 'danger');
         }
     }
     
@@ -321,9 +321,9 @@
                 <td>${satellite.speed.toFixed(2)}</td>
                 <td>
                     <span class="badge ${satellite.status === 'active' ? 'bg-success' : 'bg-danger'}">
-                        ${satellite.status}
+                        ${satellite.status === 'active' ? '{{ t.active_satellite }}' : '{{ t.inactive_satellite }}'}
                     </span>
-                    ${satellite.moving ? '<span class="badge bg-info ms-1">Moving</span>' : ''}
+                    ${satellite.moving ? '<span class="badge bg-info ms-1">{{ t.moving_satellite }}</span>' : ''}
                 </td>
             `;
             tbody.appendChild(row);

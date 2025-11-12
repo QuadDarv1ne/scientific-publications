@@ -67,11 +67,11 @@
                         <div class="mb-4">
                             <label for="timezone" class="form-label fw-bold">{{ t.timezone }}</label>
                             <select class="form-select" id="timezone">
-                                <option value="UTC">UTC</option>
-                                <option value="America/New_York">Eastern Time (US & Canada)</option>
-                                <option value="Europe/London">London</option>
-                                <option value="Asia/Tokyo">Tokyo</option>
-                                <option value="Europe/Moscow" selected>Moscow</option>
+                                <option value="UTC">{{ t.timezone_utc }}</option>
+                                <option value="America/New_York">{{ t.timezone_eastern }}</option>
+                                <option value="Europe/London">{{ t.timezone_london }}</option>
+                                <option value="Asia/Tokyo">{{ t.timezone_tokyo }}</option>
+                                <option value="Europe/Moscow" selected>{{ t.timezone_moscow }}</option>
                             </select>
                         </div>
                         <div class="mb-4">
@@ -169,11 +169,11 @@
                             </div>
                             <div class="mb-3">
                                 <label for="telegramBotToken" class="form-label">{{ t.bot_token }}</label>
-                                <input type="password" class="form-control" id="telegramBotToken" value="YOUR_BOT_TOKEN_HERE">
+                                <input type="password" class="form-control" id="telegramBotToken" value="{{ t.placeholder_bot_token }}">
                             </div>
                             <div class="mb-3">
                                 <label for="telegramChatId" class="form-label">{{ t.chat_id }}</label>
-                                <input type="text" class="form-control" id="telegramChatId" value="YOUR_CHAT_ID_HERE">
+                                <input type="text" class="form-control" id="telegramChatId" value="{{ t.placeholder_chat_id }}">
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -196,7 +196,7 @@
                             </div>
                             <div class="mb-3">
                                 <label for="smtpServer" class="form-label">{{ t.smtp_server }}</label>
-                                <input type="text" class="form-control" id="smtpServer" placeholder="smtp.gmail.com">
+                                <input type="text" class="form-control" id="smtpServer" placeholder="{{ t.smtp_placeholder }}">
                             </div>
                             <div class="row g-3">
                                 <div class="col-md-6">
@@ -205,7 +205,7 @@
                                 </div>
                                 <div class="col-md-6">
                                     <label for="smtpUsername" class="form-label">{{ t.username }}</label>
-                                    <input type="text" class="form-control" id="smtpUsername" placeholder="your.email@gmail.com">
+                                    <input type="text" class="form-control" id="smtpUsername" placeholder="{{ t.email_placeholder }}">
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -227,9 +227,9 @@
                         <div class="mb-4">
                             <label for="dbType" class="form-label fw-bold">{{ t.database_type }}</label>
                             <select class="form-select" id="dbType">
-                                <option value="sqlite" selected>SQLite (Embedded)</option>
-                                <option value="postgresql">PostgreSQL</option>
-                                <option value="mysql">MySQL</option>
+                                <option value="sqlite" selected>{{ t.sqlite_embedded }}</option>
+                                <option value="postgresql">{{ t.postgresql }}</option>
+                                <option value="mysql">{{ t.mysql }}</option>
                             </select>
                         </div>
                         <div id="dbConfigFields">
@@ -407,7 +407,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">{{ t.reset_defaults }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t.close }}"></button>
             </div>
             <div class="modal-body">
                 <p>{{ t.reset_confirmation }}</p>
@@ -432,7 +432,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title">{{ t.add_new_user }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ t.close }}"></button>
             </div>
             <div class="modal-body">
                 <form>
