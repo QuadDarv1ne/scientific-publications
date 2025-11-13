@@ -119,6 +119,12 @@
 
   [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17602154.svg)](https://doi.org/10.5281/zenodo.17602154)
 
+  ![fig2_radar_components](<papers/THE IMPACT OF AI ASSISTANTS ON STUDENTS' METACOGNITIVE SKILLS/img/ai_metacog_fig2_radar_components.png>)
+
+  ![fig4_ai_perception](<papers/THE IMPACT OF AI ASSISTANTS ON STUDENTS' METACOGNITIVE SKILLS/img/ai_metacog_fig4_ai_perception.png>)
+
+  ![fig5_correlation_scatter](<papers/THE IMPACT OF AI ASSISTANTS ON STUDENTS' METACOGNITIVE SKILLS/img/ai_metacog_fig5_correlation_scatter.png>)
+
   *Массовое внедрение AI-ассистентов (GitHub Copilot, ChatGPT) в учебные процессы трансформирует методику обучения программированию, однако их влияние на формирование метакогнитивных навыков (планирование, мониторинг, рефлексия) остаётся недостаточно изученным.*
 
   **Цель исследования** — количественно и качественно оценить, как использование AI-инструментов влияет на развитие метакогнитивной самостоятельности студентов технических вузов.
