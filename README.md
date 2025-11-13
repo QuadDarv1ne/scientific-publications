@@ -117,7 +117,7 @@
 
   *THE IMPACT OF AI ASSISTANTS ON STUDENTS' METACOGNITIVE SKILLS IN SOLVING PROGRAMMING PROBLEMS*
 
-  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17602154.svg)](https://doi.org/10.5281/zenodo.17602154)
+  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17603809.svg)](https://doi.org/10.5281/zenodo.17603809)
 
   ![fig2_radar_components](<papers/THE IMPACT OF AI ASSISTANTS ON STUDENTS' METACOGNITIVE SKILLS/img/ai_metacog_fig2_radar_components.png>)
 
