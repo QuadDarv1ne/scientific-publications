@@ -34,6 +34,22 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 from src.utils.logging_config import setup_logging, get_logger
 from src.utils.weather_data import WeatherDataCollector
 
+# ============= КОНСТАНТЫ =============
+DEFAULT_MONITORING_INTERVAL_MIN = 15
+DEFAULT_PING_TIMEOUT_SEC = 3
+DEFAULT_PING_COUNT = 10
+DEFAULT_PING_INTERVAL_SEC = 0.1
+RETRY_DELAY_SEC = 60
+WEATHER_COLLECTION_CYCLE_INTERVAL = 6  # Каждый 6-й цикл
+MBPS_CONVERSION_FACTOR = 1_000_000
+MS_CONVERSION_FACTOR = 1000
+
+# Сервера по умолчанию для ping-тестов
+DEFAULT_PING_SERVERS = [
+    {'host': '8.8.8.8', 'name': 'Google DNS'},
+    {'host': '1.1.1.1', 'name': 'Cloudflare'}
+]
+
 # Configure logging
 setup_logging(config_file=os.path.join(os.path.dirname(__file__), '..', 'utils', 'logging_config.json'))
 logger = get_logger(__name__)
@@ -41,14 +57,28 @@ logger = get_logger(__name__)
 # PerformanceMetric class is now imported from src.database.models
 
 class StarlinkMonitor:
-    """Main Starlink performance monitoring class"""
+    """
+    Основной класс мониторинга производительности Starlink.
     
-    def __init__(self, config_path: str = "config.json"):
+    Выполняет сбор метрик производительности (speedtest, ping, packet loss)
+    и сохраняет их в базу данных.
+    
+    Attributes:
+        config: Конфигурация приложения
+        db_manager: Менеджер базы данных
+        db_engine: SQLAlchemy engine
+        weather_collector: Сборщик данных о погоде
+    """
+    
+    def __init__(self, config_path: str = "config.json") -> None:
         """
-        Initialize the monitor with configuration.
+        Инициализация монитора с конфигурацией.
         
         Args:
-            config_path: Path to configuration file
+            config_path: Путь к файлу конфигурации
+        
+        Raises:
+            FileNotFoundError: Если файл конфигурации не найден
         """
         self.config = self._load_config(config_path)
         self.db_manager = get_database_manager(config_path)
@@ -82,11 +112,11 @@ class StarlinkMonitor:
             st.get_best_server()
             
             # Run download test
-            download_speed = st.download() / 1_000_000  # Convert to Mbps
+            download_speed = st.download() / MBPS_CONVERSION_FACTOR  # Convert to Mbps
             logger.info(f"Download speed: {download_speed:.2f} Mbps")
             
             # Run upload test
-            upload_speed = st.upload() / 1_000_000  # Convert to Mbps
+            upload_speed = st.upload() / MBPS_CONVERSION_FACTOR  # Convert to Mbps
             logger.info(f"Upload speed: {upload_speed:.2f} Mbps")
             
             # Get ping
@@ -142,12 +172,12 @@ class StarlinkMonitor:
         
         for i in range(count):
             try:
-                delay = ping3.ping(host, timeout=3)
+                delay = ping3.ping(host, timeout=DEFAULT_PING_TIMEOUT_SEC)
                 if delay is not None:
                     successful_pings += 1
-                    total_time += delay * 1000  # Convert to ms
-                    ping_times.append(delay * 1000)
-                time.sleep(0.1)  # Small delay between pings
+                    total_time += delay * MS_CONVERSION_FACTOR  # Convert to ms
+                    ping_times.append(delay * MS_CONVERSION_FACTOR)
+                time.sleep(DEFAULT_PING_INTERVAL_SEC)  # Small delay between pings
             except ping3.PingError as e:
                 logger.warning(f"Ping {i+1} failed with ping3 error: {e}")
             except Exception as e:
@@ -179,10 +209,7 @@ class StarlinkMonitor:
             speed_results = self.run_speedtest()
             
             # Run ping tests to multiple servers
-            ping_servers = self.config.get('monitoring', {}).get('starlink', {}).get('servers', [
-                {'host': '8.8.8.8', 'name': 'Google DNS'},
-                {'host': '1.1.1.1', 'name': 'Cloudflare'}
-            ])
+            ping_servers = self.config.get('monitoring', {}).get('starlink', {}).get('servers', DEFAULT_PING_SERVERS)
             
             ping_results = {}
             for server in ping_servers:
@@ -292,12 +319,12 @@ class StarlinkMonitor:
         else:
             self._cycle_count = 1
             
-        if self._cycle_count % 6 == 0:  # Every 6th cycle
+        if self._cycle_count % WEATHER_COLLECTION_CYCLE_INTERVAL == 0:  # Every 6th cycle
             self._collect_weather_data()
         
         logger.info("Monitoring cycle completed")
         
-    def run_continuous_monitoring(self, interval_minutes: int = 15):
+    def run_continuous_monitoring(self, interval_minutes: int = DEFAULT_MONITORING_INTERVAL_MIN):
         """
         Run continuous monitoring.
         
@@ -315,13 +342,18 @@ class StarlinkMonitor:
                 break
             except Exception as e:
                 logger.error(f"Error in monitoring cycle: {e}")
-                time.sleep(60)  # Wait 1 minute before retrying
+                time.sleep(RETRY_DELAY_SEC)  # Wait before retrying
 
-def main():
-    """Main entry point for the application."""
+def main() -> int:-> int:
+    """
+    Главная точка входа приложения.
+    
+    Returns:
+        int: Код завершения (0 - успешно, 1 - ошибка)
+    """
     parser = argparse.ArgumentParser(description='Starlink Performance Monitor')
     parser.add_argument('--config', default='config.json', help='Configuration file path')
-    parser.add_argument('--interval', type=int, default=15, help='Monitoring interval in minutes')
+    parser.add_argument('--interval', type=int, default=DEFAULT_MONITORING_INTERVAL_MIN, help='Monitoring interval in minutes')
     parser.add_argument('--once', action='store_true', help='Run only one monitoring cycle')
     
     args = parser.parse_args()
