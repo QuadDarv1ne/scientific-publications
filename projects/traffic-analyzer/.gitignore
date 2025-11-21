@@ -1,20 +1,77 @@
-__pycache__
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+myenv/
+venv/
+env/
+ENV/
+**env**/
+
+# Jupyter Notebook
 .ipynb_checkpoints
-drafts
-logs
-test_videos/videos_extra
-**.engine
-**.mp4
-videos_out
+*.ipynb
 test.ipynb
-myenv
-web.py
-**env**
-test.ipynb
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project specific
+drafts/
+logs/
+test_videos/videos_extra/
+test_videos/videos_out/
+videos_out/
+*.engine
+*.mp4
+*.avi
+*.mov
+
+# Environment and secrets
 .env
+.env.local
 secrets.txt
-services/pg_data_wh
-services/grafana/alerting/1
-services/grafana/plugins
-services/triton
-services/influxdb_data
+
+# Docker volumes and services data
+services/pg_data_wh/
+services/grafana/alerting/1/
+services/grafana/plugins/
+services/triton/
+services/influxdb_data/
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+web.py
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Backups
+*_OLD.md
+*.backup
