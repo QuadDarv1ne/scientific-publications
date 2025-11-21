@@ -1,6 +1,8 @@
+from typing import List, Dict, Any, Optional
 from ultralytics import YOLO
 import torch
 import numpy as np
+import logging
 
 from utils_local.utils import profile_time
 from elements.FrameElement import FrameElement
@@ -9,14 +11,47 @@ from byte_tracker.byte_tracker_model import BYTETracker as ByteTracker
 
 
 class DetectionTrackingNodes:
-    """Модуль инференса модели детекции + трекинг алгоритма"""
+    """
+    Модуль инференса модели детекции YOLOv8 + ByteTracker для отслеживания объектов.
+    
+    Выполняет детекцию объектов на кадрах видео и последующее отслеживание (tracking)
+    обнаруженных объектов с присвоением уникальных идентификаторов.
+    
+    Attributes:
+        model: YOLO модель для детекции объектов
+        tracker: ByteTracker для отслеживания объектов
+        classes: Словарь классов YOLO
+        conf: Порог уверенности для детекции
+        iou: Порог IoU для NMS
+        imgsz: Размер изображения для инференса
+        classes_to_detect: Список классов для детекции
+    """
 
-    def __init__(self, config) -> None:
+    def __init__(self, config: Dict[str, Any]) -> None:
+        """
+        Инициализация модуля детекции и трекинга.
+        
+        Args:
+            config: Конфигурация с секциями detection_node и tracking_node
+        
+        Raises:
+            FileNotFoundError: Если файл весов модели не найден
+            RuntimeError: При ошибке инициализации модели
+        """
+        self.logger = logging.getLogger(self.__class__.__name__)
+        
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(f'Детекция будет производиться на {device}')
+        self.logger.info(f'Детекция будет производиться на {device}')
 
         config_yolo = config["detection_node"]
-        self.model = YOLO(config_yolo["weight_pth"], task='detect')
+        
+        try:
+            self.model = YOLO(config_yolo["weight_pth"], task='detect')
+            self.logger.info(f"YOLO модель загружена: {config_yolo['weight_pth']}")
+        except Exception as e:
+            self.logger.error(f"Ошибка при загрузке YOLO модели: {e}")
+            raise RuntimeError(f"Не удалось загрузить модель: {e}") from e
+        
         self.classes = self.model.names
         self.conf = config_yolo["confidence"]
         self.iou = config_yolo["iou"]
@@ -78,6 +113,15 @@ class DetectionTrackingNodes:
         return frame_element
 
     def _get_results_dor_tracker(self, results) -> np.ndarray:
+        """
+        Преобразование результатов детекции YOLO в формат для ByteTracker.
+        
+        Args:
+            results: Результаты детекции от YOLO модели
+        
+        Returns:
+            np.ndarray: Массив детекций в формате [x1, y1, x2, y2, confidence, class_id]
+        """
         # Приведение данных в правильную форму для трекера
         detections_list = []
         for result in results[0]:

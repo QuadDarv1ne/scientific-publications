@@ -1,9 +1,12 @@
 from time import sleep, time
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Event
 import logging
 import sys
+from typing import Dict, Any, List
+from pathlib import Path
 
 import hydra
+from omegaconf import DictConfig
 from tqdm import tqdm
 
 from nodes.VideoReader import VideoReader
@@ -18,10 +21,56 @@ from elements.VideoEndBreakElement import VideoEndBreakElement
 from utils_local.utils import check_and_set_env_var
 from utils_local.logger import get_process_logger
 
+# ============= КОНСТАНТЫ =============
 PRINT_PROFILE_INFO = False
+QUEUE_TIMEOUT_SEC = 10
+QUEUE_PUT_TIMEOUT_SEC = 5
+PROCESS_SHUTDOWN_TIMEOUT_SEC = 5
+DEFAULT_QUEUE_MAXSIZE = 50
+DEFAULT_WARMUP_TIME_SEC = 5
+
+# Значения по умолчанию для переменных окружения
+DEFAULT_ENV_VALUES = {
+    'VIDEO_SRC': 'test_videos/test_video.mp4',
+    'ROADS_JSON': 'configs/entry_exit_lanes.json',
+    'TOPIC_NAME': 'statistics_1',
+    'CAMERA_ID': '1'
+}
 
 
-def proc_frame_reader_and_detection(queue_out: Queue, config: dict, time_sleep_start: int):
+def validate_config(config: DictConfig) -> None:
+    """
+    Валидация конфигурации перед запуском.
+    
+    Args:
+        config: Конфигурация приложения
+    
+    Raises:
+        ValueError: Если конфигурация содержит недопустимые значения
+    """
+    required_sections = ['pipeline', 'video_reader', 'detection_node', 'tracking_node', 'show_node']
+    for section in required_sections:
+        if section not in config:
+            raise ValueError(f"Отсутствует обязательная секция конфигурации: {section}")
+    
+    # Проверка путей к файлам
+    video_src = config['video_reader'].get('src')
+    if video_src and not video_src.startswith(('http://', 'https://', 'rtsp://')):
+        video_path = Path(video_src)
+        if not video_path.exists() and not str(video_src).isdigit():
+            raise ValueError(f"Файл видео не найден: {video_src}")
+    
+    weights_path = Path(config['detection_node']['weight_pth'])
+    if not weights_path.exists():
+        raise ValueError(f"Файл весов модели не найден: {weights_path}")
+
+
+def proc_frame_reader_and_detection(
+    queue_out: Queue, 
+    config: DictConfig, 
+    time_sleep_start: int,
+    stop_event: Event
+) -> None:
     """
     Процесс чтения кадров из видео и детекции объектов.
     
@@ -29,6 +78,7 @@ def proc_frame_reader_and_detection(queue_out: Queue, config: dict, time_sleep_s
         queue_out: Очередь для передачи обработанных кадров
         config: Конфигурация приложения
         time_sleep_start: Время ожидания перед стартом (сек)
+        stop_event: Event для корректного завершения процесса
     """
     logger = get_process_logger("frame_reader_detection")
     
@@ -48,9 +98,10 @@ def proc_frame_reader_and_detection(queue_out: Queue, config: dict, time_sleep_s
             ts1 = time()
             
             try:
-                queue_out.put(frame_element, timeout=5)
+                queue_out.put(frame_element, timeout=QUEUE_PUT_TIMEOUT_SEC)
             except Exception as e:
                 logger.error(f"Ошибка при добавлении в очередь: {e}")
+                stop_event.set()
                 break
             
             if PRINT_PROFILE_INFO:
@@ -71,7 +122,12 @@ def proc_frame_reader_and_detection(queue_out: Queue, config: dict, time_sleep_s
         logger.info("Процесс frame_reader_detection завершен")
 
 
-def proc_tracker_update_and_calc(queue_in: Queue, queue_out: Queue, config: dict):
+def proc_tracker_update_and_calc(
+    queue_in: Queue, 
+    queue_out: Queue, 
+    config: DictConfig,
+    stop_event: Event
+) -> None:
     """
     Процесс обновления информации о треках и вычисления статистики.
     
@@ -79,6 +135,7 @@ def proc_tracker_update_and_calc(queue_in: Queue, queue_out: Queue, config: dict
         queue_in: Очередь входящих кадров
         queue_out: Очередь исходящих обработанных кадров
         config: Конфигурация приложения
+        stop_event: Event для корректного завершения процесса
     """
     logger = get_process_logger("tracker_update_calc")
     
@@ -117,9 +174,10 @@ def proc_tracker_update_and_calc(queue_in: Queue, queue_out: Queue, config: dict
             ts2 = time()
             
             try:
-                queue_out.put(frame_element, timeout=5)
+                queue_out.put(frame_element, timeout=QUEUE_PUT_TIMEOUT_SEC)
             except Exception as e:
                 logger.error(f"Ошибка при добавлении в выходную очередь: {e}")
+                stop_event.set()
                 break
             
             if PRINT_PROFILE_INFO:
@@ -141,13 +199,18 @@ def proc_tracker_update_and_calc(queue_in: Queue, queue_out: Queue, config: dict
         logger.info("Процесс tracker_update_calc завершен")
 
 
-def proc_show_node(queue_in: Queue, config: dict):
+def proc_show_node(
+    queue_in: Queue, 
+    config: DictConfig,
+    stop_event: Event
+) -> None:
     """
     Процесс отображения результатов обработки.
     
     Args:
         queue_in: Очередь входящих обработанных кадров
         config: Конфигурация приложения
+        stop_event: Event для корректного завершения процесса
     """
     logger = get_process_logger("show_node")
     
@@ -212,13 +275,17 @@ def proc_show_node(queue_in: Queue, config: dict):
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="app_config")
-def main(config) -> None:
+def main(config: DictConfig) -> None:
     """
     Главная функция приложения для анализа трафика.
     Запускает параллельные процессы обработки видеопотока.
     
     Args:
         config: Конфигурация из Hydra
+    
+    Raises:
+        ValueError: При невалидной конфигурации
+        Exception: При критических ошибках в процессах
     """
     logger = logging.getLogger("main")
     logger.setLevel(logging.INFO)
@@ -230,25 +297,31 @@ def main(config) -> None:
     logger.addHandler(handler)
     
     try:
-        time_sleep_start = 5
+        # Валидация конфигурации перед запуском
+        logger.info("Валидация конфигурации...")
+        validate_config(config)
+        logger.info("Конфигурация валидна")
+        
+        time_sleep_start = DEFAULT_WARMUP_TIME_SEC
+        stop_event = Event()
 
-        queue_frame_reader_and_detect_out = Queue(maxsize=50)
-        queue_track_update_out = Queue(maxsize=50)
+        queue_frame_reader_and_detect_out = Queue(maxsize=DEFAULT_QUEUE_MAXSIZE)
+        queue_track_update_out = Queue(maxsize=DEFAULT_QUEUE_MAXSIZE)
 
-        processes = [
+        processes: List[Process] = [
             Process(
                 target=proc_frame_reader_and_detection,
-                args=(queue_frame_reader_and_detect_out, config, time_sleep_start),
+                args=(queue_frame_reader_and_detect_out, config, time_sleep_start, stop_event),
                 name="proc_frame_reader_and_detection",
             ),
             Process(
                 target=proc_tracker_update_and_calc,
-                args=(queue_frame_reader_and_detect_out, queue_track_update_out, config),
+                args=(queue_frame_reader_and_detect_out, queue_track_update_out, config, stop_event),
                 name="proc_tracker_update_and_calc",
             ),
             Process(
                 target=proc_show_node,
-                args=(queue_track_update_out, config),
+                args=(queue_track_update_out, config, stop_event),
                 name="proc_show_node",
             ),
         ]
@@ -267,11 +340,18 @@ def main(config) -> None:
     
     except KeyboardInterrupt:
         logger.warning("Получен сигнал прерывания (Ctrl+C)")
+        stop_event.set()
+        logger.info("Ожидание корректного завершения процессов...")
+        
         for p in processes:
             if p.is_alive():
                 logger.info(f"Завершение процесса {p.name}")
-                p.terminate()
-                p.join(timeout=5)
+                p.join(timeout=PROCESS_SHUTDOWN_TIMEOUT_SEC)
+                
+                if p.is_alive():
+                    logger.warning(f"Принудительное завершение процесса {p.name}")
+                    p.terminate()
+                    p.join(timeout=2)
     
     except Exception as e:
         logger.exception(f"Критическая ошибка в главном процессе: {e}")
@@ -281,11 +361,13 @@ def main(config) -> None:
 if __name__ == "__main__":
     ts = time()
 
-    # Проверяем и устанавливаем переменные окружения если их нет
-    check_and_set_env_var("VIDEO_SRC", "test_videos/test_video.mp4")
-    check_and_set_env_var("ROADS_JSON", "configs/entry_exit_lanes.json")
-    check_and_set_env_var("TOPIC_NAME", "statistics_1")
-    check_and_set_env_var("CAMERA_ID", 1)
+    # Проверяем и устанавливаем переменные окружения из словаря по умолчанию
+    for env_var, default_value in DEFAULT_ENV_VALUES.items():
+        check_and_set_env_var(env_var, default_value)
 
-    main()
-    print(f"\n total time: {(time()-ts) / 60:.2} minute")
+    try:
+        main()
+        print(f"\n✅ Общее время работы: {(time()-ts) / 60:.2f} минут")
+    except Exception as e:
+        print(f"\n❌ Критическая ошибка: {e}")
+        sys.exit(1)

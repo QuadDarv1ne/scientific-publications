@@ -1,23 +1,28 @@
 import logging
 import os
 import time
+from typing import Union, Optional, Dict, List, Tuple, Any
 import numpy as np
 from shapely.geometry import Point, Polygon
 
 logger_profile = logging.getLogger("profile")
 
 
-def check_and_set_env_var(var_name, value_new):
+def check_and_set_env_var(var_name: str, value_new: Union[str, int]) -> None:
     """
-    Проверяет, установлена ли переменная окружения `var_name`. Если не установлена, 
-    присваивает ей значение `value_new`
+    Проверяет, установлена ли переменная окружения `var_name`. 
+    Если не установлена, присваивает ей значение `value_new`.
+    
+    Args:
+        var_name: Имя переменной окружения
+        value_new: Значение по умолчанию
     """
     value = os.getenv(var_name)
     if value is None:
         os.environ[var_name] = str(value_new)
-        print(f"Значение {value_new} сохранено в переменную окружения {var_name}.")
+        print(f"ℹ️ Значение {value_new} сохранено в переменную окружения {var_name}.")
     else:
-        print(f"Переменная {var_name} уже установлена: {value}")
+        print(f"✅ Переменная {var_name} уже установлена: {value}")
 
 
 def profile_time(func):
@@ -37,20 +42,30 @@ def profile_time(func):
 
 
 class FPS_Counter:
+    """
+    Счетчик FPS по скользящему окну кадров.
+    
+    Attributes:
+        time_buffer: Буфер временных меток кадров
+        calc_time_perion_N_frames: Размер окна для подсчета FPS
+    """
+    
     def __init__(self, calc_time_perion_N_frames: int) -> None:
-        """Счетчик FPS по ограниченным участкам видео (скользящему окну).
+        """
+        Инициализация счетчика FPS.
 
         Args:
-            calc_time_perion_N_frames (int): количество фреймов окна подсчета статистики.
+            calc_time_perion_N_frames: Количество кадров окна подсчета статистики
         """
-        self.time_buffer = []
+        self.time_buffer: List[float] = []
         self.calc_time_perion_N_frames = calc_time_perion_N_frames
 
     def calc_FPS(self) -> float:
-        """Производит рассчет FPS по нескольким кадрам видео.
+        """
+        Рассчитывает FPS по нескольким кадрам видео.
 
         Returns:
-            float: значение FPS.
+            float: Значение FPS или 0.0 если буфер еще не заполнен
         """
         time_buffer_is_full = len(self.time_buffer) == self.calc_time_perion_N_frames
         t = time.time()
@@ -64,17 +79,21 @@ class FPS_Counter:
             return 0.0
 
 
-def intersects_central_point(tracked_xyxy, polygons):
-    """Функция определяет присутвие центральной точки bbox в  области полигонов дорог
+def intersects_central_point(
+    tracked_xyxy: List[float], 
+    polygons: Dict[str, List[float]]
+) -> Optional[int]:
+    """
+    Определяет присутствие центральной точки bbox в области полигонов дорог.
 
     Args:
-        tracked_xyxy: координаты bbox
-        polygons: словарь полигонов
+        tracked_xyxy: Координаты bounding box [x1, y1, x2, y2]
+        polygons: Словарь полигонов дорог {road_id: [x1, y1, x2, y2, ...]}
 
     Returns:
-        Лиибо None либо значение ключа (номер дороги - int)
+        Optional[int]: Номер дороги (ключ полигона) или None если не принадлежит ни одному полигону
     """
-    # Центральная точка bbox:
+    # Вычисление центральной точки bbox:
     center_point = [
         (tracked_xyxy[0] + tracked_xyxy[2]) / 2,
         (tracked_xyxy[1] + tracked_xyxy[3]) / 2,
