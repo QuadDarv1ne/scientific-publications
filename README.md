@@ -117,7 +117,7 @@
 
   *AI AND LONELINESS: NEW-GENERATION VIRTUAL COMPANIONS*
 
-  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXXX)
+  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17681214.svg)](https://doi.org/10.5281/zenodo.17681214)
 
   ![График 1: Эпидемия одиночества и рост ИИ-компаньонов](<papers/AI AND LONELINESS - NEW-GENERATION VIRTUAL COMPANIONS/img/graphic_1.png>)
 
