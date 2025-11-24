@@ -117,7 +117,7 @@
 
   *ANALYSIS AND FORECASTING OF RARE EARTH METALS USE IN HIGH-TECH INDUSTRIES*
 
-  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXXX)
+  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.17699396.svg)](https://doi.org/10.5281/zenodo.17699396)
 
   > **Комплексное исследование динамики спроса и предложения редкоземельных элементов (РЗЭ) в ключевых высокотехнологичных секторах:** электромобили, возобновляемая энергетика, электроника, оборонная промышленность.
 
