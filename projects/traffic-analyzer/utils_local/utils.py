@@ -1,10 +1,12 @@
 import logging
 import os
 import time
+import functools
 from typing import Union, Optional, Dict, List, Tuple, Any
 import numpy as np
 from shapely.geometry import Point, Polygon
 
+logger = logging.getLogger(__name__)
 logger_profile = logging.getLogger("profile")
 
 
@@ -20,12 +22,13 @@ def check_and_set_env_var(var_name: str, value_new: Union[str, int]) -> None:
     value = os.getenv(var_name)
     if value is None:
         os.environ[var_name] = str(value_new)
-        print(f"ℹ️ Значение {value_new} сохранено в переменную окружения {var_name}.")
+        logger.info("Set environment variable %s = %s", var_name, value_new)
     else:
-        print(f"✅ Переменная {var_name} уже установлена: {value}")
+        logger.debug("Environment variable %s already set: %s", var_name, value)
 
 
 def profile_time(func):
+    @functools.wraps(func)
     def exec_and_print_status(*args, **kwargs):
         t_start = time.time()
         out = func(*args, **kwargs)

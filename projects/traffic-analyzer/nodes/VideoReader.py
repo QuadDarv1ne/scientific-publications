@@ -25,6 +25,9 @@ class VideoReader:
 
         self.stream = cv2.VideoCapture(self.video_pth)
 
+        if not self.stream.isOpened():
+            raise RuntimeError(f"VideoReader| Не удалось открыть видеопоток: {self.video_pth}")
+
         self.skip_secs = config["skip_secs"]
         self.last_frame_timestamp = -1  # специально отрицательное при инициализации (костыль)
         self.first_timestamp = 0  # Значение времени в момент первого кадра потока

@@ -1,3 +1,6 @@
+import signal
+import sys
+import logging
 import hydra
 from nodes.VideoReader import VideoReader
 from nodes.ShowNode import ShowNode
@@ -10,40 +13,63 @@ from elements.VideoEndBreakElement import VideoEndBreakElement
 from nodes.KafkaProducerNode import KafkaProducerNode
 from utils_local.utils import check_and_set_env_var
 
+logger = logging.getLogger(__name__)
+shutdown_requested = False
+
+
+def signal_handler(signum, frame):
+    global shutdown_requested
+    logger.info("Получен сигнал завершения. Останавливаем обработку...")
+    shutdown_requested = True
+
 
 @hydra.main(version_base=None, config_path="configs", config_name="app_config")
 def main(config) -> None:
-    video_reader = VideoReader(config["video_reader"])
-    detection_node = DetectionTrackingNodes(config)
-    tracker_info_update_node = TrackerInfoUpdateNode(config)
-    calc_statistics_node = CalcStatisticsNode(config)
-    show_node = ShowNode(config)
+    global shutdown_requested
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
-    save_video = config["pipeline"]["save_video"]
-    show_in_web = config["pipeline"]["show_in_web"]
-    send_info_kafka = config["pipeline"]["send_info_kafka"]
+    try:
+        video_reader = VideoReader(config["video_reader"])
+        detection_node = DetectionTrackingNodes(config)
+        tracker_info_update_node = TrackerInfoUpdateNode(config)
+        calc_statistics_node = CalcStatisticsNode(config)
+        show_node = ShowNode(config)
 
-    if save_video:
-        video_saver_node = VideoSaverNode(config["video_saver_node"])
-    if send_info_kafka:
-        kafka_producer_node = KafkaProducerNode(config)
-    if show_in_web:
-        video_server_node = VideoServer(config)
-
-    for frame_element in video_reader.process():
-
-        frame_element = detection_node.process(frame_element)
-        frame_element = tracker_info_update_node.process(frame_element)
-        frame_element = calc_statistics_node.process(frame_element)
-        if send_info_kafka:
-            frame_element = kafka_producer_node.process(frame_element)
-        frame_element = show_node.process(frame_element)
+        save_video = config["pipeline"]["save_video"]
+        show_in_web = config["pipeline"]["show_in_web"]
+        send_info_kafka = config["pipeline"]["send_info_kafka"]
 
         if save_video:
-            video_saver_node.process(frame_element)
-
+            video_saver_node = VideoSaverNode(config["video_saver_node"])
+        if send_info_kafka:
+            kafka_producer_node = KafkaProducerNode(config)
         if show_in_web:
-            video_server_node.process(frame_element)
+            video_server_node = VideoServer(config)
+
+        for frame_element in video_reader.process():
+            if shutdown_requested:
+                logger.info("Прерывание цикла обработки по запросу пользователя")
+                break
+
+            frame_element = detection_node.process(frame_element)
+            frame_element = tracker_info_update_node.process(frame_element)
+            frame_element = calc_statistics_node.process(frame_element)
+            if send_info_kafka:
+                frame_element = kafka_producer_node.process(frame_element)
+            frame_element = show_node.process(frame_element)
+
+            if save_video:
+                video_saver_node.process(frame_element)
+
+            if show_in_web:
+                video_server_node.process(frame_element)
+
+        logger.info("Обработка видео завершена")
+
+    except Exception as e:
+        logger.error("Ошибка при обработке видео: %s", e, exc_info=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

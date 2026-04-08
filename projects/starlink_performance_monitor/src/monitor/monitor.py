@@ -25,12 +25,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
 
 from src.database.db_manager import get_database_manager, get_db_session
 from src.database.models import Base, PerformanceMetric
-
-# Add project root to path for imports
-import sys
-import os
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
-
 from src.utils.logging_config import setup_logging, get_logger
 from src.utils.weather_data import WeatherDataCollector
 
@@ -344,7 +338,7 @@ class StarlinkMonitor:
                 logger.error(f"Error in monitoring cycle: {e}")
                 time.sleep(RETRY_DELAY_SEC)  # Wait before retrying
 
-def main() -> int:-> int:
+def main() -> int:
     """
     Главная точка входа приложения.
     
