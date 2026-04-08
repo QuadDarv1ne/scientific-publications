@@ -16,6 +16,10 @@ flask
 # Optional: for enhanced functionality
 scipy
 
+# SSTV/SDR Receiver (требует установки rtl-sdr-utils и sox)
+# Linux: sudo apt-get install rtl-sdr sox
+# Windows: использовать SDR# + Virtual Audio Cable
+
 # Development and testing
 pytest
 pytest-cov

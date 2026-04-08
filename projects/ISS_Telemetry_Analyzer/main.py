@@ -15,6 +15,80 @@ sys.path.insert(0, str(Path(__file__).parent / 'src'))
 from src.iss_orbital_analysis import ISSTracker, analyze_pass_frequency
 from src.iss_environment_analysis import ISSEnvironmentAnalyzer
 from src.utils import print_header, print_section
+from src.sstv_receiver import SSTVReceiver
+
+
+def run_sstv_receiver():
+    """Запуск SSTV приёмника для приёма изображений с МКС"""
+    print_section("SSTV ПРИЁМНИК")
+    
+    try:
+        from src.sstv_receiver import SSTVReceiver
+        import time
+        
+        receiver = SSTVReceiver()
+        
+        # Проверка оборудования
+        print("📡 Проверка RTL-SDR...")
+        
+        if not receiver.check_rtl_sdr():
+            print("❌ RTL-SDR не найден!")
+            print("   Для работы SSTV приёмника требуется:")
+            print("   1. RTL-SDR донгл (V4 рекомендуется)")
+            print("   2. sudo apt-get install rtl-sdr sox")
+            return
+            
+        missing = receiver.check_dependencies()
+        if missing:
+            print(f"⚠️ Отсутствуют зависимости: {', '.join(missing)}")
+            print("   Установите: sudo apt-get install rtl-sdr-utils sox rx-sstv")
+            return
+            
+        print("✅ RTL-SDR готов к работе")
+        print("\n" + "-" * 50)
+        print("📺 Информация о SSTV на МКС:")
+        print("   Частота: 145.800 MHz FM")
+        print("   Время передачи: 60-120 секунд")
+        print("   Лучшее время: во время пролёта над вами")
+        print("-" * 50)
+        
+        # Получение информации о пролётах
+        print("\n🌍 Получение информации о пролётах МКС...")
+        lat = float(input("Введите широту (например, 55.7558 для Москвы): ").strip() or "55.7558")
+        lon = float(input("Введите долготу (например, 37.6173 для Москвы): ").strip() or "37.6173")
+        
+        passes_info = receiver.get_iss_passes(lat, lon)
+        if passes_info['status'] == 'success' and passes_info.get('passes'):
+            print("\n📅 Ближайшие пролёты:")
+            for i, p in enumerate(passes_info['passes'][:3], 1):
+                print(f"   {i}. {p['risetime'].strftime('%Y-%m-%d %H:%M:%S')}")
+                print(f"      Продолжительность: {p['duration']} сек, Высота: {p['altitude']}°")
+        else:
+            print("⚠️ Не удалось получить данные о пролётах")
+        
+        # Запуск приёма
+        print("\n" + "-" * 50)
+        duration = int(input("Длительность приёма (сек, по умолчанию 180): ").strip() or "180"))
+        print(f"🚀 Запуск приёма на {duration} секунд...")
+        
+        result = receiver.receive_sstv(duration=duration)
+        
+        if result:
+            print(f"\n✅ Запись сохранена: {result}")
+            print("   Для декодирования изображения установите RX-SSTV:")
+            print("   sudo apt-get install rx-sstv")
+            print("   Или используйте онлайн-декодер")
+        else:
+            print("\n❌ Приём не удался")
+            print("   Возможные причины:")
+            print("   - МКС не передавала SSTV в это время")
+            print("   - Слабый сигнал")
+            print("   - Помехи")
+            
+    except KeyboardInterrupt:
+        print("\n⚠️ Приём прерван пользователем")
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
 
 
 def show_menu():
@@ -28,6 +102,8 @@ def show_menu():
     print("5. 📖 Методология исследования")
     print("6. 📈 Расширенный орбитальный анализ")
     print("7. 🔍 Расширенный анализ условий среды")
+    print("8. 📻 SSTV приём (RTL-SDR)")
+    print("9. 📡 Мониторинг частот")
     print("0. ❌ Выход")
     print("-" * 50)
 
@@ -226,6 +302,120 @@ def run_tests():
         print(f"❌ Ошибка при запуске тестов: {e}")
 
 
+def run_sstv_receiver():
+    """Запуск SSTV приёмника для МКС"""
+    print_section("SSTV ПРИЁМНИК (RTL-SDR)")
+    
+    try:
+        receiver = SSTVReceiver()
+        
+        # Проверка оборудования
+        print("📡 Проверка RTL-SDR...")
+        
+        if not receiver.check_rtl_sdr():
+            print("❌ RTL-SDR не найден!")
+            print("\nДля работы SSTV приёмника требуется:")
+            print("  1. RTL-SDR dongle")
+            print("  2. Установить: sudo apt-get install rtl-sdr sox")
+            print("  3. Создать blacklist для встроенных карт:")
+            print("     echo 'blacklist dvb_usb_rtl28xxu' | sudo tee /etc/modprobe.d/rtl-sdr.conf")
+            return
+            
+        missing = receiver.check_dependencies()
+        if missing:
+            print(f"⚠️ Отсутствуют: {', '.join(missing)}")
+            print("   Установите: sudo apt-get install rtl-sdr-utils sox")
+            
+        print("✓ RTL-SDR готов")
+        print(f"\n📻 Частота МКС SSTV: {receiver.ISS_SSTV_FREQ} MHz")
+        print("📻 Частота МКС APRS: {receiver.ISS_APRS_FREQ} MHz")
+        
+        # Выбор режима
+        print("\nВыберите режим:")
+        print("1. Одиночный приём (2 минуты)")
+        print("2. Длительный приём (5 минут)")
+        print("3. Мониторинг пролётов МКС")
+        print("4. Показать последние изображения")
+        
+        choice = input("Выбор: ").strip()
+        
+        if choice == '1':
+            print("\n🎬 Запись SSTV сигнала (120 сек)...")
+            result = receiver.receive_sstv(duration=120)
+            if result:
+                print(f"✅ Записано: {result}")
+            else:
+                print("❌ Запись не удалась")
+                
+        elif choice == '2':
+            print("\n🎬 Запись SSTV сигнала (300 сек)...")
+            result = receiver.receive_sstv(duration=300)
+            if result:
+                print(f"✅ Записано: {result}")
+            else:
+                print("❌ Запись не удалась")
+                
+        elif choice == '3':
+            print("\n🔄 Запуск мониторинга пролётов...")
+            print("   (Для остановки нажмите Ctrl+C)")
+            receiver.is_receiving = True
+            receiver.start_monitoring(interval=300)
+            
+            # Ожидаем прерывания
+            try:
+                import time
+                while receiver.is_receiving:
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                receiver.stop()
+                print("\n✅ Мониторинг остановлен")
+                
+        elif choice == '4':
+            images = receiver.get_recent_images(limit=5)
+            if images:
+                print("\n📷 Последние принятые изображения:")
+                for i, img in enumerate(images, 1):
+                    print(f"  {i}. {img}")
+            else:
+                print("📷 Изображений пока нет")
+        else:
+            print("❌ Неверный выбор")
+            
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+
+
+def run_frequency_monitor():
+    """Мониторинг радиочастот"""
+    print_section("МОНИТОРИНГ ЧАСТОТ")
+    
+    try:
+        receiver = SSTVReceiver()
+        
+        if not receiver.check_rtl_sdr():
+            print("❌ RTL-SDR не найден!")
+            return
+            
+        print("📡 Доступные частоты для мониторинга:")
+        print("-" * 40)
+        print("  МКС SSTV:      145.800 MHz FM")
+        print("  МКС APRS:      145.825 MHz")
+        print("  NOAA:          137.100-137.500 MHz (APT)")
+        print("  Meteor M2:     137.100 MHz (LRPT)")
+        print("  ADS-B:         1090 MHz")
+        print("  ACARS:         131.550 MHz")
+        print("  APRS:          144.800 MHz")
+        print("-" * 40)
+        
+        print("\nДля мониторинга используйте:")
+        print("  rtl_fm -f 145800000 -s 48000 - | play -r 48000 -t raw -e signed -b 16 -")
+        print("\nИли запустите Gqrx для визуального мониторинга:")
+        print("  gqrx")
+        
+    except Exception as e:
+        print(f"❌ Ошибка: {e}")
+
+
 def show_methodology():
     """Отображение методологии исследования"""
     print_section("МЕТОДОЛОГИЯ ИССЛЕДОВАНИЯ")
@@ -266,11 +456,15 @@ def main():
                 run_advanced_orbital_analysis()
             elif choice == '7':
                 run_advanced_environment_analysis()
+            elif choice == '8':
+                run_sstv_receiver()
+            elif choice == '9':
+                run_frequency_monitor()
             elif choice == '0':
                 print("\n👋 До свидания! Спасибо за использование ISS Telemetry Analyzer!")
                 break
             else:
-                print("❌ Неверный выбор. Пожалуйста, введите число от 0 до 7.")
+                print("❌ Неверный выбор. Пожалуйста, введите число от 0 до 9.")
                 
         except KeyboardInterrupt:
             print("\n\n👋 Программа прервана пользователем. До свидания!")
