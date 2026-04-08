@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: "If you use this work in your research, please cite it as below."
+authors:
+  - family-names: "Dupley"
+    given-names: "Maksim I."
+    orcid: "0009-0007-7605-539X"
+title: "Роль студенческих движений в социально-политических трансформациях XX века: сравнительный анализ (на примере России и Западной Европы)"
+version: 1.0
+doi: 10.5281/zenodo.17494238
+date-released: 2025-04-05
+url: https://doi.org/10.5281/zenodo.17494238
+license: CC-BY-4.0
+type: article
+abstract: "Историко-социологическое исследование, посвящённое влиянию студенческой активности на политические изменения в России и странах Западной Европы в XX веке."

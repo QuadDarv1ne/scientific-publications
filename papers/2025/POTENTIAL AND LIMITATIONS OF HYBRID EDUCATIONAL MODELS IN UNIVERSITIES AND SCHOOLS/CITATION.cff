@@ -1,0 +1,111 @@
+cff-version: 1.2.0
+message: "If you use this work in your research, please cite it as below."
+authors:
+  - family-names: "Дуплей"
+    given-names: "Максим Игоревич"
+    name-particle: "М.И."
+    orcid: "https://orcid.org/0009-0007-7605-539X"
+    email: "maksimqwe42@mail.ru"
+    affiliation: "АНО ВО 'Институт Международных Экономических Связей', кафедра информационных технологий"
+    city: "Москва"
+    country: "RU"
+title: "Потенциал и ограничения гибридных образовательных моделей в вузах и школах"
+title-translated:
+  en: "Potential and Limitations of Hybrid Educational Models in Universities and Schools"
+version: 1.0
+date-released: 2025-11-09
+license: CC-BY-4.0
+type: article
+keywords:
+  - гибридное обучение
+  - смешанное обучение
+  - цифровая образовательная среда
+  - образовательные технологии
+  - дистанционное обучение
+  - очно-дистанционные форматы
+  - педагогические компетенции
+  - образовательная инфраструктура
+  - вовлеченность студентов
+  - образовательная эффективность
+  - цифровая трансформация образования
+  - адаптивное обучение
+  - hybrid learning
+  - blended learning
+  - digital educational environment
+  - educational technologies
+  - distance learning
+abstract: |
+  В условиях ускоренной цифровизации образования и постпандемической трансформации 
+  учебных процессов гибридные образовательные модели приобретают стратегическое 
+  значение для обеспечения качества, доступности и гибкости обучения. В статье 
+  проводится комплексный анализ потенциала и ограничений гибридных форматов в 
+  контексте российского школьного и вузовского образования. Особое внимание уделяется 
+  методологическим аспектам интеграции очных и онлайн-компонентов, техническим 
+  требованиям к инфраструктуре, педагогическим компетенциям преподавателей, а также 
+  психологическим и организационным вызовам. Автором выявлены ключевые факторы 
+  успешной реализации гибридных моделей, предложены практические рекомендации по их 
+  внедрению с учетом специфики разных образовательных уровней. Исследование основано 
+  на анализе отечественного и международного опыта, данных эмпирических исследований 
+  и экспертных оценках.
+identifiers:
+  - type: other
+    value: "УДК 378.147:004.7 + 37.018.44"
+    description: "Универсальная десятичная классификация"
+references:
+  - type: article
+    authors:
+      - family-names: "Андреев"
+        given-names: "А. А."
+    title: "Дидактические основы дистанционного обучения в высших учебных заведениях"
+    year: 2020
+    publisher:
+      name: "МЭСИ"
+    isbn: "978-5-7764-0821-5"
+  - type: article
+    authors:
+      - family-names: "Звездина"
+        given-names: "Г. П."
+      - family-names: "Поветкина"
+        given-names: "Т. В."
+    title: "Гибридное обучение в вузе: потенциал и ограничения"
+    journal: "Высшее образование в России"
+    year: 2021
+    volume: 30
+    issue: 4
+    start: 93
+    end: 106
+    doi: "10.31992/0869-3617-2021-30-4-93-106"
+  - type: book
+    authors:
+      - family-names: "Graham"
+        given-names: "C. R."
+      - family-names: "Woodfield"
+        given-names: "W."
+      - family-names: "Harrison"
+        given-names: "J. B."
+    title: "A framework for institutional adoption and implementation of blended learning in higher education"
+    journal: "The Internet and Higher Education"
+    year: 2013
+    volume: 18
+    start: 4
+    end: 14
+    doi: "10.1016/j.iheduc.2012.09.003"
+  - type: report
+    authors:
+      - family-names: "Christensen"
+        given-names: "C. M."
+      - family-names: "Horn"
+        given-names: "M. B."
+      - family-names: "Staker"
+        given-names: "H."
+    title: "Is K-12 blended learning disruptive? An introduction to the theory of hybrids"
+    year: 2013
+    institution:
+      name: "Clayton Christensen Institute"
+    url: "https://www.christenseninstitute.org/publications/hybrids/"
+contact:
+  - family-names: "Дуплей"
+    given-names: "Максим Игоревич"
+    email: "maksimqwe42@mail.ru"
+    tel: "+7-915-048-02-49"
+    address: "143007, Россия, Московская область, г. Одинцово"
