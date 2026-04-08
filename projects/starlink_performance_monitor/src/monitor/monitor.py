@@ -15,8 +15,6 @@ import speedtest
 import ping3
 import pandas as pd
 import numpy as np
-from sqlalchemy import create_engine, Column, Integer, String, Float, DateTime
-from sqlalchemy.orm import sessionmaker
 
 # Add project root to path for imports
 import sys
@@ -249,19 +247,13 @@ class StarlinkMonitor:
             metrics: Dictionary with metrics to store
         """
         logger.info("Storing metrics in database...")
-        # Prefer using the local `sessionmaker` (this allows tests to patch
-        # `src.monitor.monitor.sessionmaker` and provide a mocked session).
-        # Fall back to the global DB helper when sessionmaker is not available.
+        
+        # Используем get_db_session для получения сессии
         try:
-            if callable(sessionmaker):
-                # sessionmaker() -> Session class/factory, then call it to get a Session
-                Session = sessionmaker()
-                session = Session()
-            else:
-                session = get_db_session()
-        except Exception:
-            # Defensive fallback
             session = get_db_session()
+        except Exception as e:
+            logger.error(f"Failed to get database session: {e}")
+            return
         
         try:
             # Store speedtest results
