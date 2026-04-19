@@ -1,0 +1,86 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Виртуальные окружения
+venv/
+ENV/
+env/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Poetry
+poetry.lock
+
+# Операционная система
+.DS_Store
+Thumbs.db
+
+# Логи
+*.log
+
+# Данные и кэш
+data/*.json
+data/*.csv
+data/cache/
+*.db
+*.sqlite
+
+# Конфигурации с секретами
+*.env
+.env
+config.local.json
+secrets/
+
+# Бинарные файлы и большие файлы
+*.exe
+*.dll
+*.so.*
+*.dylib
+
+# PDF и Word документы (можно комментировать при необходимости)
+# papers/*.pdf
+# papers/*.docx
+
+# Временные файлы
+tmp/
+temp/
+~*

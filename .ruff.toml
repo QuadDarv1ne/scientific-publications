@@ -1,0 +1,30 @@
+# Ruff конфигурация для всего проекта
+target-version = "py311"
+
+# Правила
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+    "RUF", # Ruff-specific rules
+]
+
+# Игнорировать
+ignore = [
+    "E501",  # line too long (black handles this)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+# Исключения для тестов
+exclude = [
+    "projects/*/tests/*",
+    "papers/*",
+    "archive/*",
+]
+
+[per-file-ignores]
+"projects/*/tests/*" = ["S101"]  # allow assert in tests
