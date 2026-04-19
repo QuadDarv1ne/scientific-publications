@@ -1,0 +1,47 @@
+[tool.poetry]
+name = "scientific-publications"
+version = "1.0.0"
+description = "Научные публикации и проекты Дуплей М.И."
+authors = ["Дуплей М.И. <ORCID: 0009-0007-7605-539X>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.8.0"
+black = "^24.0"
+mypy = "^1.13"
+pytest = "^8.3"
+pytest-cov = "^6.0"
+pre-commit = "^4.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+exclude = '''
+/(
+    \.git
+  | \.venv
+  | papers
+  | archive
+)/
+'''
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = ["papers/", "archive/"]
+
+[tool.pytest.ini_options]
+testpaths = ["projects/*/tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=projects --cov-report=term-missing"
