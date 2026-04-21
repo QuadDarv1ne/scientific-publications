@@ -1,0 +1,22 @@
+﻿cff-version: 1.2.0
+message: "If you use this work in your research, please cite the following publication."
+authors:
+  - family-names: "Dupley"
+    given-names: "Maxim"
+    orcid: "https://orcid.org/0009-0007-7605-539X"
+    email: "maksimqwe42@mail.ru"
+title: "Влияние AI-ассистентов на метакогнитивные навыки студентов при решении задач программирования"
+version: 1.0
+date-released: 2025-01-01
+url: "https://github.com/QuadDarv1ne/scientific-publications/tree/main/papers/2025"
+license: CC-BY-4.0
+type: article
+keywords:
+  - scientific publication
+abstract: |
+  Scientific publication by Maxim Dupley.
+contact:
+  - family-names: "Dupley"
+    given-names: "Maxim"
+    email: "maksimqwe42@mail.ru"
+    address: "Moscow, Russia"
