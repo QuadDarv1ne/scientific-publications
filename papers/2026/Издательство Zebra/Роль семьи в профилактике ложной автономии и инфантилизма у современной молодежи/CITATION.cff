@@ -1,0 +1,26 @@
+﻿cff-version: 1.2.0
+message: "If you use this work in your research, please cite the following publication."
+authors:
+  - family-names: "Dupley"
+    given-names: "Maxim"
+    orcid: "https://orcid.org/0009-0007-7605-539X"
+    email: "maksimqwe42@mail.ru"
+title: "Роль семьи в профилактике ложной автономии и инфантилизма у современной молодежи"
+version: 1.0
+date-released: 2026-01-01
+doi: "10.5281/zenodo.19696828"
+url: "https://doi.org/10.5281/zenodo.19696828"
+license: CC-BY-4.0
+type: article
+keywords:
+  - семья
+  - профилактика
+  - ложная автономия
+  - инфантилизм
+abstract: |
+  Научная публикация автора Максима Игоревича Дуплея.
+contact:
+  - family-names: "Dupley"
+    given-names: "Maxim"
+    email: "maksimqwe42@mail.ru"
+    address: "Moscow, Russia"
