@@ -54,6 +54,9 @@ poetry.lock
 .DS_Store
 Thumbs.db
 
+# AI-инструменты
+.qwen/
+
 # Логи
 *.log
 

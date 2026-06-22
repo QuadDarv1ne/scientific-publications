@@ -5,7 +5,7 @@
 ## Структура проекта
 
 ```
-scientific-publications/
+academic-partfolio/
 ├── papers/              # Научные статьи и публикации
 ├── projects/            # Программные проекты
 │   ├── project-name/
@@ -27,8 +27,7 @@ scientific-publications/
    - Включайте `README.md` с описанием
 
 2. **Качество кода**
-   - Линтинг с `ruff`
-   - Форматирование с `black` (line-length: 100)
+   - Линтинг и форматирование с `ruff`
    - Типизация с `mypy`
 
 3. **Документация**
@@ -37,10 +36,10 @@ scientific-publications/
 
 ## Процесс разработки
 
-1. Создайте ветку от `dev`:
+1. Создайте ветку от `main`:
 
    ```bash
-   git checkout dev
+   git checkout main
    git checkout -b feature/your-feature
    ```
 
@@ -53,15 +52,14 @@ scientific-publications/
 
 3. Внесите изменения и протестируйте
 
-4. Отправьте пул-реквест в `dev`
+4. Отправьте пул-реквест в `main`
 
 ## Проверки перед коммитом
 
 ```bash
 # Проверка качества кода
 ruff check .
-black --check .
-mypy .
+ruff format --check .
 
 # Запуск тестов
 pytest projects/
@@ -87,4 +85,4 @@ pre-commit run --all-files
 
 ## Лицензия
 
-Внося изменения, вы соглашаетесь, что ваш вклад распространяется под лицензией MIT.
+Внося изменения, вы соглашаетесь, что ваш вклад распространяется под лицензией CC BY-NC-SA 4.0.
