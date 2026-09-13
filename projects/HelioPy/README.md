@@ -156,9 +156,7 @@ sdo_data = data_loader.load_sdo_aia(date, wavelength)
 
 # Создание визуализации
 fig = visualization.plot_solar_image(
-    sdo_data,
-    title=f"SDO/AIA {wavelength}Å - {date}",
-    save_path="sdo_image.png"
+    sdo_data, title=f"SDO/AIA {wavelength}Å - {date}", save_path="sdo_image.png"
 )
 
 print("Изображение сохранено в sdo_image.png")
@@ -179,9 +177,7 @@ helio_data = load_helioviewer(date, source_id=14)
 
 # Создание визуализации
 fig = visualization.plot_solar_image(
-    helio_data,
-    title=f"Helioviewer SDO/AIA 193Å - {date}",
-    save_path="helio_image.png"
+    helio_data, title=f"Helioviewer SDO/AIA 193Å - {date}", save_path="helio_image.png"
 )
 
 print("Изображение сохранено в helio_image.png")
@@ -236,10 +232,7 @@ lasco_data = data_loader.load_soho_lasco("2023-10-15", "C2")
 cme_events = cme_detector.track_cme(lasco_data)
 
 # Визуализация траектории CME
-visualization.plot_cme_trajectory(
-    cme_events[0],
-    save_path="cme_trajectory.png"
-)
+visualization.plot_cme_trajectory(cme_events[0], save_path="cme_trajectory.png")
 
 print(f"Скорость CME: {cme_events[0].speed:.1f} км/с")
 print(f"Направление: {cme_events[0].direction} градусов")

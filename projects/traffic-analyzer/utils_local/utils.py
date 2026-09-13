@@ -1,8 +1,9 @@
+import functools
 import logging
 import os
 import time
-import functools
-from typing import Union, Optional, Dict, List, Tuple, Any
+from typing import Dict, List, Optional, Union
+
 import numpy as np
 from shapely.geometry import Point, Polygon
 
@@ -12,9 +13,9 @@ logger_profile = logging.getLogger("profile")
 
 def check_and_set_env_var(var_name: str, value_new: Union[str, int]) -> None:
     """
-    Проверяет, установлена ли переменная окружения `var_name`. 
+    Проверяет, установлена ли переменная окружения `var_name`.
     Если не установлена, присваивает ей значение `value_new`.
-    
+
     Args:
         var_name: Имя переменной окружения
         value_new: Значение по умолчанию
@@ -47,12 +48,12 @@ def profile_time(func):
 class FPS_Counter:
     """
     Счетчик FPS по скользящему окну кадров.
-    
+
     Attributes:
         time_buffer: Буфер временных меток кадров
         calc_time_perion_N_frames: Размер окна для подсчета FPS
     """
-    
+
     def __init__(self, calc_time_perion_N_frames: int) -> None:
         """
         Инициализация счетчика FPS.
@@ -83,8 +84,7 @@ class FPS_Counter:
 
 
 def intersects_central_point(
-    tracked_xyxy: List[float], 
-    polygons: Dict[str, List[float]]
+    tracked_xyxy: List[float], polygons: Dict[str, List[float]]
 ) -> Optional[int]:
     """
     Определяет присутствие центральной точки bbox в области полигонов дорог.

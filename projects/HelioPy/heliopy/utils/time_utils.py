@@ -30,7 +30,7 @@ class TimeUtils:
         """
         if isinstance(time_input, Time):
             return time_input
-        elif isinstance(time_input, datetime) or isinstance(time_input, str):
+        elif isinstance(time_input, (datetime, str)):
             return Time(time_input)
         else:
             raise ValueError(f"Неподдерживаемый тип времени: {type(time_input)}")
@@ -61,10 +61,7 @@ class TimeUtils:
         start_time = TimeUtils.parse_time(start)
         end_time = TimeUtils.parse_time(end)
 
-        if isinstance(step, timedelta):
-            step_seconds = step.total_seconds()
-        else:
-            step_seconds = step.to(u.s).value
+        step_seconds = step.total_seconds() if isinstance(step, timedelta) else step.to(u.s).value
 
         times = []
         current = start_time

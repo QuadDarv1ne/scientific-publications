@@ -4,11 +4,14 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from astropy.time import Time
 
 from heliopy.data_sources.base_loader import BaseLoader
+
+if TYPE_CHECKING:
+    from heliopy.imaging.image_processor import SolarImage
 
 
 class SDOLoader(BaseLoader):
@@ -53,10 +56,7 @@ class SDOLoader(BaseLoader):
             )
 
         # Преобразование даты
-        if isinstance(date, str):
-            time = Time(date)
-        else:
-            time = Time(date)
+        time = Time(date) if isinstance(date, str) else Time(date)
 
         # Поиск данных через SunPy
         # Ленивый импорт sunpy — чтобы пакет можно было импортировать без sunpy,
@@ -65,10 +65,10 @@ class SDOLoader(BaseLoader):
             from sunpy.map import Map
             from sunpy.net import Fido
             from sunpy.net import attrs as a
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
             raise RuntimeError(
                 "Для загрузки данных SDO требуется пакет 'sunpy'. Установите его: pip install sunpy"
-            )
+            ) from e
 
         try:
             query = Fido.search(
@@ -102,7 +102,7 @@ class SDOLoader(BaseLoader):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Ошибка при загрузке данных SDO/AIA: {e}")
+            raise RuntimeError(f"Ошибка при загрузке данных SDO/AIA: {e}") from e
 
     def load_hmi(
         self, date: Union[str, datetime], data_type: str = "magnetogram", **kwargs
@@ -127,29 +127,22 @@ class SDOLoader(BaseLoader):
         if data_type not in ["magnetogram", "continuum", "dopplergram"]:
             raise ValueError(f"Неподдерживаемый тип данных: {data_type}")
 
-        if isinstance(date, str):
-            time = Time(date)
-        else:
-            time = Time(date)
+        time = Time(date) if isinstance(date, str) else Time(date)
 
         # Ленивый импорт sunpy — ошибка, если пакет не установлен
         try:
             from sunpy.map import Map
             from sunpy.net import Fido
             from sunpy.net import attrs as a
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
             raise RuntimeError(
                 "Для загрузки данных SDO требуется пакет 'sunpy'. Установите его: pip install sunpy"
-            )
+            ) from e
 
         try:
             # Определение типа данных для SunPy
-            if data_type == "magnetogram":
-                product = "hmi.M_720s"
-            elif data_type == "continuum":
-                product = "hmi.Ic_720s"
-            elif data_type == "dopplergram":
-                product = "hmi.V_720s"
+            if data_type == "magnetogram" or data_type == "continuum" or data_type == "dopplergram":
+                pass
 
             query = Fido.search(
                 a.Time(time, time + 1 / 24), a.Instrument("HMI"), a.Physobs(data_type)
@@ -178,4 +171,4 @@ class SDOLoader(BaseLoader):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Ошибка при загрузке данных SDO/HMI: {e}")
+            raise RuntimeError(f"Ошибка при загрузке данных SDO/HMI: {e}") from e

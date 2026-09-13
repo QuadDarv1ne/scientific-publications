@@ -27,9 +27,9 @@ tracker = ISSTracker(file_manager=None)
 **Возвращает:** `dict` или `None`
 ```python
 {
-    'latitude': float,      # Широта в градусах
-    'longitude': float,     # Долгота в градусах
-    'timestamp': datetime   # Время измерения
+    "latitude": float,  # Широта в градусах
+    "longitude": float,  # Долгота в градусах
+    "timestamp": datetime,  # Время измерения
 }
 ```
 
@@ -39,10 +39,10 @@ tracker = ISSTracker(file_manager=None)
 **Возвращает:** `dict` или `None`
 ```python
 {
-    'name': str,            # Название объекта
-    'line1': str,           # Первая строка TLE
-    'line2': str,           # Вторая строка TLE
-    'timestamp': str        # Время получения данных
+    "name": str,  # Название объекта
+    "line1": str,  # Первая строка TLE
+    "line2": str,  # Вторая строка TLE
+    "timestamp": str,  # Время получения данных
 }
 ```
 
@@ -59,14 +59,14 @@ tracker = ISSTracker(file_manager=None)
 **Возвращает:** `dict` или `None`
 ```python
 {
-    'altitude_km': float,           # Высота орбиты в км
-    'avg_speed_kmh': float,         # Средняя скорость в км/ч
-    'max_speed_kmh': float,         # Максимальная скорость в км/ч
-    'min_speed_kmh': float,         # Минимальная скорость в км/ч
-    'speed_std': float,             # Стандартное отклонение скорости
-    'orbital_period_min': float,    # Период обращения в минутах
-    'vitkov_per_day': float,        # Количество витков в сутки
-    'data_points': int              # Количество точек данных
+    "altitude_km": float,  # Высота орбиты в км
+    "avg_speed_kmh": float,  # Средняя скорость в км/ч
+    "max_speed_kmh": float,  # Максимальная скорость в км/ч
+    "min_speed_kmh": float,  # Минимальная скорость в км/ч
+    "speed_std": float,  # Стандартное отклонение скорости
+    "orbital_period_min": float,  # Период обращения в минутах
+    "vitkov_per_day": float,  # Количество витков в сутки
+    "data_points": int,  # Количество точек данных
 }
 ```
 
@@ -91,12 +91,12 @@ tracker = ISSTracker(file_manager=None)
 **Возвращает:** `dict` или `None`
 ```python
 {
-    'initial_altitude': float,              # Начальная высота
-    'final_altitude': float,                # Конечная высота
-    'average_altitude': float,              # Средняя высота
-    'trend_slope_km_per_day': float,        # Наклон тренда в км/день
-    'trend_slope_m_per_day': float,         # Наклон тренда в м/день
-    'total_change': float                   # Общее изменение высоты
+    "initial_altitude": float,  # Начальная высота
+    "final_altitude": float,  # Конечная высота
+    "average_altitude": float,  # Средняя высота
+    "trend_slope_km_per_day": float,  # Наклон тренда в км/день
+    "trend_slope_m_per_day": float,  # Наклон тренда в м/день
+    "total_change": float,  # Общее изменение высоты
 }
 ```
 
@@ -121,14 +121,14 @@ tracker = ISSTracker(file_manager=None)
 **Возвращает:** `dict` или `None`
 ```python
 {
-    'total_passes': int,                # Общее количество пролетов
-    'avg_passes_per_day': float,        # Среднее количество пролетов в день
-    'std_passes_per_day': float,        # Стандартное отклонение
-    'max_passes_per_day': int,          # Максимум пролетов в день
-    'min_passes_per_day': int,          # Минимум пролетов в день
-    'most_active_day': int,             # Наиболее активный день
-    'least_active_day': int,            # Наименее активный день
-    'passes_data': list                 # Данные о пролетах
+    "total_passes": int,  # Общее количество пролетов
+    "avg_passes_per_day": float,  # Среднее количество пролетов в день
+    "std_passes_per_day": float,  # Стандартное отклонение
+    "max_passes_per_day": int,  # Максимум пролетов в день
+    "min_passes_per_day": int,  # Минимум пролетов в день
+    "most_active_day": int,  # Наиболее активный день
+    "least_active_day": int,  # Наименее активный день
+    "passes_data": list,  # Данные о пролетах
 }
 ```
 
@@ -152,10 +152,10 @@ analyzer = ISSEnvironmentAnalyzer(file_manager=None)
 **Возвращает:** `dict` или `None`
 ```python
 {
-    'name': str,            # Название объекта
-    'line1': str,           # Первая строка TLE
-    'line2': str,           # Вторая строка TLE
-    'timestamp': str        # Время получения данных
+    "name": str,  # Название объекта
+    "line1": str,  # Первая строка TLE
+    "line2": str,  # Вторая строка TLE
+    "timestamp": str,  # Время получения данных
 }
 ```
 
@@ -213,13 +213,13 @@ analyzer = ISSEnvironmentAnalyzer(file_manager=None)
 **Возвращает:** `dict` или `None`
 ```python
 {
-    'total_peaks': int,                     # Общее количество пиков
-    'max_peak': float,                      # Максимальный пик
-    'avg_peak': float,                      # Средняя интенсивность пиков
-    'std_peak': float,                      # Стандартное отклонение пиков
-    'peak_frequency_per_day': float,        # Частота пиков в день
-    'peak_duration_avg_hours': float,       # Средняя продолжительность пиков
-    'peak_intensity_ratio': float           # Отношение интенсивности пиков к среднему уровню
+    "total_peaks": int,  # Общее количество пиков
+    "max_peak": float,  # Максимальный пик
+    "avg_peak": float,  # Средняя интенсивность пиков
+    "std_peak": float,  # Стандартное отклонение пиков
+    "peak_frequency_per_day": float,  # Частота пиков в день
+    "peak_duration_avg_hours": float,  # Средняя продолжительность пиков
+    "peak_intensity_ratio": float,  # Отношение интенсивности пиков к среднему уровню
 }
 ```
 

@@ -1,6 +1,7 @@
-from pathlib import Path
-import os
 import logging
+import os
+from pathlib import Path
+
 import cv2
 
 from elements.FrameElement import FrameElement
@@ -24,9 +25,9 @@ class VideoSaverNode:
             self._cv2_writer.release()
             print(f"Видео сохранено в папке {self.out_folder}")
             return
-        assert isinstance(
-            frame_element, FrameElement
-        ), f"VideoSaverNode | Неправильный формат входного элемента {type(frame_element)}"
+        assert isinstance(frame_element, FrameElement), (
+            f"VideoSaverNode | Неправильный формат входного элемента {type(frame_element)}"
+        )
 
         source = frame_element.source
         frame = frame_element.frame_result

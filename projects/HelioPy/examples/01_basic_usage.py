@@ -8,12 +8,13 @@
 - Математические утилиты
 """
 
-from datetime import datetime, timedelta
+from datetime import timedelta
+
 import numpy as np
 
-from heliopy.utils.time_utils import TimeUtils
 from heliopy.utils.math_utils import MathUtils
 from heliopy.utils.stats_utils import StatsUtils
+from heliopy.utils.time_utils import TimeUtils
 
 
 def main():

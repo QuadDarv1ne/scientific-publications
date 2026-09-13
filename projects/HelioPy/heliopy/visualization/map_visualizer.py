@@ -39,7 +39,7 @@ class MapVisualizer:
         Figure
             Объект matplotlib Figure.
         """
-        fig, ax = plt.subplots(figsize=(12, 6), subplot_kw=dict(projection="mollweide"))
+        fig, ax = plt.subplots(figsize=(12, 6), subplot_kw={"projection": "mollweide"})
 
         # Упрощенная реализация
         # В полной версии используется более сложная проекция

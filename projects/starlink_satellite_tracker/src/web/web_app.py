@@ -4,21 +4,21 @@ Web interface for Starlink Satellite Tracker
 Provides a dashboard for visualizing satellite positions, passes, and coverage.
 """
 
+import hashlib
 import json
+import logging
+import math
 import os
 import sys
-import math
 from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request
-import logging
 from functools import wraps
-import hashlib
-import base64
-from io import BytesIO
+
+from flask import Flask, jsonify, render_template, request
 
 # Try to import skyfield, but handle if not available
 try:
     from skyfield.api import load
+
     SKYFIELD_AVAILABLE = True
 except ImportError:
     SKYFIELD_AVAILABLE = False
@@ -26,7 +26,7 @@ except ImportError:
     logging.warning("Skyfield not installed. Some visualization features disabled.")
 
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 # Import our configuration manager
 from utils.config_manager import get_config
@@ -34,26 +34,28 @@ from utils.config_manager import get_config
 # Import tracker module with error handling
 try:
     from core.main import StarlinkTracker
+
     tracker_instance = StarlinkTracker()
     TRACKER_AVAILABLE = True
 except ImportError:
     TRACKER_AVAILABLE = False
+
     # Create a minimal version
     class MinimalTracker:
-    
         def __init__(self):
             try:
                 from skyfield.api import load
+
                 self.ts = load.timescale()
             except ImportError:
                 self.ts = None
             # Initialize search index
             self._satellite_index = {}
             self._last_update = None
-        
+
         def update_tle_data(self, force=False):
             return []
-        
+
         def _build_search_index(self, satellites):
             """Build an index for faster satellite searching."""
             self._satellite_index = {}
@@ -64,7 +66,7 @@ except ImportError:
                     if name_lower not in self._satellite_index:
                         self._satellite_index[name_lower] = []
                     self._satellite_index[name_lower].append(sat)
-                    
+
                     # Index by NORAD ID
                     try:
                         norad_id = str(sat.model.satnum)
@@ -74,68 +76,67 @@ except ImportError:
                     except AttributeError:
                         # Handle case where sat.model might not be available
                         pass
-                    
+
                     # Index by name parts
-                    for part in sat.name.split('-'):
+                    for part in sat.name.split("-"):
                         part_lower = part.lower()
                         if part_lower and part_lower not in self._satellite_index:
                             self._satellite_index[part_lower] = []
                         self._satellite_index[part_lower].append(sat)
                 except Exception as e:
                     # Log error but continue indexing other satellites
-                    app.logger.warning(f"Error indexing satellite {getattr(sat, 'name', 'Unknown')}: {e}")
+                    app.logger.warning(
+                        f"Error indexing satellite {getattr(sat, 'name', 'Unknown')}: {e}"
+                    )
                     continue
-        
+
         def predict_passes(self, latitude, longitude, altitude=0, hours_ahead=24, min_elevation=10):
             # Return sample data
             return [
                 {
-                    'satellite': 'STARLINK-1234',
-                    'time': datetime.now() + timedelta(minutes=30),
-                    'altitude': 65.5,
-                    'azimuth': 42.3,
-                    'distance': 350.2,
-                    'velocity': 7.5,
-                    'brightness': 2.1
+                    "satellite": "STARLINK-1234",
+                    "time": datetime.now() + timedelta(minutes=30),
+                    "altitude": 65.5,
+                    "azimuth": 42.3,
+                    "distance": 350.2,
+                    "velocity": 7.5,
+                    "brightness": 2.1,
                 },
                 {
-                    'satellite': 'STARLINK-5678',
-                    'time': datetime.now() + timedelta(minutes=90),
-                    'altitude': 78.2,
-                    'azimuth': 58.1,
-                    'distance': 420.7,
-                    'velocity': 7.2,
-                    'brightness': 1.8
-                }
+                    "satellite": "STARLINK-5678",
+                    "time": datetime.now() + timedelta(minutes=90),
+                    "altitude": 78.2,
+                    "azimuth": 58.1,
+                    "distance": 420.7,
+                    "velocity": 7.2,
+                    "brightness": 1.8,
+                },
             ]
-        
+
         def get_satellite_info(self, satellite_name):
             return {
-                'name': satellite_name,
-                'norad_id': 12345,
-                'position': {
-                    'latitude': 45.0,
-                    'longitude': -122.0,
-                    'altitude': 550.0
+                "name": satellite_name,
+                "norad_id": 12345,
+                "position": {"latitude": 45.0, "longitude": -122.0, "altitude": 550.0},
+                "orbit": {
+                    "inclination": 53.0,
+                    "eccentricity": 0.001,
+                    "period": 95.0,
+                    "semi_major_axis": 6900.0,
                 },
-                'orbit': {
-                    'inclination': 53.0,
-                    'eccentricity': 0.001,
-                    'period': 95.0,
-                    'semi_major_axis': 6900.0
-                },
-                'updated': datetime.now().isoformat()
+                "updated": datetime.now().isoformat(),
             }
-        
+
         def start_scheduler(self):
             """Minimal scheduler method."""
             pass
-        
+
         def clear_caches(self):
             """Minimal cache clearing method."""
             pass
-    
+
     tracker_instance = MinimalTracker()
+
 
 # Multi-level cache for API responses
 # Uses Redis for persistent caching and in-memory for fast access
@@ -145,11 +146,14 @@ class APICache:
         self.timestamps = {}
         self.default_ttl = default_ttl
         self.logger = logging.getLogger(__name__)
-        
+
         # Try to initialize Redis cache
         try:
             import redis
-            self.redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
+            self.redis_client = redis.Redis(
+                host="localhost", port=6379, db=0, decode_responses=True
+            )
             self.redis_client.ping()  # Test connection
             self.use_redis = True
             self.logger.info("Redis cache initialized successfully")
@@ -161,7 +165,7 @@ class APICache:
             self.redis_client = None
             self.use_redis = False
             self.logger.warning(f"Redis not available, using in-memory cache only. Error: {e}")
-    
+
     def get(self, key):
         """Retrieve cached data from Redis or in-memory cache."""
         # Try to get from Redis first (if available)
@@ -173,7 +177,7 @@ class APICache:
                     return json.loads(cached_data)
             except Exception as e:
                 self.logger.warning(f"Error retrieving from Redis cache: {e}")
-        
+
         # Fall back to in-memory cache
         if key in self.cache:
             timestamp = self.timestamps[key]
@@ -186,7 +190,7 @@ class APICache:
                 del self.timestamps[key]
                 self.logger.debug(f"In-memory cache expired for key: {key}")
         return None
-    
+
     def set(self, key, value):
         """Store data in both Redis and in-memory cache."""
         # Store in Redis (if available)
@@ -196,12 +200,12 @@ class APICache:
                 self.logger.debug(f"Cached data in Redis for key: {key}")
             except Exception as e:
                 self.logger.warning(f"Error storing in Redis cache: {e}")
-        
+
         # Store in in-memory cache
         self.cache[key] = value
         self.timestamps[key] = datetime.now()
         self.logger.debug(f"Cached data in memory for key: {key}")
-    
+
     def clear(self):
         """Clear all cached data from both Redis and in-memory cache."""
         # Clear Redis cache (if available)
@@ -211,14 +215,16 @@ class APICache:
                 self.logger.debug("Redis cache cleared")
             except Exception as e:
                 self.logger.warning(f"Error clearing Redis cache: {e}")
-        
+
         # Clear in-memory cache
         self.cache.clear()
         self.timestamps.clear()
         self.logger.debug("In-memory cache cleared")
 
+
 # Initialize cache
 api_cache = APICache()
+
 
 # Cache decorator for API endpoints
 def cached(ttl=300):
@@ -228,18 +234,21 @@ def cached(ttl=300):
             # Generate cache key from function name and arguments
             cache_key = f.__name__ + str(args) + str(sorted(kwargs.items()))
             cache_key = hashlib.md5(cache_key.encode()).hexdigest()
-            
+
             # Try to get from cache
             cached_result = api_cache.get(cache_key)
             if cached_result is not None:
                 return cached_result
-            
+
             # Execute function and cache result
             result = f(*args, **kwargs)
             api_cache.set(cache_key, result)
             return result
+
         return wrapper
+
     return decorator
+
 
 # Error handler decorator
 def handle_api_errors(f):
@@ -249,10 +258,13 @@ def handle_api_errors(f):
             return f(*args, **kwargs)
         except Exception as e:
             logging.error(f"API error in {f.__name__}: {e}")
-            return jsonify({
-                'error': 'Internal server error',
-                'message': str(e) if app.config.get('DEBUG') else 'An error occurred'
-            }), 500
+            return jsonify(
+                {
+                    "error": "Internal server error",
+                    "message": str(e) if app.config.get("DEBUG") else "An error occurred",
+                }
+            ), 500
+
     return wrapper
 
 
@@ -269,21 +281,21 @@ def calculate_orbital_velocity(satellite, time_point):
         # Get positions at two nearby times
         t1 = time_point
         t2 = time_point.ts.from_datetime(time_point.utc_datetime() + timedelta(seconds=1))
-        
+
         # Calculate velocity relative to Earth center
         geocentric1 = satellite.at(t1)
         geocentric2 = satellite.at(t2)
-        
+
         # Get position vectors
         x1, y1, z1 = geocentric1.position.km
         x2, y2, z2 = geocentric2.position.km
-        
+
         # Calculate distance traveled in 1 second
-        vx = (x2 - x1)  # km/s
-        vy = (y2 - y1)  # km/s
-        vz = (z2 - z1)  # km/s
+        vx = x2 - x1  # km/s
+        vy = y2 - y1  # km/s
+        vz = z2 - z1  # km/s
         velocity = math.sqrt(vx**2 + vy**2 + vz**2)  # km/s
-        
+
         return velocity
     except Exception:
         return 0.0
@@ -299,28 +311,35 @@ def calculate_orbital_period(satellite, time_point):
     except Exception:
         return 0.0
 
-app = Flask(__name__, template_folder=os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '..', 'templates'))
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "templates"
+    ),
+)
 
 # Load configuration
 config = get_config()
 
 # Set default observer location from config
-if 'observer' in config:
-    DEFAULT_LATITUDE = config['observer'].get('default_latitude', 55.7558)
-    DEFAULT_LONGITUDE = config['observer'].get('default_longitude', 37.6173)
+if "observer" in config:
+    DEFAULT_LATITUDE = config["observer"].get("default_latitude", 55.7558)
+    DEFAULT_LONGITUDE = config["observer"].get("default_longitude", 37.6173)
 else:
     DEFAULT_LATITUDE = 55.7558  # Moscow
     DEFAULT_LONGITUDE = 37.6173
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, 
-                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 # Start scheduler for automated tasks (if available)
 if TRACKER_AVAILABLE:
     try:
         # Try to start scheduler if method exists
-        if hasattr(tracker_instance, 'start_scheduler'):
+        if hasattr(tracker_instance, "start_scheduler"):
             try:
                 tracker_instance.start_scheduler()
             except:
@@ -328,78 +347,87 @@ if TRACKER_AVAILABLE:
     except Exception as e:
         app.logger.warning(f"Could not start scheduler: {e}")
 
-def get_template_name(base_name, language='en'):
+
+def get_template_name(base_name, language="en"):
     """Get template name based on language preference."""
-    if language == 'ru':
+    if language == "ru":
         return f"{base_name}_ru.html"
     return f"{base_name}.html"
 
-@app.route('/')
+
+@app.route("/")
 def index():
     """Main dashboard showing current satellite positions."""
-    language = request.args.get('lang', 'en')
-    template = get_template_name('index', language)
+    language = request.args.get("lang", "en")
+    template = get_template_name("index", language)
     return render_template(template)
 
-@app.route('/passes')
+
+@app.route("/passes")
 def passes():
     """Page showing upcoming satellite passes."""
-    language = request.args.get('lang', 'en')
-    template = get_template_name('passes', language)
+    language = request.args.get("lang", "en")
+    template = get_template_name("passes", language)
     return render_template(template)
 
-@app.route('/coverage')
+
+@app.route("/coverage")
 def coverage():
     """Page showing global Starlink coverage."""
-    language = request.args.get('lang', 'en')
-    template = get_template_name('coverage', language)
+    language = request.args.get("lang", "en")
+    template = get_template_name("coverage", language)
     return render_template(template)
 
-@app.route('/settings')
+
+@app.route("/settings")
 def settings():
     """Page for configuring observer location and notification settings."""
-    language = request.args.get('lang', 'en')
-    template = get_template_name('settings', language)
+    language = request.args.get("lang", "en")
+    template = get_template_name("settings", language)
     return render_template(template)
 
-@app.route('/export')
+
+@app.route("/export")
 def export():
     """Page for exporting satellite data."""
-    language = request.args.get('lang', 'en')
-    template = get_template_name('export', language)
+    language = request.args.get("lang", "en")
+    template = get_template_name("export", language)
     return render_template(template)
 
-@app.route('/visualization')
+
+@app.route("/visualization")
 def visualization():
     """Page for interactive satellite visualization."""
-    language = request.args.get('lang', 'en')
-    template = get_template_name('visualization', language)
+    language = request.args.get("lang", "en")
+    template = get_template_name("visualization", language)
     return render_template(template)
 
 
-@app.route('/map')
+@app.route("/map")
 def map_view():
     """Page for real-time satellite map."""
-    language = request.args.get('lang', 'en')
-    template = get_template_name('map', language)
+    language = request.args.get("lang", "en")
+    template = get_template_name("map", language)
     return render_template(template)
 
 
-@app.route('/statistics')
+@app.route("/statistics")
 def statistics():
     """Page for satellite statistics."""
-    language = request.args.get('lang', 'en')
-    template = get_template_name('statistics', language)
+    language = request.args.get("lang", "en")
+    template = get_template_name("statistics", language)
     return render_template(template)
 
-@app.route('/ar')
+
+@app.route("/ar")
 def ar_view():
     """Page for augmented reality view."""
-    language = request.args.get('lang', 'en')
-    template = get_template_name('ar_view', language)
+    language = request.args.get("lang", "en")
+    template = get_template_name("ar_view", language)
     return render_template(template)
 
-@app.route('/api/satellites')
+
+@app.route("/api/satellites")
 @handle_api_errors
 @cached(ttl=600)  # Cache for 10 minutes
 def api_satellites():
@@ -407,91 +435,98 @@ def api_satellites():
     try:
         # Update TLE data if needed
         satellites = tracker_instance.update_tle_data()
-        
+
         # Debug: Print number of satellites loaded
         app.logger.info(f"Loaded {len(satellites)} satellites")
-        
+
         # Return simplified satellite data
         sat_data = []
         for sat in satellites[:50]:  # Limit to first 50 for performance
-            sat_data.append({
-                'name': sat.name,
-                'id': sat.name.split('-')[-1] if '-' in sat.name else sat.name
-            })
-        
-        return jsonify({
-            'satellites': sat_data,
-            'count': len(sat_data),
-            'total_count': len(satellites),
-            'updated': datetime.now().isoformat()
-        })
+            sat_data.append(
+                {"name": sat.name, "id": sat.name.split("-")[-1] if "-" in sat.name else sat.name}
+            )
+
+        return jsonify(
+            {
+                "satellites": sat_data,
+                "count": len(sat_data),
+                "total_count": len(satellites),
+                "updated": datetime.now().isoformat(),
+            }
+        )
     except Exception as e:
         app.logger.error(f"Error in api_satellites: {e}")
-        return jsonify({
-            'satellites': [],
-            'count': 0,
-            'total_count': 0,
-            'updated': datetime.now().isoformat(),
-            'error': 'Failed to load satellite data'
-        }), 500
+        return jsonify(
+            {
+                "satellites": [],
+                "count": 0,
+                "total_count": 0,
+                "updated": datetime.now().isoformat(),
+                "error": "Failed to load satellite data",
+            }
+        ), 500
 
-@app.route('/api/passes')
+
+@app.route("/api/passes")
 @handle_api_errors
 @cached(ttl=300)  # Cache for 5 minutes
 def api_passes():
     """API endpoint returning predicted satellite passes."""
     # Get location parameters from request or use defaults
     try:
-        lat = float(request.args.get('lat', DEFAULT_LATITUDE))
-        lon = float(request.args.get('lon', DEFAULT_LONGITUDE))
-        hours = int(request.args.get('hours', 24))
-        
+        lat = float(request.args.get("lat", DEFAULT_LATITUDE))
+        lon = float(request.args.get("lon", DEFAULT_LONGITUDE))
+        hours = int(request.args.get("hours", 24))
+
         # Validate parameters
         if not (-90 <= lat <= 90):
-            return jsonify({'error': 'Invalid latitude. Must be between -90 and 90.'}), 400
+            return jsonify({"error": "Invalid latitude. Must be between -90 and 90."}), 400
         if not (-180 <= lon <= 180):
-            return jsonify({'error': 'Invalid longitude. Must be between -180 and 180.'}), 400
+            return jsonify({"error": "Invalid longitude. Must be between -180 and 180."}), 400
         if not (1 <= hours <= 168):  # Max 1 week
-            return jsonify({'error': 'Invalid hours. Must be between 1 and 168.'}), 400
+            return jsonify({"error": "Invalid hours. Must be between 1 and 168."}), 400
     except ValueError:
-        return jsonify({'error': 'Invalid parameter format.'}), 400
-    
+        return jsonify({"error": "Invalid parameter format."}), 400
+
     try:
         # Predict passes
         passes = tracker_instance.predict_passes(lat, lon, hours_ahead=hours)
-        
+
         # Sort by time
-        passes.sort(key=lambda x: x['time'])
-        
+        passes.sort(key=lambda x: x["time"])
+
         # Format for JSON serialization
         formatted_passes = []
         for p in passes:
-            formatted_passes.append({
-                'satellite': p['satellite'],
-                'time': p['time'].isoformat(),
-                'altitude': round(p['altitude'], 1),
-                'azimuth': round(p['azimuth'], 1),
-                'distance': round(p['distance'], 1),
-                'velocity': round(p['velocity'], 2) if 'velocity' in p else 0,
-                'brightness': round(p['brightness'], 1) if 'brightness' in p else 5.0
-            })
-        
-        return jsonify({
-            'passes': formatted_passes,
-            'count': len(formatted_passes),
-            'location': {'latitude': lat, 'longitude': lon},
-            'period_hours': hours,
-            'generated': datetime.now().isoformat()
-        })
+            formatted_passes.append(
+                {
+                    "satellite": p["satellite"],
+                    "time": p["time"].isoformat(),
+                    "altitude": round(p["altitude"], 1),
+                    "azimuth": round(p["azimuth"], 1),
+                    "distance": round(p["distance"], 1),
+                    "velocity": round(p["velocity"], 2) if "velocity" in p else 0,
+                    "brightness": round(p["brightness"], 1) if "brightness" in p else 5.0,
+                }
+            )
+
+        return jsonify(
+            {
+                "passes": formatted_passes,
+                "count": len(formatted_passes),
+                "location": {"latitude": lat, "longitude": lon},
+                "period_hours": hours,
+                "generated": datetime.now().isoformat(),
+            }
+        )
     except Exception as e:
         app.logger.error(f"Error in api_passes: {e}")
-        return jsonify({
-            'passes': [],
-            'count': 0,
-            'error': 'Failed to predict satellite passes'
-        }), 500
+        return jsonify(
+            {"passes": [], "count": 0, "error": "Failed to predict satellite passes"}
+        ), 500
 
-@app.route('/api/coverage')
+
+@app.route("/api/coverage")
 @handle_api_errors
 @cached(ttl=3600)  # Cache for 1 hour
 def api_coverage():
@@ -502,56 +537,59 @@ def api_coverage():
         # Get total satellite count
         satellites = tracker_instance.update_tle_data()
         total_satellites = len(satellites) if satellites else 0
-        
+
         coverage_data = {
-            'regions': [
+            "regions": [
                 {
-                    'name': 'North America',
-                    'satellite_count': int(total_satellites * 0.4),
-                    'coverage_percentage': 98.5
+                    "name": "North America",
+                    "satellite_count": int(total_satellites * 0.4),
+                    "coverage_percentage": 98.5,
                 },
                 {
-                    'name': 'Europe',
-                    'satellite_count': int(total_satellites * 0.2),
-                    'coverage_percentage': 95.2
+                    "name": "Europe",
+                    "satellite_count": int(total_satellites * 0.2),
+                    "coverage_percentage": 95.2,
                 },
                 {
-                    'name': 'Asia',
-                    'satellite_count': int(total_satellites * 0.15),
-                    'coverage_percentage': 87.3
+                    "name": "Asia",
+                    "satellite_count": int(total_satellites * 0.15),
+                    "coverage_percentage": 87.3,
                 },
                 {
-                    'name': 'South America',
-                    'satellite_count': int(total_satellites * 0.1),
-                    'coverage_percentage': 75.1
+                    "name": "South America",
+                    "satellite_count": int(total_satellites * 0.1),
+                    "coverage_percentage": 75.1,
                 },
                 {
-                    'name': 'Africa',
-                    'satellite_count': int(total_satellites * 0.08),
-                    'coverage_percentage': 68.4
+                    "name": "Africa",
+                    "satellite_count": int(total_satellites * 0.08),
+                    "coverage_percentage": 68.4,
                 },
                 {
-                    'name': 'Oceania',
-                    'satellite_count': int(total_satellites * 0.07),
-                    'coverage_percentage': 82.7
-                }
+                    "name": "Oceania",
+                    "satellite_count": int(total_satellites * 0.07),
+                    "coverage_percentage": 82.7,
+                },
             ],
-            'total_satellites': total_satellites,
-            'global_coverage': 92.1,
-            'generated': datetime.now().isoformat()
+            "total_satellites": total_satellites,
+            "global_coverage": 92.1,
+            "generated": datetime.now().isoformat(),
         }
-        
+
         return jsonify(coverage_data)
     except Exception as e:
         app.logger.error(f"Error in api_coverage: {e}")
-        return jsonify({
-            'regions': [],
-            'total_satellites': 0,
-            'global_coverage': 0,
-            'error': 'Failed to generate coverage data'
-        }), 500
+        return jsonify(
+            {
+                "regions": [],
+                "total_satellites": 0,
+                "global_coverage": 0,
+                "error": "Failed to generate coverage data",
+            }
+        ), 500
 
-@app.route('/api/satellite/<satellite_name>')
+
+@app.route("/api/satellite/<satellite_name>")
 @handle_api_errors
 @cached(ttl=300)  # Cache for 5 minutes
 def api_satellite_info(satellite_name):
@@ -561,56 +599,59 @@ def api_satellite_info(satellite_name):
         if info:
             return jsonify(info)
         else:
-            return jsonify({'error': f'Satellite {satellite_name} not found'}), 404
+            return jsonify({"error": f"Satellite {satellite_name} not found"}), 404
     except Exception as e:
         app.logger.error(f"Error in api_satellite_info: {e}")
-        return jsonify({'error': 'Failed to get satellite information'}), 500
+        return jsonify({"error": "Failed to get satellite information"}), 500
 
-@app.route('/api/search')
+
+@app.route("/api/search")
 @handle_api_errors
 @cached(ttl=300)  # Cache for 5 minutes
 def api_search():
     """API endpoint for searching satellites by name or ID with enhanced search capabilities."""
     try:
-        query = request.args.get('q', '').strip().upper()
-        search_type = request.args.get('type', 'all')  # all, name, id, pattern
-        limit = min(int(request.args.get('limit', 20)), 100)  # Max 100 results
-        
+        query = request.args.get("q", "").strip().upper()
+        search_type = request.args.get("type", "all")  # all, name, id, pattern
+        limit = min(int(request.args.get("limit", 20)), 100)  # Max 100 results
+
         # Additional search parameters
-        min_altitude = request.args.get('min_altitude', None)
-        max_altitude = request.args.get('max_altitude', None)
-        min_inclination = request.args.get('min_inclination', None)
-        max_inclination = request.args.get('max_inclination', None)
-        
+        min_altitude = request.args.get("min_altitude", None)
+        max_altitude = request.args.get("max_altitude", None)
+        min_inclination = request.args.get("min_inclination", None)
+        max_inclination = request.args.get("max_inclination", None)
+
         if not query:
-            return jsonify({'error': 'Search query is required'}), 400
-        
+            return jsonify({"error": "Search query is required"}), 400
+
         # Update TLE data if needed
         satellites = tracker_instance.update_tle_data()
-        
+
         # Build search index if not already built or if using full tracker
-        if hasattr(tracker_instance, '_build_search_index') and satellites:
+        if hasattr(tracker_instance, "_build_search_index") and satellites:
             # Check if we need to rebuild the index (every 5 minutes)
-            if (not hasattr(tracker_instance, '_last_update') or 
-                tracker_instance._last_update is None or 
-                (datetime.now() - tracker_instance._last_update).total_seconds() > 300):  # 5 minutes
+            if (
+                not hasattr(tracker_instance, "_last_update")
+                or tracker_instance._last_update is None
+                or (datetime.now() - tracker_instance._last_update).total_seconds() > 300
+            ):  # 5 minutes
                 tracker_instance._build_search_index(satellites)
                 tracker_instance._last_update = datetime.now()
-        
+
         # Search for matching satellites using index
         matches = []
         query_lower = query.lower()
-        
+
         # Use index for faster searching if available
-        satellite_index = getattr(tracker_instance, '_satellite_index', None)
-        if satellite_index and hasattr(satellite_index, 'items'):
+        satellite_index = getattr(tracker_instance, "_satellite_index", None)
+        if satellite_index and hasattr(satellite_index, "items"):
             # Try to find matches in index first
             potential_matches = set()
-            
+
             # Check direct index matches
             if query_lower in satellite_index:
                 potential_matches.update(satellite_index[query_lower])
-            
+
             # Check for partial matches in index
             try:
                 for key, sats in satellite_index.items():
@@ -625,434 +666,463 @@ def api_search():
         else:
             # Fallback to linear search
             satellite_list = satellites
-        
+
         # Process matches
         for sat in satellite_list:
             sat_name = sat.name
             sat_name_lower = sat_name.lower()
             sat_id = str(sat.model.satnum)
-            
+
             # Different search types
             match = False
-            if search_type == 'all':
+            if search_type == "all":
                 # Search in name, ID, and patterns
-                match = (query in sat_name.upper() or 
-                        query in sat_id or
-                        query_lower in sat_name_lower)
-            elif search_type == 'name':
+                match = (
+                    query in sat_name.upper() or query in sat_id or query_lower in sat_name_lower
+                )
+            elif search_type == "name":
                 # Search only in name
                 match = query in sat_name.upper()
-            elif search_type == 'id':
+            elif search_type == "id":
                 # Search only in ID
                 match = query in sat_id
-            elif search_type == 'pattern':
+            elif search_type == "pattern":
                 # Pattern matching
                 match = query_lower in sat_name_lower
-            
+
             # Apply additional filters if match found
             if match and (min_altitude or max_altitude or min_inclination or max_inclination):
                 try:
                     # Check if tracker has ts attribute (not available in MinimalTracker)
-                    if hasattr(tracker_instance, 'ts') and tracker_instance.ts is not None:
+                    if hasattr(tracker_instance, "ts") and tracker_instance.ts is not None:
                         t = tracker_instance.ts.now()
                         elements = sat.orbit_elements_at(t)
-                        
+
                         # Apply altitude filter (semi-major axis)
                         if min_altitude and elements.semi_major_axis.km < float(min_altitude):
                             match = False
                         if max_altitude and elements.semi_major_axis.km > float(max_altitude):
                             match = False
-                        
+
                         # Apply inclination filter
-                        if min_inclination and elements.inclination.degrees < float(min_inclination):
+                        if min_inclination and elements.inclination.degrees < float(
+                            min_inclination
+                        ):
                             match = False
-                        if max_inclination and elements.inclination.degrees > float(max_inclination):
+                        if max_inclination and elements.inclination.degrees > float(
+                            max_inclination
+                        ):
                             match = False
                 except Exception as e:
                     app.logger.warning(f"Could not apply filters for {sat_name}: {e}")
-            
+
             if match:
                 # Get additional satellite info
                 sat_info = {
-                    'name': sat_name,
-                    'id': sat.model.satnum,
-                    'short_name': sat_name.split('-')[-1] if '-' in sat_name else sat_name,
-                    'norad_cat_id': sat.model.satnum
+                    "name": sat_name,
+                    "id": sat.model.satnum,
+                    "short_name": sat_name.split("-")[-1] if "-" in sat_name else sat_name,
+                    "norad_cat_id": sat.model.satnum,
                 }
-                
+
                 # Add orbital information if available
                 try:
                     # Check if tracker has ts attribute (not available in MinimalTracker)
-                    if hasattr(tracker_instance, 'ts') and tracker_instance.ts is not None:
+                    if hasattr(tracker_instance, "ts") and tracker_instance.ts is not None:
                         t = tracker_instance.ts.now()
                         geocentric = sat.at(t)
                         subpoint = geocentric.subpoint()
-                        sat_info['position'] = {
-                            'latitude': round(subpoint.latitude.degrees, 4),
-                            'longitude': round(subpoint.longitude.degrees, 4),
-                            'altitude_km': round(subpoint.elevation.km, 2)
+                        sat_info["position"] = {
+                            "latitude": round(subpoint.latitude.degrees, 4),
+                            "longitude": round(subpoint.longitude.degrees, 4),
+                            "altitude_km": round(subpoint.elevation.km, 2),
                         }
-                        
+
                         # Add orbital elements
                         elements = sat.orbit_elements_at(t)
-                        sat_info['orbital_elements'] = {
-                            'inclination_deg': round(elements.inclination.degrees, 4),
-                            'eccentricity': round(elements.eccentricity, 6),
-                            'period_minutes': round(elements.period_in_days * 24 * 60, 2),
-                            'semi_major_axis_km': round(elements.semi_major_axis.km, 2)
+                        sat_info["orbital_elements"] = {
+                            "inclination_deg": round(elements.inclination.degrees, 4),
+                            "eccentricity": round(elements.eccentricity, 6),
+                            "period_minutes": round(elements.period_in_days * 24 * 60, 2),
+                            "semi_major_axis_km": round(elements.semi_major_axis.km, 2),
                         }
                 except Exception:
                     # If we can't get position, just continue without it
                     pass
-                
+
                 matches.append(sat_info)
-                
+
                 # Limit results
                 if len(matches) >= limit:
                     break
-        
+
         # Sort results by relevance
-        if search_type == 'id' and query.isdigit():
+        if search_type == "id" and query.isdigit():
             # If searching by ID, sort by ID proximity
             query_int = int(query)
-            matches.sort(key=lambda x: abs(x['id'] - query_int))
-        elif search_type == 'name':
+            matches.sort(key=lambda x: abs(x["id"] - query_int))
+        elif search_type == "name":
             # If searching by name, sort by name similarity
-            matches.sort(key=lambda x: x['name'].find(query))
-        
-        return jsonify({
-            'results': matches,
-            'count': len(matches),
-            'query': query,
-            'search_type': search_type,
-            'limit': limit,
-            'filters_applied': {
-                'min_altitude': min_altitude,
-                'max_altitude': max_altitude,
-                'min_inclination': min_inclination,
-                'max_inclination': max_inclination
+            matches.sort(key=lambda x: x["name"].find(query))
+
+        return jsonify(
+            {
+                "results": matches,
+                "count": len(matches),
+                "query": query,
+                "search_type": search_type,
+                "limit": limit,
+                "filters_applied": {
+                    "min_altitude": min_altitude,
+                    "max_altitude": max_altitude,
+                    "min_inclination": min_inclination,
+                    "max_inclination": max_inclination,
+                },
             }
-        })
+        )
     except Exception as e:
         app.logger.error(f"Error in api_search: {e}")
-        return jsonify({'error': 'Failed to search satellites'}), 500
+        return jsonify({"error": "Failed to search satellites"}), 500
 
-@app.route('/api/export/<format>')
+
+@app.route("/api/export/<format>")
 @handle_api_errors
 def api_export(format):
     """API endpoint for exporting data in various formats."""
     try:
         from utils.data_processor import DataProcessor
-        
+
         # Initialize processor with config
         processor = DataProcessor()
-        
+
         # Load satellite data
         satellites = processor.load_satellite_data()
-        
+
         if not satellites:
-            return jsonify({'error': 'No satellite data available'}), 404
-        
+            return jsonify({"error": "No satellite data available"}), 404
+
         # Generate filename with timestamp
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        filename = f'starlink_export_{timestamp}'
-        
-        if format == 'json':
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"starlink_export_{timestamp}"
+
+        if format == "json":
             # Export to JSON
-            success = processor.export_to_json(satellites, filename + '.json')
+            success = processor.export_to_json(satellites, filename + ".json")
             if success:
                 # Return the data
                 try:
-                    with open(filename + '.json', 'r') as f:
+                    with open(filename + ".json") as f:
                         data = json.load(f)
                     return jsonify(data)
                 except Exception:
-                    return jsonify({'message': 'Export completed successfully'}), 200
+                    return jsonify({"message": "Export completed successfully"}), 200
             else:
-                return jsonify({'error': 'Failed to export data to JSON'}), 500
-        elif format == 'csv':
+                return jsonify({"error": "Failed to export data to JSON"}), 500
+        elif format == "csv":
             # Export to CSV
-            success = processor.export_to_csv(satellites, filename + '.csv')
+            success = processor.export_to_csv(satellites, filename + ".csv")
             if success:
-                return jsonify({'message': 'CSV export completed successfully'}), 200
+                return jsonify({"message": "CSV export completed successfully"}), 200
             else:
-                return jsonify({'error': 'Failed to export data to CSV'}), 500
+                return jsonify({"error": "Failed to export data to CSV"}), 500
         else:
-            return jsonify({'error': f'Unsupported format: {format}'}), 400
+            return jsonify({"error": f"Unsupported format: {format}"}), 400
     except Exception as e:
         app.logger.error(f"Error in api_export: {e}")
-        return jsonify({'error': 'Failed to export data'}), 500
+        return jsonify({"error": "Failed to export data"}), 500
 
-@app.route('/api/cache/clear', methods=['POST'])
+
+@app.route("/api/cache/clear", methods=["POST"])
 @handle_api_errors
 def clear_cache():
     """API endpoint to clear the cache."""
     try:
         api_cache.clear()
         # Try to clear tracker caches if method exists
-        if hasattr(tracker_instance, 'clear_caches'):
+        if hasattr(tracker_instance, "clear_caches"):
             try:
                 tracker_instance.clear_caches()
             except:
                 pass  # Ignore errors when clearing tracker caches
-        return jsonify({'message': 'Cache cleared successfully'})
+        return jsonify({"message": "Cache cleared successfully"})
     except Exception as e:
         app.logger.error(f"Error clearing cache: {e}")
-        return jsonify({'error': 'Failed to clear cache'}), 500
+        return jsonify({"error": "Failed to clear cache"}), 500
 
-@app.route('/api/visualization/orbits')
+
+@app.route("/api/visualization/orbits")
 @handle_api_errors
 def api_visualize_orbits():
     """API endpoint for generating interactive orbit visualization."""
     try:
-        import plotly.graph_objects as go
-        import plotly.utils
         import json
         from datetime import datetime, timedelta
-        
+
+        import plotly.graph_objects as go
+        import plotly.utils
+
         # Get parameters
-        hours = int(request.args.get('hours', 2))
-        max_satellites = int(request.args.get('satellites', 10))
-        
+        hours = int(request.args.get("hours", 2))
+        max_satellites = int(request.args.get("satellites", 10))
+
         # Update TLE data if needed
         satellites = tracker_instance.update_tle_data()
-        
+
         if not satellites:
-            return jsonify({'error': 'No satellite data available'}), 404
-        
+            return jsonify({"error": "No satellite data available"}), 404
+
         # Limit number of satellites for performance
-        satellites_to_plot = satellites[:min(max_satellites, len(satellites))]
-        
+        satellites_to_plot = satellites[: min(max_satellites, len(satellites))]
+
         # Create 3D plot
         fig = go.Figure()
-        
+
         # Time range for orbit calculation
         if not SKYFIELD_AVAILABLE or load is None:
-            return jsonify({'error': 'Skyfield not installed. Required for orbit calculations.'}), 501
-        
+            return jsonify(
+                {"error": "Skyfield not installed. Required for orbit calculations."}
+            ), 501
+
         ts = load.timescale()
         t0 = ts.now()
         t1 = ts.from_datetime(datetime.now() + timedelta(hours=hours))
-        times = ts.linspace(t0, t1, config['visualization']['orbit_points'])
-        
+        times = ts.linspace(t0, t1, config["visualization"]["orbit_points"])
+
         # Plot orbits for selected satellites
         for satellite in satellites_to_plot:
             try:
                 geocentric = satellite.at(times)
                 x, y, z = geocentric.position.km
-                
-                fig.add_trace(go.Scatter3d(
-                    x=x, y=y, z=z,
-                    mode='lines',
-                    name=satellite.name.split()[0],
-                    line=dict(width=2)
-                ))
+
+                fig.add_trace(
+                    go.Scatter3d(
+                        x=x,
+                        y=y,
+                        z=z,
+                        mode="lines",
+                        name=satellite.name.split()[0],
+                        line={"width": 2},
+                    )
+                )
             except Exception as e:
                 app.logger.warning(f"Error plotting orbit for {satellite.name}: {e}")
                 continue
-        
+
         # Update layout
         fig.update_layout(
-            title='Starlink Satellite Orbits',
-            scene=dict(
-                xaxis_title='X (km)',
-                yaxis_title='Y (km)',
-                zaxis_title='Z (km)',
-                aspectmode='data'
-            ),
-            margin=dict(l=0, r=0, b=0, t=30)
+            title="Starlink Satellite Orbits",
+            scene={
+                "xaxis_title": "X (km)", "yaxis_title": "Y (km)", "zaxis_title": "Z (km)", "aspectmode": "data"
+            },
+            margin={"l": 0, "r": 0, "b": 0, "t": 30},
         )
-        
+
         # Convert to JSON for web delivery
         graphJSON = json.dumps(fig, cls=plotly.utils.PlotlyJSONEncoder)
-        
-        return jsonify({
-            'plot': graphJSON,
-            'satellite_count': len(satellites_to_plot),
-            'hours': hours,
-            'generated': datetime.now().isoformat()
-        })
+
+        return jsonify(
+            {
+                "plot": graphJSON,
+                "satellite_count": len(satellites_to_plot),
+                "hours": hours,
+                "generated": datetime.now().isoformat(),
+            }
+        )
     except ImportError as e:
         error_msg = str(e)
-        if 'plotly' in error_msg.lower():
-            return jsonify({'error': 'Plotly not installed. Please install with: pip install plotly'}), 501
+        if "plotly" in error_msg.lower():
+            return jsonify(
+                {"error": "Plotly not installed. Please install with: pip install plotly"}
+            ), 501
         else:
             app.logger.error(f"Import error in api_visualize_orbits: {e}")
-            return jsonify({'error': 'Missing required dependencies'}), 500
+            return jsonify({"error": "Missing required dependencies"}), 500
     except Exception as e:
         app.logger.error(f"Error in api_visualize_orbits: {e}")
-        return jsonify({'error': 'Failed to generate orbit visualization'}), 500
+        return jsonify({"error": "Failed to generate orbit visualization"}), 500
 
 
-@app.route('/api/statistics')
+@app.route("/api/statistics")
 @handle_api_errors
 def api_statistics():
     """API endpoint for satellite pass statistics."""
     try:
         from utils.data_processor import DataProcessor
-        
+
         # Get location parameters from request or use defaults
-        lat = float(request.args.get('lat', DEFAULT_LATITUDE))
-        lon = float(request.args.get('lon', DEFAULT_LONGITUDE))
-        hours = int(request.args.get('hours', 24))
-        min_elevation = int(float(request.args.get('min_elevation', 10)))
-        
+        lat = float(request.args.get("lat", DEFAULT_LATITUDE))
+        lon = float(request.args.get("lon", DEFAULT_LONGITUDE))
+        hours = int(request.args.get("hours", 24))
+        min_elevation = int(float(request.args.get("min_elevation", 10)))
+
         # Validate parameters
         if not (-90 <= lat <= 90):
-            return jsonify({'error': 'Invalid latitude. Must be between -90 and 90.'}), 400
+            return jsonify({"error": "Invalid latitude. Must be between -90 and 90."}), 400
         if not (-180 <= lon <= 180):
-            return jsonify({'error': 'Invalid longitude. Must be between -180 and 180.'}), 400
+            return jsonify({"error": "Invalid longitude. Must be between -180 and 180."}), 400
         if not (1 <= hours <= 168):  # Max 1 week
-            return jsonify({'error': 'Invalid hours. Must be between 1 and 168.'}), 400
+            return jsonify({"error": "Invalid hours. Must be between 1 and 168."}), 400
         if not (0 <= min_elevation <= 90):
-            return jsonify({'error': 'Invalid min_elevation. Must be between 0 and 90.'}), 400
-        
+            return jsonify({"error": "Invalid min_elevation. Must be between 0 and 90."}), 400
+
         # Predict passes
-        passes = tracker_instance.predict_passes(lat, lon, hours_ahead=hours, min_elevation=min_elevation)
-        
+        passes = tracker_instance.predict_passes(
+            lat, lon, hours_ahead=hours, min_elevation=min_elevation
+        )
+
         # Initialize data processor
         processor = DataProcessor()
-        
+
         # Calculate statistics
         stats = processor.calculate_satellite_statistics(passes)
-        
+
         # Add detailed statistics
         if passes:
             # Calculate average brightness
-            avg_brightness = sum(p.get('brightness', 5.0) for p in passes) / len(passes)
-            
+            avg_brightness = sum(p.get("brightness", 5.0) for p in passes) / len(passes)
+
             # Calculate average velocity
-            avg_velocity = sum(p.get('velocity', 0.0) for p in passes) / len(passes)
-            
+            avg_velocity = sum(p.get("velocity", 0.0) for p in passes) / len(passes)
+
             # Find brightest pass
-            brightest_pass = min(passes, key=lambda x: x.get('brightness', 5.0))
-            
+            brightest_pass = min(passes, key=lambda x: x.get("brightness", 5.0))
+
             # Find fastest pass
-            fastest_pass = max(passes, key=lambda x: x.get('velocity', 0.0))
-            
-            stats['detailed'] = {
-                'average_brightness': round(avg_brightness, 2),
-                'average_velocity_kms': round(avg_velocity, 2),
-                'brightest_pass': {
-                    'satellite': brightest_pass['satellite'],
-                    'brightness': round(brightest_pass['brightness'], 2),
-                    'time': brightest_pass['time'].isoformat() if isinstance(brightest_pass['time'], datetime) else brightest_pass['time']
+            fastest_pass = max(passes, key=lambda x: x.get("velocity", 0.0))
+
+            stats["detailed"] = {
+                "average_brightness": round(avg_brightness, 2),
+                "average_velocity_kms": round(avg_velocity, 2),
+                "brightest_pass": {
+                    "satellite": brightest_pass["satellite"],
+                    "brightness": round(brightest_pass["brightness"], 2),
+                    "time": brightest_pass["time"].isoformat()
+                    if isinstance(brightest_pass["time"], datetime)
+                    else brightest_pass["time"],
                 },
-                'fastest_pass': {
-                    'satellite': fastest_pass['satellite'],
-                    'velocity_kms': round(fastest_pass['velocity'], 2),
-                    'time': fastest_pass['time'].isoformat() if isinstance(fastest_pass['time'], datetime) else fastest_pass['time']
-                }
+                "fastest_pass": {
+                    "satellite": fastest_pass["satellite"],
+                    "velocity_kms": round(fastest_pass["velocity"], 2),
+                    "time": fastest_pass["time"].isoformat()
+                    if isinstance(fastest_pass["time"], datetime)
+                    else fastest_pass["time"],
+                },
             }
-        
-        return jsonify({
-            'statistics': stats,
-            'location': {'latitude': lat, 'longitude': lon},
-            'period_hours': hours,
-            'min_elevation': min_elevation,
-            'generated': datetime.now().isoformat()
-        })
+
+        return jsonify(
+            {
+                "statistics": stats,
+                "location": {"latitude": lat, "longitude": lon},
+                "period_hours": hours,
+                "min_elevation": min_elevation,
+                "generated": datetime.now().isoformat(),
+            }
+        )
     except Exception as e:
         app.logger.error(f"Error in api_statistics: {e}")
-        return jsonify({
-            'error': 'Failed to calculate satellite statistics'
-        }), 500
+        return jsonify({"error": "Failed to calculate satellite statistics"}), 500
 
-@app.route('/api/anomalies')
+
+@app.route("/api/anomalies")
 @handle_api_errors
 def api_anomalies():
     """API endpoint for satellite anomaly detection."""
     try:
         # Get recent anomalies from tracker
-        anomalies = getattr(tracker_instance, 'anomaly_history', [])
-        
+        anomalies = getattr(tracker_instance, "anomaly_history", [])
+
         # Filter by time range (last 24 hours by default)
-        hours = int(request.args.get('hours', 24))
+        hours = int(request.args.get("hours", 24))
         cutoff_time = datetime.now() - timedelta(hours=hours)
-        
+
         recent_anomalies = [
-            anomaly for anomaly in anomalies
-            if anomaly.get('timestamp', datetime.min) >= cutoff_time
+            anomaly
+            for anomaly in anomalies
+            if anomaly.get("timestamp", datetime.min) >= cutoff_time
         ]
-        
+
         # Sort by timestamp (newest first)
-        recent_anomalies.sort(key=lambda x: x.get('timestamp', datetime.min), reverse=True)
-        
+        recent_anomalies.sort(key=lambda x: x.get("timestamp", datetime.min), reverse=True)
+
         # Limit results
-        limit = min(int(request.args.get('limit', 50)), 100)
+        limit = min(int(request.args.get("limit", 50)), 100)
         recent_anomalies = recent_anomalies[:limit]
-        
-        return jsonify({
-            'anomalies': recent_anomalies,
-            'count': len(recent_anomalies),
-            'total_count': len(anomalies),
-            'period_hours': hours,
-            'generated': datetime.now().isoformat()
-        })
+
+        return jsonify(
+            {
+                "anomalies": recent_anomalies,
+                "count": len(recent_anomalies),
+                "total_count": len(anomalies),
+                "period_hours": hours,
+                "generated": datetime.now().isoformat(),
+            }
+        )
     except Exception as e:
         app.logger.error(f"Error in api_anomalies: {e}")
-        return jsonify({
-            'error': 'Failed to retrieve satellite anomalies'
-        }), 500
+        return jsonify({"error": "Failed to retrieve satellite anomalies"}), 500
 
-@app.route('/api/predictions/ml')
+
+@app.route("/api/predictions/ml")
 @handle_api_errors
 def api_ml_predictions():
     """API endpoint for ML-based satellite pass predictions."""
     try:
         from utils.data_processor import DataProcessor
-        
+
         # Get location parameters from request or use defaults
-        lat = float(request.args.get('lat', DEFAULT_LATITUDE))
-        lon = float(request.args.get('lon', DEFAULT_LONGITUDE))
-        hours = int(request.args.get('hours', 24))
-        
+        lat = float(request.args.get("lat", DEFAULT_LATITUDE))
+        lon = float(request.args.get("lon", DEFAULT_LONGITUDE))
+        hours = int(request.args.get("hours", 24))
+
         # Validate parameters
         if not (-90 <= lat <= 90):
-            return jsonify({'error': 'Invalid latitude. Must be between -90 and 90.'}), 400
+            return jsonify({"error": "Invalid latitude. Must be between -90 and 90."}), 400
         if not (-180 <= lon <= 180):
-            return jsonify({'error': 'Invalid longitude. Must be between -180 and 180.'}), 400
+            return jsonify({"error": "Invalid longitude. Must be between -180 and 180."}), 400
         if not (1 <= hours <= 168):  # Max 1 week
-            return jsonify({'error': 'Invalid hours. Must be between 1 and 168.'}), 400
-        
+            return jsonify({"error": "Invalid hours. Must be between 1 and 168."}), 400
+
         # Predict passes
         passes = tracker_instance.predict_passes(lat, lon, hours_ahead=hours)
-        
+
         # Initialize data processor
         processor = DataProcessor()
-        
+
         # Generate ML predictions
         ml_predictions = processor._generate_ml_predictions(passes)
-        
-        return jsonify({
-            'ml_predictions': ml_predictions,
-            'location': {'latitude': lat, 'longitude': lon},
-            'period_hours': hours,
-            'generated': datetime.now().isoformat()
-        })
+
+        return jsonify(
+            {
+                "ml_predictions": ml_predictions,
+                "location": {"latitude": lat, "longitude": lon},
+                "period_hours": hours,
+                "generated": datetime.now().isoformat(),
+            }
+        )
     except Exception as e:
         app.logger.error(f"Error in api_ml_predictions: {e}")
-        return jsonify({
-            'error': 'Failed to generate ML-based predictions'
-        }), 500
+        return jsonify({"error": "Failed to generate ML-based predictions"}), 500
+
 
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors."""
-    return jsonify({'error': 'Not found'}), 404
+    return jsonify({"error": "Not found"}), 404
+
 
 @app.errorhandler(500)
 def internal_error(error):
     """Handle 500 errors."""
-    return jsonify({'error': 'Internal server error'}), 500
+    return jsonify({"error": "Internal server error"}), 500
+
 
 def create_templates_dir():
     """Create templates directory with basic HTML files."""
-    templates_dir = 'templates'
+    templates_dir = "templates"
     os.makedirs(templates_dir, exist_ok=True)
-    
+
     # Create base template
-    base_html = '''<!DOCTYPE html>
+    base_html = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -1108,11 +1178,11 @@ def create_templates_dir():
             </div>
         </div>
     </nav>
-    
+
     <div class="container mt-4">
         {% block content %}{% endblock %}
     </div>
-    
+
     <footer class="bg-light">
         <div class="container">
             <div class="row">
@@ -1124,16 +1194,16 @@ def create_templates_dir():
             </div>
         </div>
     </footer>
-    
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
-</html>'''
-    
-    with open(os.path.join(templates_dir, 'base.html'), 'w', encoding='utf-8') as f:
+</html>"""
+
+    with open(os.path.join(templates_dir, "base.html"), "w", encoding="utf-8") as f:
         f.write(base_html)
-    
+
     # Create index template
-    index_html = '''{% extends "base.html" %}
+    index_html = """{% extends "base.html" %}
 
 {% block content %}
 <div class="row">
@@ -1165,7 +1235,7 @@ def create_templates_dir():
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
@@ -1231,7 +1301,7 @@ fetch('/api/passes?hours=48')
     .then(data => {
         const nextPassContent = document.getElementById('next-pass-content');
         const recentPasses = document.getElementById('recent-passes');
-        
+
         if (data.passes && data.passes.length > 0) {
             // Next pass
             const nextPass = data.passes[0];
@@ -1248,7 +1318,7 @@ fetch('/api/passes?hours=48')
                     </div>
                 </div>
             `;
-            
+
             // Recent passes (show first 5)
             recentPasses.innerHTML = '';
             const passesToShow = Math.min(5, data.passes.length);
@@ -1275,13 +1345,13 @@ fetch('/api/passes?hours=48')
         document.getElementById('recent-passes').innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error loading passes</td></tr>';
     });
 </script>
-{% endblock %}'''
-    
-    with open(os.path.join(templates_dir, 'index.html'), 'w', encoding='utf-8') as f:
+{% endblock %}"""
+
+    with open(os.path.join(templates_dir, "index.html"), "w", encoding="utf-8") as f:
         f.write(index_html)
-    
+
     # Create passes template
-    passes_html = '''{% extends "base.html" %}
+    passes_html = """{% extends "base.html" %}
 
 {% block content %}
 <div class="row">
@@ -1359,19 +1429,19 @@ fetch('/api/passes?hours=48')
 function fetchPasses(lat, lon, hours) {
     const tableBody = document.getElementById('passes-table');
     tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Loading passes...</td></tr>';
-    
+
     fetch(`/api/passes?lat=${lat}&lon=${lon}&hours=${hours}`)
         .then(response => response.json())
         .then(data => {
             tableBody.innerHTML = '';
             document.getElementById('pass-count').textContent = `${data.passes.length} passes`;
-            
+
             if (data.passes && data.passes.length > 0) {
                 data.passes.forEach(pass => {
                     const row = document.createElement('tr');
                     // Calculate approximate duration (this is a simplified calculation)
                     const duration = Math.max(1, Math.round(pass.altitude / 10)); // In minutes
-                    
+
                     row.innerHTML = `
                         <td>${pass.satellite}</td>
                         <td>${new Date(pass.time).toLocaleString()}</td>
@@ -1379,8 +1449,8 @@ function fetchPasses(lat, lon, hours) {
                             <div class="d-flex align-items-center">
                                 <span>${pass.altitude}°</span>
                                 <div class="progress ms-2" style="width: 100px; height: 5px;">
-                                    <div class="progress-bar" role="progressbar" 
-                                         style="width: ${Math.min(100, pass.altitude)}%" 
+                                    <div class="progress-bar" role="progressbar"
+                                         style="width: ${Math.min(100, pass.altitude)}%"
                                          aria-valuenow="${pass.altitude}" aria-valuemin="0" aria-valuemax="90"></div>
                                 </div>
                             </div>
@@ -1404,11 +1474,11 @@ function fetchPasses(lat, lon, hours) {
 // Handle form submission
 document.getElementById('pass-filter-form').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const lat = document.getElementById('latitude').value;
     const lon = document.getElementById('longitude').value;
     const hours = document.getElementById('hours').value;
-    
+
     fetchPasses(lat, lon, hours);
 });
 
@@ -1417,13 +1487,13 @@ document.addEventListener('DOMContentLoaded', function() {
     fetchPasses(55.7558, 37.6173, 48);
 });
 </script>
-{% endblock %}'''
-    
-    with open(os.path.join(templates_dir, 'passes.html'), 'w', encoding='utf-8') as f:
+{% endblock %}"""
+
+    with open(os.path.join(templates_dir, "passes.html"), "w", encoding="utf-8") as f:
         f.write(passes_html)
-    
+
     # Create coverage template
-    coverage_html = '''{% extends "base.html" %}
+    coverage_html = """{% extends "base.html" %}
 
 {% block content %}
 <div class="row">
@@ -1478,7 +1548,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
@@ -1494,11 +1564,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         <i class="fas fa-satellite"></i>
                     </div>
                 </div>
-                
+
                 <div class="progress mb-3">
                     <div class="progress-bar bg-success" role="progressbar" style="width: 92%" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100">92% Operational</div>
                 </div>
-                
+
                 <div class="row">
                     <div class="col-6">
                         <p class="mb-1"><small class="text-muted">Active</small></p>
@@ -1522,7 +1592,7 @@ fetch('/api/coverage')
         // Update regional coverage statistics
         const statsTable = document.getElementById('coverage-stats');
         statsTable.innerHTML = '';
-        
+
         if (data.regions && data.regions.length > 0) {
             data.regions.forEach(region => {
                 const row = document.createElement('tr');
@@ -1533,8 +1603,8 @@ fetch('/api/coverage')
                         <div class="d-flex align-items-center">
                             <span>${region.coverage_percentage}%</span>
                             <div class="progress ms-2" style="width: 100px; height: 5px;">
-                                <div class="progress-bar" role="progressbar" 
-                                     style="width: ${region.coverage_percentage}%" 
+                                <div class="progress-bar" role="progressbar"
+                                     style="width: ${region.coverage_percentage}%"
                                      aria-valuenow="${region.coverage_percentage}" aria-valuemin="0" aria-valuemax="100"></div>
                             </div>
                         </div>
@@ -1545,7 +1615,7 @@ fetch('/api/coverage')
         } else {
             statsTable.innerHTML = '<tr><td colspan="3" class="text-center">No coverage data available</td></tr>';
         }
-        
+
         // Update constellation status
         document.getElementById('total-satellites').textContent = data.total_satellites || '-';
         document.getElementById('active-satellites').textContent = Math.round((data.total_satellites || 0) * (data.global_coverage || 0) / 100) || '-';
@@ -1556,13 +1626,13 @@ fetch('/api/coverage')
         document.getElementById('coverage-stats').innerHTML = '<tr><td colspan="3" class="text-center text-danger">Error loading coverage data</td></tr>';
     });
 </script>
-{% endblock %}'''
-    
-    with open(os.path.join(templates_dir, 'coverage.html'), 'w', encoding='utf-8') as f:
+{% endblock %}"""
+
+    with open(os.path.join(templates_dir, "coverage.html"), "w", encoding="utf-8") as f:
         f.write(coverage_html)
-    
+
     # Create settings template
-    settings_html = '''{% extends "base.html" %}
+    settings_html = """{% extends "base.html" %}
 
 {% block content %}
 <div class="row">
@@ -1609,7 +1679,7 @@ fetch('/api/coverage')
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
@@ -1721,13 +1791,13 @@ document.getElementById('clear-cache').addEventListener('click', function() {
     }
 });
 </script>
-{% endblock %}'''
-    
-    with open(os.path.join(templates_dir, 'settings.html'), 'w', encoding='utf-8') as f:
+{% endblock %}"""
+
+    with open(os.path.join(templates_dir, "settings.html"), "w", encoding="utf-8") as f:
         f.write(settings_html)
-    
+
     # Create export template
-    export_html = '''{% extends "base.html" %}
+    export_html = """{% extends "base.html" %}
 
 {% block content %}
 <div class="row">
@@ -1779,7 +1849,7 @@ document.getElementById('clear-cache').addEventListener('click', function() {
             </div>
         </div>
     </div>
-    
+
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">
@@ -1841,89 +1911,94 @@ document.getElementById('clear-cache').addEventListener('click', function() {
 // Handle export form submission
 document.getElementById('export-form').addEventListener('submit', function(e) {
     e.preventDefault();
-    
+
     const format = document.getElementById('export-format').value;
-    
+
     // In a real implementation, this would trigger the actual export
     alert(`Exporting data in ${format.toUpperCase()} format. This would download a file in a real implementation.`);
-    
+
     // Example of how to trigger an actual download:
     // window.location.href = `/api/export/${format}`;
 });
 </script>
-{% endblock %}'''
-    
-    with open(os.path.join(templates_dir, 'export.html'), 'w', encoding='utf-8') as f:
+{% endblock %}"""
+
+    with open(os.path.join(templates_dir, "export.html"), "w", encoding="utf-8") as f:
         f.write(export_html)
 
 
-@app.route('/api/satellites/advanced-search')
+@app.route("/api/satellites/advanced-search")
 @handle_api_errors
 def api_advanced_satellite_search():
     """API endpoint for advanced satellite search with detailed information."""
     try:
         # Get search parameters
-        query = request.args.get('q', '').strip()
-        search_fields = request.args.get('fields', 'name,id').split(',')
-        sort_by = request.args.get('sort', 'name')
-        order = request.args.get('order', 'asc')
-        limit = min(int(request.args.get('limit', 50)), 100)
-        include_orbital_data = request.args.get('orbital_data', 'false').lower() == 'true'
-        include_position = request.args.get('position', 'false').lower() == 'true'
-        min_inclination = request.args.get('min_inclination', None)
-        max_inclination = request.args.get('max_inclination', None)
-        min_eccentricity = request.args.get('min_eccentricity', None)
-        max_eccentricity = request.args.get('max_eccentricity', None)
-        min_altitude = request.args.get('min_altitude', None)
-        max_altitude = request.args.get('max_altitude', None)
-        
+        query = request.args.get("q", "").strip()
+        search_fields = request.args.get("fields", "name,id").split(",")
+        sort_by = request.args.get("sort", "name")
+        order = request.args.get("order", "asc")
+        limit = min(int(request.args.get("limit", 50)), 100)
+        include_orbital_data = request.args.get("orbital_data", "false").lower() == "true"
+        include_position = request.args.get("position", "false").lower() == "true"
+        min_inclination = request.args.get("min_inclination", None)
+        max_inclination = request.args.get("max_inclination", None)
+        min_eccentricity = request.args.get("min_eccentricity", None)
+        max_eccentricity = request.args.get("max_eccentricity", None)
+        min_altitude = request.args.get("min_altitude", None)
+        max_altitude = request.args.get("max_altitude", None)
+
         if not query:
-            return jsonify({'error': 'Search query is required'}), 400
-        
+            return jsonify({"error": "Search query is required"}), 400
+
         # Update TLE data if needed
         satellites = tracker_instance.update_tle_data()
-        
+
         # Search for matching satellites
         matches = []
         query_lower = query.lower()
-        
+
         for sat in satellites:
             sat_name = sat.name
             sat_name_lower = sat_name.lower()
             sat_id = str(sat.model.satnum)
-            
+
             # Check for matches based on search fields
             match = False
             for field in search_fields:
-                if field == 'name' and query_lower in sat_name_lower:
+                if (field == "name" and query_lower in sat_name_lower) or (field == "id" and query in sat_id) or (field == "all" and (query_lower in sat_name_lower or query in sat_id)):
                     match = True
                     break
-                elif field == 'id' and query in sat_id:
-                    match = True
-                    break
-                elif field == 'all' and (query_lower in sat_name_lower or query in sat_id):
-                    match = True
-                    break
-            
+
             # Apply additional filters if match found
-            if match and (min_inclination or max_inclination or min_eccentricity or max_eccentricity or min_altitude or max_altitude):
+            if match and (
+                min_inclination
+                or max_inclination
+                or min_eccentricity
+                or max_eccentricity
+                or min_altitude
+                or max_altitude
+            ):
                 try:
-                    if hasattr(tracker_instance, 'ts') and tracker_instance.ts is not None:
+                    if hasattr(tracker_instance, "ts") and tracker_instance.ts is not None:
                         t = tracker_instance.ts.now()
                         elements = sat.orbit_elements_at(t)
-                        
+
                         # Apply inclination filter
-                        if min_inclination and elements.inclination.degrees < float(min_inclination):
+                        if min_inclination and elements.inclination.degrees < float(
+                            min_inclination
+                        ):
                             match = False
-                        if max_inclination and elements.inclination.degrees > float(max_inclination):
+                        if max_inclination and elements.inclination.degrees > float(
+                            max_inclination
+                        ):
                             match = False
-                        
+
                         # Apply eccentricity filter
                         if min_eccentricity and elements.eccentricity < float(min_eccentricity):
                             match = False
                         if max_eccentricity and elements.eccentricity > float(max_eccentricity):
                             match = False
-                        
+
                         # Apply altitude filter (semi-major axis)
                         if min_altitude and elements.semi_major_axis.km < float(min_altitude):
                             match = False
@@ -1931,128 +2006,139 @@ def api_advanced_satellite_search():
                             match = False
                 except Exception as e:
                     app.logger.warning(f"Could not apply filters for {sat_name}: {e}")
-            
+
             if match:
                 # Build satellite info
                 sat_info = {
-                    'name': sat_name,
-                    'id': sat.model.satnum,
-                    'norad_cat_id': sat.model.satnum
+                    "name": sat_name,
+                    "id": sat.model.satnum,
+                    "norad_cat_id": sat.model.satnum,
                 }
-                
+
                 # Add orbital data if requested
                 if include_orbital_data:
                     try:
-                        if hasattr(tracker_instance, 'ts') and tracker_instance.ts is not None:
+                        if hasattr(tracker_instance, "ts") and tracker_instance.ts is not None:
                             t = tracker_instance.ts.now()
                             elements = sat.orbit_elements_at(t)
-                            sat_info['orbital_elements'] = {
-                                'inclination_deg': round(elements.inclination.degrees, 4),
-                                'eccentricity': round(elements.eccentricity, 6),
-                                'period_minutes': round(elements.period_in_days * 24 * 60, 2),
-                                'semi_major_axis_km': round(elements.semi_major_axis.km, 2),
-                                'right_ascension_deg': round(elements.longitude_of_ascending_node.degrees, 4),
-                                'argument_of_perigee_deg': round(elements.argument_of_perigee.degrees, 4),
-                                'mean_anomaly_deg': round(elements.mean_anomaly.degrees, 4)
+                            sat_info["orbital_elements"] = {
+                                "inclination_deg": round(elements.inclination.degrees, 4),
+                                "eccentricity": round(elements.eccentricity, 6),
+                                "period_minutes": round(elements.period_in_days * 24 * 60, 2),
+                                "semi_major_axis_km": round(elements.semi_major_axis.km, 2),
+                                "right_ascension_deg": round(
+                                    elements.longitude_of_ascending_node.degrees, 4
+                                ),
+                                "argument_of_perigee_deg": round(
+                                    elements.argument_of_perigee.degrees, 4
+                                ),
+                                "mean_anomaly_deg": round(elements.mean_anomaly.degrees, 4),
                             }
-                            
+
                             # Calculate velocity if possible
                             if include_position:
                                 velocity = calculate_orbital_velocity(sat, t)
-                                sat_info['velocity_kms'] = round(velocity, 3)
+                                sat_info["velocity_kms"] = round(velocity, 3)
                     except Exception as e:
                         app.logger.warning(f"Could not get orbital data for {sat_name}: {e}")
-                
+
                 # Add position data if requested
                 if include_position:
                     try:
-                        if hasattr(tracker_instance, 'ts') and tracker_instance.ts is not None:
+                        if hasattr(tracker_instance, "ts") and tracker_instance.ts is not None:
                             t = tracker_instance.ts.now()
                             geocentric = sat.at(t)
                             subpoint = geocentric.subpoint()
-                            sat_info['position'] = {
-                                'latitude': round(subpoint.latitude.degrees, 4),
-                                'longitude': round(subpoint.longitude.degrees, 4),
-                                'altitude_km': round(subpoint.elevation.km, 2)
+                            sat_info["position"] = {
+                                "latitude": round(subpoint.latitude.degrees, 4),
+                                "longitude": round(subpoint.longitude.degrees, 4),
+                                "altitude_km": round(subpoint.elevation.km, 2),
                             }
                     except Exception as e:
                         app.logger.warning(f"Could not get position for {sat_name}: {e}")
-                
+
                 matches.append(sat_info)
-                
+
                 # Limit results
                 if len(matches) >= limit:
                     break
-        
+
         # Sort results
-        if sort_by == 'name':
-            matches.sort(key=lambda x: x['name'], reverse=(order == 'desc'))
-        elif sort_by == 'id':
-            matches.sort(key=lambda x: x['id'], reverse=(order == 'desc'))
-        
-        return jsonify({
-            'results': matches,
-            'count': len(matches),
-            'query': query,
-            'search_fields': search_fields,
-            'sort_by': sort_by,
-            'order': order,
-            'limit': limit,
-            'include_orbital_data': include_orbital_data,
-            'include_position': include_position,
-            'filters': {
-                'min_inclination': min_inclination,
-                'max_inclination': max_inclination,
-                'min_eccentricity': min_eccentricity,
-                'max_eccentricity': max_eccentricity,
-                'min_altitude': min_altitude,
-                'max_altitude': max_altitude
+        if sort_by == "name":
+            matches.sort(key=lambda x: x["name"], reverse=(order == "desc"))
+        elif sort_by == "id":
+            matches.sort(key=lambda x: x["id"], reverse=(order == "desc"))
+
+        return jsonify(
+            {
+                "results": matches,
+                "count": len(matches),
+                "query": query,
+                "search_fields": search_fields,
+                "sort_by": sort_by,
+                "order": order,
+                "limit": limit,
+                "include_orbital_data": include_orbital_data,
+                "include_position": include_position,
+                "filters": {
+                    "min_inclination": min_inclination,
+                    "max_inclination": max_inclination,
+                    "min_eccentricity": min_eccentricity,
+                    "max_eccentricity": max_eccentricity,
+                    "min_altitude": min_altitude,
+                    "max_altitude": max_altitude,
+                },
             }
-        })
+        )
     except Exception as e:
         app.logger.error(f"Error in api_advanced_satellite_search: {e}")
-        return jsonify({'error': 'Failed to perform advanced satellite search'}), 500
+        return jsonify({"error": "Failed to perform advanced satellite search"}), 500
 
-@app.route('/api/satellites/bulk')
+
+@app.route("/api/satellites/bulk")
 @handle_api_errors
 def api_bulk_satellite_data():
     """API endpoint for bulk satellite data retrieval with filtering capabilities."""
     try:
         # Get filter parameters
-        limit = min(int(request.args.get('limit', 100)), 500)  # Max 500 satellites
-        include_tle = request.args.get('tle', 'false').lower() == 'true'
-        include_orbital_elements = request.args.get('orbital_elements', 'false').lower() == 'true'
-        include_position = request.args.get('position', 'false').lower() == 'true'
-        min_inclination = request.args.get('min_inclination', None)
-        max_inclination = request.args.get('max_inclination', None)
-        min_eccentricity = request.args.get('min_eccentricity', None)
-        max_eccentricity = request.args.get('max_eccentricity', None)
-        
+        limit = min(int(request.args.get("limit", 100)), 500)  # Max 500 satellites
+        include_tle = request.args.get("tle", "false").lower() == "true"
+        include_orbital_elements = request.args.get("orbital_elements", "false").lower() == "true"
+        include_position = request.args.get("position", "false").lower() == "true"
+        min_inclination = request.args.get("min_inclination", None)
+        max_inclination = request.args.get("max_inclination", None)
+        min_eccentricity = request.args.get("min_eccentricity", None)
+        max_eccentricity = request.args.get("max_eccentricity", None)
+
         # Update TLE data if needed
         satellites = tracker_instance.update_tle_data()
-        
+
         # Process satellites with filters
         results = []
         processed_count = 0
-        
+
         for sat in satellites:
             if processed_count >= limit:
                 break
-                
+
             # Apply filters
             include_satellite = True
             if min_inclination or max_inclination or min_eccentricity or max_eccentricity:
                 try:
-                    if hasattr(tracker_instance, 'ts') and tracker_instance.ts is not None:
+                    if hasattr(tracker_instance, "ts") and tracker_instance.ts is not None:
                         t = tracker_instance.ts.now()
                         elements = sat.orbit_elements_at(t)
-                        
+
                         # Apply inclination filter
-                        if min_inclination and elements.inclination.degrees < float(min_inclination):
+                        if min_inclination and elements.inclination.degrees < float(
+                            min_inclination
+                        ):
                             include_satellite = False
-                        if max_inclination and elements.inclination.degrees > float(max_inclination):
+                        if max_inclination and elements.inclination.degrees > float(
+                            max_inclination
+                        ):
                             include_satellite = False
-                        
+
                         # Apply eccentricity filter
                         if min_eccentricity and elements.eccentricity < float(min_eccentricity):
                             include_satellite = False
@@ -2061,184 +2147,182 @@ def api_bulk_satellite_data():
                 except Exception as e:
                     app.logger.warning(f"Could not apply filters for {sat.name}: {e}")
                     continue  # Skip satellite if we can't apply filters
-            
+
             if include_satellite:
-                sat_data = {
-                    'name': sat.name,
-                    'id': sat.model.satnum
-                }
-                
+                sat_data = {"name": sat.name, "id": sat.model.satnum}
+
                 # Add TLE data if requested
                 if include_tle:
                     try:
                         line1 = sat.model.line1
                         line2 = sat.model.line2
-                        sat_data['tle'] = {
-                            'line1': line1,
-                            'line2': line2
-                        }
+                        sat_data["tle"] = {"line1": line1, "line2": line2}
                     except Exception as e:
                         app.logger.warning(f"Could not get TLE data for {sat.name}: {e}")
-                
+
                 # Add orbital elements if requested
                 if include_orbital_elements:
                     try:
-                        if hasattr(tracker_instance, 'ts') and tracker_instance.ts is not None:
+                        if hasattr(tracker_instance, "ts") and tracker_instance.ts is not None:
                             t = tracker_instance.ts.now()
                             elements = sat.orbit_elements_at(t)
-                            sat_data['orbital_elements'] = {
-                                'inclination_deg': round(elements.inclination.degrees, 4),
-                                'eccentricity': round(elements.eccentricity, 6),
-                                'period_minutes': round(elements.period_in_days * 24 * 60, 2),
-                                'semi_major_axis_km': round(elements.semi_major_axis.km, 2),
-                                'right_ascension_deg': round(elements.longitude_of_ascending_node.degrees, 4),
-                                'argument_of_perigee_deg': round(elements.argument_of_perigee.degrees, 4),
-                                'mean_anomaly_deg': round(elements.mean_anomaly.degrees, 4)
+                            sat_data["orbital_elements"] = {
+                                "inclination_deg": round(elements.inclination.degrees, 4),
+                                "eccentricity": round(elements.eccentricity, 6),
+                                "period_minutes": round(elements.period_in_days * 24 * 60, 2),
+                                "semi_major_axis_km": round(elements.semi_major_axis.km, 2),
+                                "right_ascension_deg": round(
+                                    elements.longitude_of_ascending_node.degrees, 4
+                                ),
+                                "argument_of_perigee_deg": round(
+                                    elements.argument_of_perigee.degrees, 4
+                                ),
+                                "mean_anomaly_deg": round(elements.mean_anomaly.degrees, 4),
                             }
                     except Exception as e:
                         app.logger.warning(f"Could not get orbital elements for {sat.name}: {e}")
-                
+
                 # Add position data if requested
                 if include_position:
                     try:
-                        if hasattr(tracker_instance, 'ts') and tracker_instance.ts is not None:
+                        if hasattr(tracker_instance, "ts") and tracker_instance.ts is not None:
                             t = tracker_instance.ts.now()
                             geocentric = sat.at(t)
                             subpoint = geocentric.subpoint()
-                            sat_data['position'] = {
-                                'latitude': round(subpoint.latitude.degrees, 4),
-                                'longitude': round(subpoint.longitude.degrees, 4),
-                                'altitude_km': round(subpoint.elevation.km, 2)
+                            sat_data["position"] = {
+                                "latitude": round(subpoint.latitude.degrees, 4),
+                                "longitude": round(subpoint.longitude.degrees, 4),
+                                "altitude_km": round(subpoint.elevation.km, 2),
                             }
                             # Calculate velocity
                             velocity = calculate_orbital_velocity(sat, t)
-                            sat_data['velocity_kms'] = round(velocity, 3)
+                            sat_data["velocity_kms"] = round(velocity, 3)
                     except Exception as e:
                         app.logger.warning(f"Could not get position for {sat.name}: {e}")
-                
+
                 results.append(sat_data)
                 processed_count += 1
-        
-        return jsonify({
-            'satellites': results,
-            'count': len(results),
-            'total_available': len(satellites),
-            'filters_applied': {
-                'min_inclination': min_inclination,
-                'max_inclination': max_inclination,
-                'min_eccentricity': min_eccentricity,
-                'max_eccentricity': max_eccentricity
+
+        return jsonify(
+            {
+                "satellites": results,
+                "count": len(results),
+                "total_available": len(satellites),
+                "filters_applied": {
+                    "min_inclination": min_inclination,
+                    "max_inclination": max_inclination,
+                    "min_eccentricity": min_eccentricity,
+                    "max_eccentricity": max_eccentricity,
+                },
             }
-        })
+        )
     except Exception as e:
         app.logger.error(f"Error in api_bulk_satellite_data: {e}")
-        return jsonify({'error': 'Failed to retrieve bulk satellite data'}), 500
+        return jsonify({"error": "Failed to retrieve bulk satellite data"}), 500
 
 
-@app.route('/api/constellation/analysis')
+@app.route("/api/constellation/analysis")
 @handle_api_errors
 def api_constellation_analysis():
     """API endpoint for constellation analysis and statistics."""
     try:
         # Get parameters
-        group_by = request.args.get('group_by', 'inclination')  # inclination, altitude, eccentricity
-        
+        group_by = request.args.get(
+            "group_by", "inclination"
+        )  # inclination, altitude, eccentricity
+
         # Update TLE data if needed
         satellites = tracker_instance.update_tle_data()
-        
+
         # Analysis data
-        analysis = {
-            'total_satellites': len(satellites),
-            'groups': {},
-            'statistics': {}
-        }
-        
+        analysis = {"total_satellites": len(satellites), "groups": {}, "statistics": {}}
+
         # Group satellites based on parameter
         groups = {}
         inclinations = []
         altitudes = []
         eccentricities = []
-        
+
         for sat in satellites:
             try:
-                if hasattr(tracker_instance, 'ts') and tracker_instance.ts is not None:
+                if hasattr(tracker_instance, "ts") and tracker_instance.ts is not None:
                     t = tracker_instance.ts.now()
                     elements = sat.orbit_elements_at(t)
-                    
+
                     # Collect data for statistics
                     inclinations.append(elements.inclination.degrees)
                     altitudes.append(elements.semi_major_axis.km)
                     eccentricities.append(elements.eccentricity)
-                    
+
                     # Group by selected parameter
-                    if group_by == 'inclination':
+                    if group_by == "inclination":
                         # Group by inclination ranges (0-10, 10-20, etc.)
                         group_key = int(elements.inclination.degrees // 10) * 10
-                        group_label = f"{group_key}-{group_key+10}°"
-                    elif group_by == 'altitude':
+                        group_label = f"{group_key}-{group_key + 10}°"
+                    elif group_by == "altitude":
                         # Group by altitude ranges (300-400, 400-500, etc.)
                         group_key = int(elements.semi_major_axis.km // 100) * 100
-                        group_label = f"{group_key}-{group_key+100} km"
-                    elif group_by == 'eccentricity':
+                        group_label = f"{group_key}-{group_key + 100} km"
+                    elif group_by == "eccentricity":
                         # Group by eccentricity ranges (0.000-0.001, 0.001-0.002, etc.)
                         group_key = int(elements.eccentricity * 1000) / 1000
-                        group_label = f"{group_key:.3f}-{group_key+0.001:.3f}"
+                        group_label = f"{group_key:.3f}-{group_key + 0.001:.3f}"
                     else:
                         group_label = "Unknown"
-                    
+
                     if group_label not in groups:
                         groups[group_label] = []
-                    groups[group_label].append({
-                        'name': sat.name,
-                        'id': sat.model.satnum,
-                        'inclination': round(elements.inclination.degrees, 2),
-                        'altitude': round(elements.semi_major_axis.km, 2),
-                        'eccentricity': round(elements.eccentricity, 6)
-                    })
+                    groups[group_label].append(
+                        {
+                            "name": sat.name,
+                            "id": sat.model.satnum,
+                            "inclination": round(elements.inclination.degrees, 2),
+                            "altitude": round(elements.semi_major_axis.km, 2),
+                            "eccentricity": round(elements.eccentricity, 6),
+                        }
+                    )
             except Exception as e:
                 app.logger.warning(f"Could not analyze {sat.name}: {e}")
                 continue
-        
-        analysis['groups'] = groups
-        
+
+        analysis["groups"] = groups
+
         # Calculate statistics
         if inclinations:
-            analysis['statistics']['inclination'] = {
-                'min': round(min(inclinations), 2),
-                'max': round(max(inclinations), 2),
-                'avg': round(sum(inclinations) / len(inclinations), 2),
-                'median': round(sorted(inclinations)[len(inclinations) // 2], 2)
+            analysis["statistics"]["inclination"] = {
+                "min": round(min(inclinations), 2),
+                "max": round(max(inclinations), 2),
+                "avg": round(sum(inclinations) / len(inclinations), 2),
+                "median": round(sorted(inclinations)[len(inclinations) // 2], 2),
             }
-        
+
         if altitudes:
-            analysis['statistics']['altitude'] = {
-                'min': round(min(altitudes), 2),
-                'max': round(max(altitudes), 2),
-                'avg': round(sum(altitudes) / len(altitudes), 2),
-                'median': round(sorted(altitudes)[len(altitudes) // 2], 2)
+            analysis["statistics"]["altitude"] = {
+                "min": round(min(altitudes), 2),
+                "max": round(max(altitudes), 2),
+                "avg": round(sum(altitudes) / len(altitudes), 2),
+                "median": round(sorted(altitudes)[len(altitudes) // 2], 2),
             }
-        
+
         if eccentricities:
-            analysis['statistics']['eccentricity'] = {
-                'min': round(min(eccentricities), 6),
-                'max': round(max(eccentricities), 6),
-                'avg': round(sum(eccentricities) / len(eccentricities), 6),
-                'median': round(sorted(eccentricities)[len(eccentricities) // 2], 6)
+            analysis["statistics"]["eccentricity"] = {
+                "min": round(min(eccentricities), 6),
+                "max": round(max(eccentricities), 6),
+                "avg": round(sum(eccentricities) / len(eccentricities), 6),
+                "median": round(sorted(eccentricities)[len(eccentricities) // 2], 6),
             }
-        
-        return jsonify({
-            'analysis': analysis,
-            'grouped_by': group_by,
-            'generated': datetime.now().isoformat()
-        })
+
+        return jsonify(
+            {"analysis": analysis, "grouped_by": group_by, "generated": datetime.now().isoformat()}
+        )
     except Exception as e:
         app.logger.error(f"Error in api_constellation_analysis: {e}")
-        return jsonify({'error': 'Failed to perform constellation analysis'}), 500
+        return jsonify({"error": "Failed to perform constellation analysis"}), 500
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Create templates directory
     create_templates_dir()
-    
+
     # Run the web application
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host="0.0.0.0", port=5000)

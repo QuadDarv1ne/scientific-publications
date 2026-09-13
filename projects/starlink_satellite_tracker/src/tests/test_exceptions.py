@@ -4,19 +4,19 @@ Test suite for Starlink Tracker Custom Exceptions
 Verifies that custom exceptions work correctly
 """
 
-import unittest
-import sys
 import os
+import sys
+import unittest
 
 # Add the project directory to the path so we can import our modules
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 
 from core.main import (
-    StarlinkTrackerError, 
-    TLEDataError, 
-    PredictionError, 
-    SchedulerError, 
-    VisualizationError
+    PredictionError,
+    SchedulerError,
+    StarlinkTrackerError,
+    TLEDataError,
+    VisualizationError,
 )
 
 
@@ -29,7 +29,7 @@ class TestStarlinkTrackerExceptions(unittest.TestCase):
         error = StarlinkTrackerError("Test error message")
         self.assertIsInstance(error, Exception)
         self.assertEqual(str(error), "Test error message")
-        
+
         # Test with no message
         error = StarlinkTrackerError()
         self.assertIsInstance(error, Exception)
@@ -67,5 +67,5 @@ class TestStarlinkTrackerExceptions(unittest.TestCase):
         self.assertEqual(str(error), "Visualization error")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main(verbosity=2)

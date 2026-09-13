@@ -235,7 +235,7 @@ satellites = processor.load_satellite_data()
 stats = processor.analyze_constellation(satellites)
 
 # Экспорт в CSV
-processor.export_to_csv(satellites, 'starlink_data.csv')
+processor.export_to_csv(satellites, "starlink_data.csv")
 ```
 
 ### Планировщик (`src/utils/scheduler.py`)
@@ -259,11 +259,11 @@ processor.export_to_csv(satellites, 'starlink_data.csv')
 ```python
 # В config.json
 {
-  "schedule": {
-    "tle_update_cron": "0 0 */6 * *",
-    "prediction_update_cron": "*/30 * * * *",
-    "notification_check_cron": "*/15 * * * *"
-  }
+    "schedule": {
+        "tle_update_cron": "0 0 */6 * *",
+        "prediction_update_cron": "*/30 * * * *",
+        "notification_check_cron": "*/15 * * * *",
+    }
 }
 ```
 
@@ -319,16 +319,16 @@ processor.export_to_csv(satellites, 'starlink_data.csv')
 ```python
 # Включение уведомлений по электронной почте в config.json
 {
-  "notifications": {
-    "email": {
-      "enabled": true,
-      "smtp_server": "smtp.gmail.com",
-      "smtp_port": 587,
-      "username": "your_email@gmail.com",
-      "password": "your_app_password",
-      "recipient": "recipient@example.com"
+    "notifications": {
+        "email": {
+            "enabled": true,
+            "smtp_server": "smtp.gmail.com",
+            "smtp_port": 587,
+            "username": "your_email@gmail.com",
+            "password": "your_app_password",
+            "recipient": "recipient@example.com",
+        }
     }
-  }
 }
 ```
 
@@ -336,26 +336,16 @@ processor.export_to_csv(satellites, 'starlink_data.csv')
 ```python
 # Включение уведомлений через Telegram в config.json
 {
-  "notifications": {
-    "telegram": {
-      "enabled": true,
-      "bot_token": "your_bot_token",
-      "chat_id": "your_chat_id"
+    "notifications": {
+        "telegram": {"enabled": true, "bot_token": "your_bot_token", "chat_id": "your_chat_id"}
     }
-  }
 }
 ```
 
 **Настройка уведомлений через Pushover:**
 ```python
 # Включение уведомлений через Pushover в config.json
-{
-  "pushover": {
-    "enabled": true,
-    "user_key": "your_user_key",
-    "api_token": "your_api_token"
-  }
-}
+{"pushover": {"enabled": true, "user_key": "your_user_key", "api_token": "your_api_token"}}
 ```
 
 ### Веб-приложение (`src/web/web_app.py`)

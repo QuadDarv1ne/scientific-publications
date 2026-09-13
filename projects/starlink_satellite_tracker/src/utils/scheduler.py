@@ -4,14 +4,13 @@ Scheduler utility for Starlink Satellite Tracker
 Handles automated tasks based on cron-like schedules defined in config.json
 """
 
-import schedule
-import time
-import threading
 import logging
+import threading
+import time
 from datetime import datetime
-import json
-import os
-from typing import Dict, Any, Optional
+from typing import Any
+
+import schedule
 
 # Import our configuration manager
 from utils.config_manager import get_config
@@ -19,11 +18,11 @@ from utils.config_manager import get_config
 
 class JobExecutionCache:
     """Cache for tracking job execution times to prevent duplicate runs."""
-    
+
     def __init__(self):
         self.execution_times = {}
         self.logger = logging.getLogger(__name__)
-    
+
     def should_execute(self, job_name: str, min_interval_seconds: int = 60) -> bool:
         """Check if job should be executed based on last execution time."""
         now = datetime.now()
@@ -32,11 +31,11 @@ class JobExecutionCache:
             if elapsed < min_interval_seconds:
                 self.logger.debug(f"Skipping {job_name}, last executed {elapsed:.1f}s ago")
                 return False
-        
+
         # Update execution time
         self.execution_times[job_name] = now
         return True
-    
+
     def clear(self) -> None:
         """Clear execution times cache."""
         self.execution_times.clear()
@@ -44,15 +43,15 @@ class JobExecutionCache:
 
 class CronParser:
     """Utility class for parsing cron expressions."""
-    
+
     @staticmethod
-    def parse_cron_expression(cron_expression: str) -> Dict[str, str]:
+    def parse_cron_expression(cron_expression: str) -> dict[str, str]:
         """
         Parse a cron expression into its components.
-        
+
         Args:
             cron_expression: A cron expression in the format "minute hour day month weekday"
-            
+
         Returns:
             Dictionary with parsed components
         """
@@ -60,28 +59,28 @@ class CronParser:
             parts = cron_expression.strip().split()
             if len(parts) != 5:
                 raise ValueError(f"Invalid cron expression: {cron_expression}. Expected 5 parts.")
-            
+
             return {
-                'minute': parts[0],
-                'hour': parts[1],
-                'day': parts[2],
-                'month': parts[3],
-                'weekday': parts[4]
+                "minute": parts[0],
+                "hour": parts[1],
+                "day": parts[2],
+                "month": parts[3],
+                "weekday": parts[4],
             }
         except Exception as e:
             logging.error(f"Error parsing cron expression '{cron_expression}': {e}")
             raise
-    
+
     @staticmethod
     def cron_to_schedule_job(cron_expression: str, job_function, job_tag: str) -> bool:
         """
         Convert a cron expression to a schedule job.
-        
+
         Args:
             cron_expression: A cron expression
             job_function: The function to schedule
             job_tag: Tag for the job
-            
+
         Returns:
             True if successful, False otherwise
         """
@@ -90,30 +89,30 @@ class CronParser:
             if len(parts) != 5:
                 logging.warning(f"Invalid cron expression: {cron_expression}")
                 return False
-            
-            minute, hour, day, month, weekday = parts
-            
+
+            minute, hour, _day, _month, _weekday = parts
+
             # Handle special cases
-            if cron_expression == '0 0 */6 * *':
+            if cron_expression == "0 0 */6 * *":
                 # Every 6 hours
                 schedule.every(6).hours.do(job_function).tag(job_tag)
-            elif cron_expression == '*/30 * * * *':
+            elif cron_expression == "*/30 * * * *":
                 # Every 30 minutes
                 schedule.every(30).minutes.do(job_function).tag(job_tag)
-            elif cron_expression == '*/15 * * * *':
+            elif cron_expression == "*/15 * * * *":
                 # Every 15 minutes
                 schedule.every(15).minutes.do(job_function).tag(job_tag)
-            elif cron_expression == '0 0 * * *':
+            elif cron_expression == "0 0 * * *":
                 # Daily at midnight
                 schedule.every().day.at("00:00").do(job_function).tag(job_tag)
-            elif cron_expression == '0 * * * *':
+            elif cron_expression == "0 * * * *":
                 # Hourly
                 schedule.every().hour.do(job_function).tag(job_tag)
             else:
                 # Try to parse more complex expressions
                 if CronParser._is_simple_interval(minute, hour):
                     # Simple interval like "*/N * * * *"
-                    if minute.startswith('*/') and hour == '*':
+                    if minute.startswith("*/") and hour == "*":
                         try:
                             interval = int(minute[2:])
                             if interval > 0:
@@ -121,173 +120,202 @@ class CronParser:
                                 return True
                         except ValueError:
                             pass
-                
+
                 # Fall back to basic scheduling if we can't parse
-                logging.warning(f"Unsupported cron expression '{cron_expression}', using default 1 hour interval")
+                logging.warning(
+                    f"Unsupported cron expression '{cron_expression}', using default 1 hour interval"
+                )
                 schedule.every().hour.do(job_function).tag(job_tag)
-            
+
             return True
-            
+
         except Exception as e:
-            logging.error(f"Error converting cron expression '{cron_expression}' to schedule job: {e}")
+            logging.error(
+                f"Error converting cron expression '{cron_expression}' to schedule job: {e}"
+            )
             return False
-    
+
     @staticmethod
     def _is_simple_interval(minute: str, hour: str) -> bool:
         """Check if the cron expression represents a simple interval."""
-        return minute.startswith('*/') and hour == '*'
+        return minute.startswith("*/") and hour == "*"
 
 
 class StarlinkScheduler:
-    def __init__(self, config: Optional[Dict[str, Any]] = None, tracker=None):
+    def __init__(self, config: dict[str, Any] | None = None, tracker=None):
         """Initialize scheduler with configuration and tracker instance."""
         self.config = config or get_config()
         self.tracker = tracker
-        self.schedule_config = self.config.get('schedule', {})
+        self.schedule_config = self.config.get("schedule", {})
         self.running = False
         self.thread = None
-        
+
         # Setup logging
         self.logger = logging.getLogger(__name__)
-        logging.basicConfig(level=logging.INFO, 
-                          format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        
+        logging.basicConfig(
+            level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+
         # Initialize execution cache
         self.execution_cache = JobExecutionCache()
-    
+
     def setup_scheduled_tasks(self) -> bool:
         """Setup all scheduled tasks based on configuration."""
         try:
             # Clear any existing scheduled jobs first
             schedule.clear()
-            
+
             # Debug logging
             self.logger.debug(f"Schedule config: {self.schedule_config}")
             self.logger.debug(f"Schedule config type: {type(self.schedule_config)}")
-            self.logger.debug(f"Schedule config length: {len(self.schedule_config) if self.schedule_config else 'N/A'}")
-            
-            if not self.schedule_config or not isinstance(self.schedule_config, dict) or len(self.schedule_config) == 0:
+            self.logger.debug(
+                f"Schedule config length: {len(self.schedule_config) if self.schedule_config else 'N/A'}"
+            )
+
+            if (
+                not self.schedule_config
+                or not isinstance(self.schedule_config, dict)
+                or len(self.schedule_config) == 0
+            ):
                 self.logger.warning("No schedule configuration found")
                 return False
-            
+
             # Setup TLE update task
-            tle_cron = self.schedule_config.get('tle_update_cron', '0 0 */6 * *')
+            tle_cron = self.schedule_config.get("tle_update_cron", "0 0 */6 * *")
             if tle_cron:
-                if not CronParser.cron_to_schedule_job(tle_cron, self._update_tle_data, "TLE Update"):
+                if not CronParser.cron_to_schedule_job(
+                    tle_cron, self._update_tle_data, "TLE Update"
+                ):
                     self.logger.warning(f"Failed to schedule TLE update with cron: {tle_cron}")
                 else:
                     self.logger.info(f"Scheduled TLE Update with cron: {tle_cron}")
-            
+
             # Setup prediction update task
-            pred_cron = self.schedule_config.get('prediction_update_cron', '*/30 * * * *')
+            pred_cron = self.schedule_config.get("prediction_update_cron", "*/30 * * * *")
             if pred_cron:
-                if not CronParser.cron_to_schedule_job(pred_cron, self._update_predictions, "Prediction Update"):
-                    self.logger.warning(f"Failed to schedule Prediction Update with cron: {pred_cron}")
+                if not CronParser.cron_to_schedule_job(
+                    pred_cron, self._update_predictions, "Prediction Update"
+                ):
+                    self.logger.warning(
+                        f"Failed to schedule Prediction Update with cron: {pred_cron}"
+                    )
                 else:
                     self.logger.info(f"Scheduled Prediction Update with cron: {pred_cron}")
-            
+
             # Setup notification check task
-            notif_cron = self.schedule_config.get('notification_check_cron', '*/15 * * * *')
+            notif_cron = self.schedule_config.get("notification_check_cron", "*/15 * * * *")
             if notif_cron:
-                if not CronParser.cron_to_schedule_job(notif_cron, self._check_notifications, "Notification Check"):
-                    self.logger.warning(f"Failed to schedule Notification Check with cron: {notif_cron}")
+                if not CronParser.cron_to_schedule_job(
+                    notif_cron, self._check_notifications, "Notification Check"
+                ):
+                    self.logger.warning(
+                        f"Failed to schedule Notification Check with cron: {notif_cron}"
+                    )
                 else:
                     self.logger.info(f"Scheduled Notification Check with cron: {notif_cron}")
-            
+
             self.logger.info("Scheduled tasks setup completed")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error setting up scheduled tasks: {e}")
             return False
-    
+
     def _update_tle_data(self):
         """Update TLE data task."""
         try:
             # Check execution cache to prevent duplicate runs
             if not self.execution_cache.should_execute("TLE Update", 300):  # 5 minutes minimum
                 return
-            
+
             self.logger.info("Starting TLE data update task")
             if self.tracker:
                 satellites = self.tracker.update_tle_data(force=True)
-                self.logger.info(f"TLE data update completed. Loaded {len(satellites) if satellites else 0} satellites")
+                self.logger.info(
+                    f"TLE data update completed. Loaded {len(satellites) if satellites else 0} satellites"
+                )
             else:
                 self.logger.warning("No tracker instance available for TLE update")
         except Exception as e:
             self.logger.error(f"TLE data update failed: {e}")
-    
+
     def _update_predictions(self):
         """Update predictions task."""
         try:
             # Check execution cache to prevent duplicate runs
-            if not self.execution_cache.should_execute("Prediction Update", 600):  # 10 minutes minimum
+            if not self.execution_cache.should_execute(
+                "Prediction Update", 600
+            ):  # 10 minutes minimum
                 return
-            
+
             self.logger.info("Starting prediction update task")
             # This would typically update cached predictions
             # For now, we'll just log that the task ran
             self.logger.info("Prediction update completed")
         except Exception as e:
             self.logger.error(f"Prediction update failed: {e}")
-    
+
     def _check_notifications(self):
         """Check and send notifications task."""
         try:
             # Check execution cache to prevent duplicate runs
-            if not self.execution_cache.should_execute("Notification Check", 300):  # 5 minutes minimum
+            if not self.execution_cache.should_execute(
+                "Notification Check", 300
+            ):  # 5 minutes minimum
                 return
-            
+
             self.logger.info("Starting notification check task")
-            
+
             # Check for upcoming passes and send notifications
             if self.tracker:
                 try:
                     # Import notification system
                     from utils.notify import NotificationSystem
-                    
+
                     # Get observer location from config
-                    observer_config = self.config.get('observer', {})
-                    lat = observer_config.get('default_latitude', 55.7558)
-                    lon = observer_config.get('default_longitude', 37.6173)
-                    alt = observer_config.get('default_altitude', 0)
-                    
+                    observer_config = self.config.get("observer", {})
+                    lat = observer_config.get("default_latitude", 55.7558)
+                    lon = observer_config.get("default_longitude", 37.6173)
+                    alt = observer_config.get("default_altitude", 0)
+
                     # Get notification settings
-                    notification_config = self.config.get('notifications', {})
-                    advance_notice = notification_config.get('advance_notice_minutes', 30)
-                    
+                    notification_config = self.config.get("notifications", {})
+                    advance_notice = notification_config.get("advance_notice_minutes", 30)
+
                     # Predict passes for the next 2 hours
                     passes = self.tracker.predict_passes(lat, lon, alt, hours_ahead=2)
-                    
+
                     # Initialize notification system
                     notifier = NotificationSystem(self.config)
-                    
+
                     # Check each pass
                     current_time = datetime.now()
                     for pass_info in passes:
-                        pass_time = pass_info.get('time')
+                        pass_time = pass_info.get("time")
                         if not pass_time:
                             continue
-                        
+
                         # Calculate time until pass
-                        time_until_pass = (pass_time - current_time).total_seconds() / 60  # in minutes
-                        
+                        time_until_pass = (
+                            pass_time - current_time
+                        ).total_seconds() / 60  # in minutes
+
                         # Check if this pass is coming up soon (within advance notice window)
                         if 0 < time_until_pass <= advance_notice:
                             # Send notification
-                            satellite_name = pass_info.get('satellite', 'Unknown')
-                            max_elevation = pass_info.get('altitude', 0)
-                            azimuth = pass_info.get('azimuth', 0)
-                            brightness = pass_info.get('brightness', 0)
-                            velocity = pass_info.get('velocity', 0)
-                            
+                            satellite_name = pass_info.get("satellite", "Unknown")
+                            max_elevation = pass_info.get("altitude", 0)
+                            azimuth = pass_info.get("azimuth", 0)
+                            brightness = pass_info.get("brightness", 0)
+                            velocity = pass_info.get("velocity", 0)
+
                             notifier.notify_upcoming_pass(
-                                satellite_name, 
-                                pass_time, 
-                                max_elevation, 
+                                satellite_name,
+                                pass_time,
+                                max_elevation,
                                 azimuth,
                                 brightness,
-                                velocity
+                                velocity,
                             )
                 except ImportError:
                     self.logger.warning("Notification system not available")
@@ -295,54 +323,54 @@ class StarlinkScheduler:
                     self.logger.error(f"Error checking passes for notifications: {e}")
             else:
                 self.logger.warning("No tracker instance available for notification check")
-            
+
             self.logger.info("Notification check completed")
         except Exception as e:
             self.logger.error(f"Notification check failed: {e}")
-    
+
     def start_scheduler(self) -> bool:
         """Start the scheduler in a background thread."""
         try:
             if self.running:
                 self.logger.warning("Scheduler is already running")
                 return True
-            
+
             if not self.setup_scheduled_tasks():
                 self.logger.error("Failed to setup scheduled tasks")
                 return False
-            
+
             self.running = True
             self.thread = threading.Thread(target=self._run_scheduler, daemon=True)
             self.thread.start()
             self.logger.info("Scheduler started")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error starting scheduler: {e}")
             self.running = False
             return False
-    
+
     def stop_scheduler(self) -> bool:
         """Stop the scheduler."""
         try:
             # Always clear scheduled jobs, regardless of running state
             schedule.clear()
-            
+
             if not self.running:
                 self.logger.warning("Scheduler is not running")
                 return True
-            
+
             self.running = False
             if self.thread:
                 self.thread.join(timeout=5)
             self.execution_cache.clear()
             self.logger.info("Scheduler stopped")
             return True
-            
+
         except Exception as e:
             self.logger.error(f"Error stopping scheduler: {e}")
             return False
-    
+
     def _run_scheduler(self):
         """Run the scheduler loop."""
         while self.running:
@@ -352,29 +380,31 @@ class StarlinkScheduler:
             except Exception as e:
                 self.logger.error(f"Scheduler error: {e}")
                 time.sleep(10)  # Wait longer on error
-    
+
     def get_scheduled_jobs(self) -> list:
         """Get information about scheduled jobs."""
         try:
             jobs = []
             for job in schedule.get_jobs():
                 # Handle tags properly
-                tags = getattr(job, 'tags', None)
+                tags = getattr(job, "tags", None)
                 if tags and isinstance(tags, (set, list)) and len(tags) > 0:
-                    name = list(tags)[0] if isinstance(tags, set) else tags[0]
+                    name = next(iter(tags)) if isinstance(tags, set) else tags[0]
                 else:
-                    name = 'Unknown'
-                
-                jobs.append({
-                    'name': name,
-                    'next_run': getattr(job, 'next_run', None),
-                    'interval': str(getattr(job, 'interval', 'Unknown'))
-                })
+                    name = "Unknown"
+
+                jobs.append(
+                    {
+                        "name": name,
+                        "next_run": getattr(job, "next_run", None),
+                        "interval": str(getattr(job, "interval", "Unknown")),
+                    }
+                )
             return jobs
         except Exception as e:
             self.logger.error(f"Error getting scheduled jobs: {e}")
             return []
-    
+
     def clear_cache(self) -> None:
         """Clear the execution cache."""
         self.execution_cache.clear()
@@ -384,12 +414,13 @@ class StarlinkScheduler:
 def main():
     """Example usage of the scheduler."""
     # Setup logging
-    logging.basicConfig(level=logging.INFO, 
-                       format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    )
+
     # Initialize scheduler
     scheduler = StarlinkScheduler()
-    
+
     # Start scheduler
     if scheduler.start_scheduler():
         try:
@@ -401,7 +432,7 @@ def main():
                     logging.info("Scheduled jobs:")
                     for job in jobs:
                         logging.info(f"  {job['name']}: Next run at {job['next_run']}")
-                
+
                 time.sleep(30)
         except KeyboardInterrupt:
             logging.info("Stopping scheduler...")

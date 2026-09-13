@@ -2,9 +2,6 @@
 Модульные тесты для imaging и visualization модулей.
 """
 
-import pytest
-import numpy as np
-
 
 class TestImagingModule:
     """Тесты для модуля imaging."""

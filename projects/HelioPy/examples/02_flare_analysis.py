@@ -8,8 +8,9 @@
 - Классификацию вспышек
 """
 
-import numpy as np
 from datetime import datetime, timedelta
+
+import numpy as np
 
 from heliopy.events.flare_detector import FlareDetector, GOESData
 
@@ -91,7 +92,7 @@ def main():
         print(f"  Время пика: {flare.peak_time}")
         print(f"  Время окончания: {flare.end_time}")
         print(f"  Пиковый поток: {flare.peak_flux:.2e} Вт/м²")
-        
+
         duration = (flare.end_time - flare.start_time).sec / 60
         print(f"  Длительность: {duration:.1f} минут")
         print()

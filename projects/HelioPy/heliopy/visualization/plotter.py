@@ -141,7 +141,7 @@ class Plotter:
         Figure
             Объект matplotlib Figure.
         """
-        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection="polar"))
+        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
 
         # Упрощенная визуализация траектории
         if cme.trajectory:

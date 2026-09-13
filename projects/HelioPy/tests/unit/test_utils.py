@@ -2,10 +2,11 @@
 Модульные тесты для utils модулей.
 """
 
-import pytest
-import numpy as np
 from datetime import datetime, timedelta
+
+import numpy as np
 from astropy.time import Time
+
 from heliopy.utils.math_utils import MathUtils
 from heliopy.utils.stats_utils import StatsUtils
 from heliopy.utils.time_utils import TimeUtils

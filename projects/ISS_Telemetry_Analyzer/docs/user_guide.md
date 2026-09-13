@@ -237,9 +237,9 @@ python -m pytest tests/ -v
 Для добавления прогноза видимости для новых городов:
 ```python
 cities = {
-    'Москва': (55.7558, 37.6173),
-    'Санкт-Петербург': (59.9343, 30.3351),
-    'Новосибирск': (55.0084, 82.9357)
+    "Москва": (55.7558, 37.6173),
+    "Санкт-Петербург": (59.9343, 30.3351),
+    "Новосибирск": (55.0084, 82.9357),
 }
 
 for city, (lat, lon) in cities.items():
@@ -255,7 +255,7 @@ import pandas as pd
 
 # Экспорт траектории в CSV
 df = pd.DataFrame(tracker.positions)
-df.to_csv('iss_trajectory.csv', index=False)
+df.to_csv("iss_trajectory.csv", index=False)
 ```
 
 ## 🐛 Решение проблем

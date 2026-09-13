@@ -1,30 +1,54 @@
 # Ruff конфигурация для всего проекта
+#
+# Настройки иерархичны: для файлов внутри projects/<name>/ применяется ближайший
+# pyproject.toml этого проекта, для всех остальных - этот файл.
 target-version = "py311"
 
+# Стиль: 100 символов (см. CONTRIBUTING.md и [tool.black] в pyproject.toml)
+line-length = 100
+
+exclude = [
+    "papers/*",
+    "archive/*",
+    "**/.venv/*",
+    "**/venv/*",
+    "**/.ipynb_checkpoints/*",
+]
+
+[lint]
 # Правила
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
-    "F",   # Pyflakes
     "I",   # isort
+    "F",   # Pyflakes
     "B",   # flake8-bugbear
     "C4",  # flake8-comprehensions
     "UP",  # pyupgrade
     "RUF", # Ruff-specific rules
 ]
 
-# Игнорировать
 ignore = [
-    "E501",  # line too long (black handles this)
+    "E501",  # line too long (formatter handles this)
     "B008",  # do not perform function calls in argument defaults
+    # Проекты пишутся по-русски: комментарии, докстринги и строки содержат кириллицу.
+    # RUF001/RUF002/RUF003 реагируют на символы, похожие на латинские (а, е, о, с, р, х),
+    # и в русскоязычном коде срабатывают на обычном осмысленном тексте, а не на ошибках.
+    "RUF001", # ambiguous-unicode-character-string
+    "RUF002", # ambiguous-unicode-character-docstring
+    "RUF003", # ambiguous-unicode-character-comment
 ]
 
-# Исключения для тестов
-exclude = [
-    "projects/*/tests/*",
-    "papers/*",
-    "archive/*",
-]
+[lint.per-file-ignores]
+# В тестах допустимы assert и импорты после настройки sys.path
+"**/tests/**" = ["S101", "E402"]
+"**/test_*.py" = ["S101", "E402"]
+# __init__.py реэкспортируют имена - неиспользуемый импорт там легален
+"**/__init__.py" = ["F401"]
 
-[per-file-ignores]
-"projects/*/tests/*" = ["S101"]  # allow assert in tests
+[format]
+# В индексе git файлы хранятся с LF (core.autocrlf=false). Без этой настройки
+# форматтер пишет переводы строк по умолчанию платформы, и на Windows каждый
+# прогон переписывает файл целиком.
+line-ending = "lf"
+

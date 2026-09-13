@@ -8,11 +8,12 @@
 - Базовую обработку
 """
 
-import numpy as np
 from datetime import datetime
 
-from heliopy.imaging.image_processor import SolarImage, ImageProcessor
+import numpy as np
+
 from heliopy.core.data_processor import DataProcessor
+from heliopy.imaging.image_processor import SolarImage
 
 
 def create_test_solar_image():
@@ -22,7 +23,7 @@ def create_test_solar_image():
     center = size // 2
 
     # Создаем координатную сетку
-    y, x = np.ogrid[-center:size - center, -center:size - center]
+    y, x = np.ogrid[-center : size - center, -center : size - center]
     r = np.sqrt(x**2 + y**2)
 
     # Солнечный диск с лимбовым затемнением
@@ -103,13 +104,13 @@ def main():
 
     # Нормализация minmax
     normalized_minmax = processor.normalize(solar_image.data, method="minmax")
-    print(f"MinMax нормализация:")
+    print("MinMax нормализация:")
     print(f"  Мин: {normalized_minmax.min():.4f}")
     print(f"  Макс: {normalized_minmax.max():.4f}")
 
     # Нормализация zscore
     normalized_zscore = processor.normalize(solar_image.data, method="zscore")
-    print(f"\nZ-score нормализация:")
+    print("\nZ-score нормализация:")
     print(f"  Среднее: {normalized_zscore.mean():.4e}")
     print(f"  Ст. отклонение: {normalized_zscore.std():.4f}\n")
 

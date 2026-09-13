@@ -4,17 +4,20 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 from astropy.time import Time
 
 from heliopy.data_sources.base_loader import BaseLoader
 
+if TYPE_CHECKING:
+    from heliopy.imaging.image_processor import SolarImage
+
 
 class HelioviewerLoader(BaseLoader):
     """Загрузчик данных Helioviewer."""
-    
+
     def load(self, *args, **kwargs):
         """Abstract method implementation."""
         pass
@@ -30,10 +33,8 @@ class HelioviewerLoader(BaseLoader):
         """
         super().__init__(cache_dir)
         self.base_url = "https://api.helioviewer.org/v2/"
-        
-    def load_image(
-        self, date: Union[str, datetime], source_id: int = 14, **kwargs
-    ) -> "SolarImage":
+
+    def load_image(self, date: Union[str, datetime], source_id: int = 14, **kwargs) -> "SolarImage":
         """
         Загрузка изображения с Helioviewer.
 
@@ -51,34 +52,25 @@ class HelioviewerLoader(BaseLoader):
         SolarImage
             Объект с данными изображения.
         """
-        if isinstance(date, str):
-            time = Time(date)
-        else:
-            time = Time(date)
+        time = Time(date) if isinstance(date, str) else Time(date)
 
         # Ленивый импорт hvpy — чтобы импорт heliopy не падал, если hvpy не установлен.
         try:
             import hvpy
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
             raise RuntimeError(
                 "Для загрузки данных Helioviewer требуется пакет 'hvpy'. Установите его: pip install hvpy"
-            )
+            ) from e
 
         try:
             # Получение изображения с Helioviewer API
-            image_data = hvpy.getJP2Image(
-                date=time.iso,
-                sourceId=source_id
-            )
-            
+            image_data = hvpy.getJP2Image(date=time.iso, sourceId=source_id)
+
             # Получение метаданных
-            header_data = hvpy.getJP2Header(
-                date=time.iso,
-                sourceId=source_id
-            )
-            
+            header_data = hvpy.getJP2Header(date=time.iso, sourceId=source_id)
+
             from heliopy.imaging.image_processor import SolarImage
-            
+
             # Создание объекта SolarImage
             return SolarImage(
                 data=np.array(image_data),  # В реальной реализации здесь будут данные изображения
@@ -88,14 +80,14 @@ class HelioviewerLoader(BaseLoader):
                 instrument=self._get_instrument_from_source(source_id),
                 observatory=self._get_observatory_from_source(source_id),
             )
-            
+
         except Exception as e:
-            raise RuntimeError(f"Ошибка при загрузке данных Helioviewer: {e}")
-            
+            raise RuntimeError(f"Ошибка при загрузке данных Helioviewer: {e}") from e
+
     def get_data_sources(self) -> dict:
         """
         Получение списка доступных источников данных.
-        
+
         Returns
         -------
         dict
@@ -103,12 +95,13 @@ class HelioviewerLoader(BaseLoader):
         """
         try:
             import hvpy
+
             return hvpy.getDataSources()
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
             raise RuntimeError(
                 "Для получения источников данных Helioviewer требуется пакет 'hvpy'. Установите его: pip install hvpy"
-            )
-            
+            ) from e
+
     def _get_wavelength_from_source(self, source_id: int) -> Optional[float]:
         """Получение длины волны по ID источника."""
         # В реальной реализации здесь будет маппинг ID источников на длины волн
@@ -117,12 +110,12 @@ class HelioviewerLoader(BaseLoader):
             13: 171.0,  # SDO/AIA 171Å
             15: 211.0,  # SDO/AIA 211Å
             16: 304.0,  # SDO/AIA 304Å
-            17: 1600.0, # SDO/AIA 1600Å
-            18: 1700.0, # SDO/AIA 1700Å
-            19: 4500.0, # SDO/AIA 4500Å
+            17: 1600.0,  # SDO/AIA 1600Å
+            18: 1700.0,  # SDO/AIA 1700Å
+            19: 4500.0,  # SDO/AIA 4500Å
         }
         return wavelength_map.get(source_id)
-        
+
     def _get_instrument_from_source(self, source_id: int) -> str:
         """Получение названия инструмента по ID источника."""
         # В реальной реализации здесь будет маппинг ID источников на инструменты
@@ -136,7 +129,7 @@ class HelioviewerLoader(BaseLoader):
             19: "AIA",  # SDO/AIA 4500Å
         }
         return instrument_map.get(source_id, "Unknown")
-        
+
     def _get_observatory_from_source(self, source_id: int) -> str:
         """Получение названия обсерватории по ID источника."""
         # В реальной реализации здесь будет маппинг ID источников на обсерватории

@@ -2,7 +2,7 @@
 Работа с мультиволновыми данными.
 """
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -90,5 +90,5 @@ class MultiWavelengthAnalyzer:
         if len(images) == 0:
             raise ValueError("Необходимо хотя бы одно изображение")
 
-        first_image = list(images.values())[0]
+        first_image = next(iter(images.values()))
         return np.ones_like(first_image.data) * 1e6  # Примерная температура в К

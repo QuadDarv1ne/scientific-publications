@@ -1,8 +1,9 @@
-import os
 import json
-import time
 import logging
+import os
+import time
 from typing import Generator
+
 import cv2
 
 from elements.FrameElement import FrameElement
@@ -18,9 +19,7 @@ class VideoReader:
         self.video_pth = config["src"]
         self.video_source = f"Processing of {self.video_pth}"
         assert (
-            os.path.isfile(self.video_pth)
-            or type(self.video_pth) == int
-            or "://" in self.video_pth
+            os.path.isfile(self.video_pth) or type(self.video_pth) == int or "://" in self.video_pth
         ), f"VideoReader| Файл {self.video_pth} не найден"
 
         self.stream = cv2.VideoCapture(self.video_pth)
@@ -40,7 +39,7 @@ class VideoReader:
             self.stream.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
         # Чтение данных из файла JSON (информация о координатах въезда и выезда дорог)
-        with open(config["roads_info"], "r") as file:
+        with open(config["roads_info"]) as file:
             data_json = json.load(file)
 
         # Преобразование данных координат дорог в формат int

@@ -2,9 +2,6 @@
 Модульные тесты для data_sources модулей.
 """
 
-import pytest
-from pathlib import Path
-
 
 class TestDataSourcesModule:
     """Тесты для модуля data_sources."""

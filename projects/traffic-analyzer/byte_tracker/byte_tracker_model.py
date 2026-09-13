@@ -1,17 +1,13 @@
 import numpy as np
-from collections import deque
-import os
-import os.path as osp
-import copy
-import torch
-import torch.nn.functional as F
 
-from byte_tracker.utils.kalman_filter import KalmanFilter
 from byte_tracker.utils import matching
 from byte_tracker.utils.basetrack import BaseTrack, TrackState
+from byte_tracker.utils.kalman_filter import KalmanFilter
+
 
 class STrack(BaseTrack):
     shared_kalman = KalmanFilter()
+
     def __init__(self, tlwh, score, class_name):
 
         # wait activate
@@ -38,7 +34,9 @@ class STrack(BaseTrack):
             for i, st in enumerate(stracks):
                 if st.state != TrackState.Tracked:
                     multi_mean[i][7] = 0
-            multi_mean, multi_covariance = STrack.shared_kalman.multi_predict(multi_mean, multi_covariance)
+            multi_mean, multi_covariance = STrack.shared_kalman.multi_predict(
+                multi_mean, multi_covariance
+            )
             for i, (mean, cov) in enumerate(zip(multi_mean, multi_covariance)):
                 stracks[i].mean = mean
                 stracks[i].covariance = cov
@@ -83,7 +81,8 @@ class STrack(BaseTrack):
 
         new_tlwh = new_track.tlwh
         self.mean, self.covariance = self.kalman_filter.update(
-            self.mean, self.covariance, self.tlwh_to_xyah(new_tlwh))
+            self.mean, self.covariance, self.tlwh_to_xyah(new_tlwh)
+        )
         self.state = TrackState.Tracked
         self.is_activated = True
 
@@ -94,7 +93,7 @@ class STrack(BaseTrack):
     # @jit(nopython=True)
     def tlwh(self):
         """Get current position in bounding box format `(top left x, top left y,
-                width, height)`.
+        width, height)`.
         """
         if self.mean is None:
             return self._tlwh.copy()
@@ -142,15 +141,24 @@ class STrack(BaseTrack):
         return ret
 
     def __repr__(self):
-        return 'OT_{}_({}-{})'.format(self.track_id, self.start_frame, self.end_frame)
+        return f"OT_{self.track_id}_({self.start_frame}-{self.end_frame})"
 
 
-class BYTETracker(object):
-    def __init__(self, fps, first_track_thresh, second_track_thresh, match_thresh, track_buffer, resize_width_height, mot20=False):
+class BYTETracker:
+    def __init__(
+        self,
+        fps,
+        first_track_thresh,
+        second_track_thresh,
+        match_thresh,
+        track_buffer,
+        resize_width_height,
+        mot20=False,
+    ):
         self.tracked_stracks = []  # type: list[STrack]
         self.lost_stracks = []  # type: list[STrack]
         self.removed_stracks = []  # type: list[STrack]
-        
+
         self.resize_width_height = resize_width_height
 
         self.frame_id = 0
@@ -158,29 +166,29 @@ class BYTETracker(object):
         self.buffer_size = int(fps / 30.0 * track_buffer)
         self.max_time_lost = self.buffer_size
         self.kalman_filter = KalmanFilter()
-        
+
         # Thr
         self.first_track_thresh = first_track_thresh
         self.second_track_thresh = second_track_thresh
         self.match_thresh = match_thresh
-        
+
         # Use mot20 or not
         self.mot20 = mot20
-        
+
     def update(self, output_results, xyxy=True):
-        
+
         self.frame_id += 1
         activated_starcks = []
         refind_stracks = []
         lost_stracks = []
         removed_stracks = []
-        
+
         # output_results: absolute_scale(x, y, x, y), score, class
         scores = np.array([o[4].cpu().numpy() for o in output_results])
         classes = np.array([o[5].cpu().numpy() for o in output_results])
         bboxes = np.array([o[:4].cpu().numpy() for o in output_results])
-        
-        '''
+
+        """
         if output_results.shape[1] == 5:
             scores = output_results[:, 4]
             bboxes = output_results[:, :4]
@@ -191,8 +199,8 @@ class BYTETracker(object):
         img_h, img_w = img_info[0], img_info[1]
         scale = min(img_size[0] / float(img_h), img_size[1] / float(img_w))
         bboxes /= scale
-        '''
-        
+        """
+
         remain_inds = scores > self.first_track_thresh
         inds_low = scores > self.second_track_thresh
         inds_high = scores < self.first_track_thresh
@@ -204,15 +212,17 @@ class BYTETracker(object):
         classes_keep = classes[remain_inds]
         scores_second = scores[inds_second]
         classes_second = classes[inds_second]
-        
+
         if len(dets) > 0:
-            '''Detections'''
-            detections = [STrack(STrack.tlbr_to_tlwh(tlbr), s, c) for
-                          (tlbr, s, c) in zip(dets, scores_keep, classes_keep)]
+            """Detections"""
+            detections = [
+                STrack(STrack.tlbr_to_tlwh(tlbr), s, c)
+                for (tlbr, s, c) in zip(dets, scores_keep, classes_keep)
+            ]
         else:
             detections = []
 
-        ''' Add newly detected tracklets to tracked_stracks'''
+        """ Add newly detected tracklets to tracked_stracks"""
         unconfirmed = []
         tracked_stracks = []  # type: list[STrack]
         for track in self.tracked_stracks:
@@ -221,7 +231,7 @@ class BYTETracker(object):
             else:
                 tracked_stracks.append(track)
 
-        ''' Step 2: First association, with high score detection boxes'''
+        """ Step 2: First association, with high score detection boxes"""
         strack_pool = joint_stracks(tracked_stracks, self.lost_stracks)
         # Predict the current location with KF
         STrack.multi_predict(strack_pool)
@@ -240,17 +250,21 @@ class BYTETracker(object):
                 track.re_activate(det, self.frame_id, new_id=False)
                 refind_stracks.append(track)
 
-        ''' Step 3: Second association, with low score detection boxes'''
+        """ Step 3: Second association, with low score detection boxes"""
         # association the untrack to the low score detections
         if len(dets_second) > 0:
-            '''Detections'''
-            detections_second = [STrack(STrack.tlbr_to_tlwh(tlbr), s, c) for
-                          (tlbr, s, c) in zip(dets_second, scores_second, classes_second)]
+            """Detections"""
+            detections_second = [
+                STrack(STrack.tlbr_to_tlwh(tlbr), s, c)
+                for (tlbr, s, c) in zip(dets_second, scores_second, classes_second)
+            ]
         else:
             detections_second = []
-        r_tracked_stracks = [strack_pool[i] for i in u_track if strack_pool[i].state == TrackState.Tracked]
+        r_tracked_stracks = [
+            strack_pool[i] for i in u_track if strack_pool[i].state == TrackState.Tracked
+        ]
         dists = matching.iou_distance(r_tracked_stracks, detections_second)
-        matches, u_track, u_detection_second = matching.linear_assignment(dists, thresh=0.5)
+        matches, u_track, _u_detection_second = matching.linear_assignment(dists, thresh=0.5)
         for itracked, idet in matches:
             track = r_tracked_stracks[itracked]
             det = detections_second[idet]
@@ -263,11 +277,11 @@ class BYTETracker(object):
 
         for it in u_track:
             track = r_tracked_stracks[it]
-            if not track.state == TrackState.Lost:
+            if track.state != TrackState.Lost:
                 track.mark_lost()
                 lost_stracks.append(track)
 
-        '''Deal with unconfirmed tracks, usually tracks with only one beginning frame'''
+        """Deal with unconfirmed tracks, usually tracks with only one beginning frame"""
         detections = [detections[i] for i in u_detection]
         dists = matching.iou_distance(unconfirmed, detections)
         if not self.mot20:
@@ -301,7 +315,9 @@ class BYTETracker(object):
         self.lost_stracks.extend(lost_stracks)
         self.lost_stracks = sub_stracks(self.lost_stracks, self.removed_stracks)
         self.removed_stracks.extend(removed_stracks)
-        self.tracked_stracks, self.lost_stracks = remove_duplicate_stracks(self.tracked_stracks, self.lost_stracks)
+        self.tracked_stracks, self.lost_stracks = remove_duplicate_stracks(
+            self.tracked_stracks, self.lost_stracks
+        )
         # get scores of lost tracks
         output_stracks = [track for track in self.tracked_stracks if track.is_activated]
 
@@ -336,7 +352,7 @@ def sub_stracks(tlista, tlistb):
 def remove_duplicate_stracks(stracksa, stracksb):
     pdist = matching.iou_distance(stracksa, stracksb)
     pairs = np.where(pdist < 0.15)
-    dupa, dupb = list(), list()
+    dupa, dupb = [], []
     for p, q in zip(*pairs):
         timep = stracksa[p].frame_id - stracksa[p].start_frame
         timeq = stracksb[q].frame_id - stracksb[q].start_frame
@@ -344,6 +360,6 @@ def remove_duplicate_stracks(stracksa, stracksb):
             dupb.append(q)
         else:
             dupa.append(p)
-    resa = [t for i, t in enumerate(stracksa) if not i in dupa]
-    resb = [t for i, t in enumerate(stracksb) if not i in dupb]
+    resa = [t for i, t in enumerate(stracksa) if i not in dupa]
+    resb = [t for i, t in enumerate(stracksb) if i not in dupb]
     return resa, resb

@@ -1,4 +1,5 @@
 from collections import deque
+
 import numpy as np
 
 from elements.FrameElement import FrameElement
@@ -21,14 +22,14 @@ class CalcStatisticsNode:
         self.count_cars_buffer_frames = config_general["count_cars_buffer_frames"]
         self.cars_buffer = deque(maxlen=self.count_cars_buffer_frames)  # создали буфер значений
 
-    @profile_time 
+    @profile_time
     def process(self, frame_element: FrameElement) -> FrameElement:
         # Выйти из обработки если это пришел VideoEndBreakElement а не FrameElement
         if isinstance(frame_element, VideoEndBreakElement):
             return frame_element
-        assert isinstance(
-            frame_element, FrameElement
-        ), f"CalcStatisticsNode | Неправильный формат входного элемента {type(frame_element)}"
+        assert isinstance(frame_element, FrameElement), (
+            f"CalcStatisticsNode | Неправильный формат входного элемента {type(frame_element)}"
+        )
 
         buffer_tracks = frame_element.buffer_tracks
         self.cars_buffer.append(len(frame_element.id_list))
@@ -57,7 +58,7 @@ class CalcStatisticsNode:
         for key in roads_activity:
             roads_activity[key] /= self.time_buffer_analytics
 
-        info_dictionary['roads_activity'] = roads_activity
+        info_dictionary["roads_activity"] = roads_activity
 
         # Запись результатов обработки:
         frame_element.info = info_dictionary

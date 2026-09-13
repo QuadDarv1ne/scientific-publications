@@ -1,16 +1,17 @@
+import logging
 import signal
 import sys
-import logging
+
 import hydra
-from nodes.VideoReader import VideoReader
-from nodes.ShowNode import ShowNode
-from nodes.VideoSaverNode import VideoSaverNode
-from nodes.DetectionTrackingNodes import DetectionTrackingNodes
-from nodes.TrackerInfoUpdateNode import TrackerInfoUpdateNode
+
 from nodes.CalcStatisticsNode import CalcStatisticsNode
+from nodes.DetectionTrackingNodes import DetectionTrackingNodes
 from nodes.FlaskServerVideoNode import VideoServer
-from elements.VideoEndBreakElement import VideoEndBreakElement
 from nodes.KafkaProducerNode import KafkaProducerNode
+from nodes.ShowNode import ShowNode
+from nodes.TrackerInfoUpdateNode import TrackerInfoUpdateNode
+from nodes.VideoReader import VideoReader
+from nodes.VideoSaverNode import VideoSaverNode
 from utils_local.utils import check_and_set_env_var
 
 logger = logging.getLogger(__name__)

@@ -4,12 +4,14 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
-import numpy as np
 from astropy.time import Time
 
 from heliopy.data_sources.base_loader import BaseLoader
+
+if TYPE_CHECKING:
+    from heliopy.imaging.image_processor import SolarImage
 
 
 class STEREOLoader(BaseLoader):
@@ -50,24 +52,21 @@ class STEREOLoader(BaseLoader):
         """
         if spacecraft not in ["A", "B"]:
             raise ValueError("Космический аппарат должен быть 'A' или 'B'")
-            
+
         if instrument not in ["EUVI", "COR1", "COR2", "HI1", "HI2"]:
             raise ValueError(f"Неподдерживаемый инструмент: {instrument}")
 
-        if isinstance(date, str):
-            time = Time(date)
-        else:
-            time = Time(date)
+        time = Time(date) if isinstance(date, str) else Time(date)
 
         # Ленивый импорт sunpy — чтобы импорт heliopy не падал, если sunpy не установлен.
         try:
             from sunpy.map import Map
             from sunpy.net import Fido
             from sunpy.net import attrs as a
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
             raise RuntimeError(
                 "Для загрузки данных STEREO требуется пакет 'sunpy'. Установите его: pip install sunpy"
-            )
+            ) from e
 
         try:
             # Поиск данных через SunPy
@@ -75,11 +74,13 @@ class STEREOLoader(BaseLoader):
                 a.Time(time, time + 1 / 24),  # 1 час
                 a.Detector("STEREO"),
                 a.Instrument(instrument),
-                a.Spacecraft(spacecraft)
+                a.Spacecraft(spacecraft),
             )
 
             if len(query) == 0:
-                raise ValueError(f"Данные не найдены для {date}, космический аппарат {spacecraft}, инструмент {instrument}")
+                raise ValueError(
+                    f"Данные не найдены для {date}, космический аппарат {spacecraft}, инструмент {instrument}"
+                )
 
             # Загрузка первого результата
             files = Fido.fetch(query[0][0])
@@ -103,4 +104,4 @@ class STEREOLoader(BaseLoader):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Ошибка при загрузке данных STEREO/SECCHI: {e}")
+            raise RuntimeError(f"Ошибка при загрузке данных STEREO/SECCHI: {e}") from e

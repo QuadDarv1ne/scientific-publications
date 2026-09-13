@@ -24,7 +24,14 @@ __license__ = "Custom License by Programming School Maestro7IT"
 from heliopy import core, events, imaging, space_weather, visualization
 
 # Удобные функции для быстрого доступа
-from heliopy.core.data_loader import load_goes, load_helioviewer, load_psp_fld, load_psp_sweap, load_sdo_aia, load_soho_lasco
+from heliopy.core.data_loader import (
+    load_goes,
+    load_helioviewer,
+    load_psp_fld,
+    load_psp_sweap,
+    load_sdo_aia,
+    load_soho_lasco,
+)
 from heliopy.space_weather.forecast_models import forecast_geoeffectiveness
 
 __all__ = [

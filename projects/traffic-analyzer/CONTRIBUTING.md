@@ -40,26 +40,26 @@ git checkout -b fix/bug-description
 ```python
 from typing import List, Optional
 
+
 def process_detections(
-    detections: List[float],
-    confidence_threshold: float = 0.5
+    detections: List[float], confidence_threshold: float = 0.5
 ) -> Optional[List[int]]:
     """
     Обрабатывает детекции объектов и фильтрует по порогу уверенности.
-    
+
     Args:
         detections: Список координат детекций [x1, y1, x2, y2, conf]
         confidence_threshold: Минимальный порог уверенности (0.0-1.0)
-    
+
     Returns:
         Список отфильтрованных индексов или None если детекций нет
-    
+
     Raises:
         ValueError: Если confidence_threshold вне диапазона [0, 1]
     """
     if not 0.0 <= confidence_threshold <= 1.0:
         raise ValueError("confidence_threshold должен быть в диапазоне [0, 1]")
-    
+
     # Ваш код здесь
     pass
 ```

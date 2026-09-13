@@ -2,8 +2,8 @@ import argparse
 import sys
 from datetime import datetime
 
-from .utils.time_utils import TimeUtils
 from .utils.math_utils import MathUtils
+from .utils.time_utils import TimeUtils
 
 
 def cmd_info(args: argparse.Namespace) -> int:
@@ -37,9 +37,9 @@ def cmd_helioviewer(args: argparse.Namespace) -> int:
                 "284Å": {"source_id": 8},
                 "304Å": {"source_id": 9},
             }
-        }
+        },
     }
-    
+
     for observatory, instruments in sources.items():
         print(f"  {observatory}:")
         for instrument, wavelengths in instruments.items():
@@ -78,7 +78,10 @@ def cmd_web(args: argparse.Namespace) -> int:
     try:
         from .web_app import main as web_main
     except Exception as e:
-        print("Не удалось запустить веб-приложение. Убедитесь, что установлен пакет 'Flask' (установите с extras: heliopy[web]).", file=sys.stderr)
+        print(
+            "Не удалось запустить веб-приложение. Убедитесь, что установлен пакет 'Flask' (установите с extras: heliopy[web]).",
+            file=sys.stderr,
+        )
         print(f"Ошибка: {e}", file=sys.stderr)
         return 1
     # Пробрасываем параметры
@@ -97,14 +100,16 @@ def build_parser() -> argparse.ArgumentParser:
     p_an.set_defaults(func=cmd_analyze)
 
     p_web = sub.add_parser("web", help="Запустить веб-интерфейс")
-    p_web.add_argument("--host", default="127.0.0.1", help="Хост для Flask (по умолчанию 127.0.0.1)")
+    p_web.add_argument(
+        "--host", default="127.0.0.1", help="Хост для Flask (по умолчанию 127.0.0.1)"
+    )
     p_web.add_argument("--port", type=int, default=5000, help="Порт для Flask (по умолчанию 5000)")
     p_web.add_argument("--debug", action="store_true", help="Включить режим отладки")
     p_web.set_defaults(func=cmd_web)
-    
+
     p_helio = sub.add_parser("helioviewer", help="Показать доступные источники данных Helioviewer")
     p_helio.set_defaults(func=cmd_helioviewer)
-    
+
     p_psp = sub.add_parser("psp", help="Показать доступные типы данных Parker Solar Probe")
     p_psp.set_defaults(func=cmd_psp)
 

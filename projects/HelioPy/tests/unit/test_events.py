@@ -2,11 +2,10 @@
 Модульные тесты для events модулей.
 """
 
-import pytest
 import numpy as np
 from astropy.time import Time
-from heliopy.events.flare_detector import FlareDetector, GOESData, Flare
-from heliopy.events.cme_detector import CMEDetector, CME
+
+from heliopy.events.flare_detector import FlareDetector, GOESData
 
 
 class TestFlareDetector:

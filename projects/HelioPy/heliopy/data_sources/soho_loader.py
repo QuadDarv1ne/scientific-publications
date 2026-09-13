@@ -4,11 +4,14 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from astropy.time import Time
 
 from heliopy.data_sources.base_loader import BaseLoader
+
+if TYPE_CHECKING:
+    from heliopy.imaging.image_processor import SolarImage
 
 
 class SOHOLoader(BaseLoader):
@@ -50,20 +53,17 @@ class SOHOLoader(BaseLoader):
                 f"Неподдерживаемый коронограф: {coronagraph}. Используйте 'C2' или 'C3'"
             )
 
-        if isinstance(date, str):
-            time = Time(date)
-        else:
-            time = Time(date)
+        time = Time(date) if isinstance(date, str) else Time(date)
 
         # Ленивый импорт sunpy — чтобы импорт heliopy не падал, если sunpy не установлен.
         try:
             from sunpy.map import Map
             from sunpy.net import Fido
             from sunpy.net import attrs as a
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as e:
             raise RuntimeError(
                 "Для загрузки данных SOHO требуется пакет 'sunpy'. Установите его: pip install sunpy"
-            )
+            ) from e
 
         try:
             query = Fido.search(
@@ -93,4 +93,4 @@ class SOHOLoader(BaseLoader):
             )
 
         except Exception as e:
-            raise RuntimeError(f"Ошибка при загрузке данных SOHO/LASCO: {e}")
+            raise RuntimeError(f"Ошибка при загрузке данных SOHO/LASCO: {e}") from e

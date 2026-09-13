@@ -2,8 +2,9 @@
 Setup script for HelioPy.
 """
 
-from setuptools import setup, find_packages
 from pathlib import Path
+
+from setuptools import find_packages, setup
 
 # Чтение README
 readme_file = Path(__file__).parent / "README.md"
@@ -55,4 +56,3 @@ setup(
     include_package_data=True,
     zip_safe=False,
 )
-

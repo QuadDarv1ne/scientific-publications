@@ -146,7 +146,7 @@ class FlareDetector:
         # Check if indices are valid
         if start_idx < 0 or peak_idx < 0 or end_idx < 0:
             return None
-        
+
         if len(goes_data.xrsb) == 0:
             return None
 
@@ -166,7 +166,7 @@ class FlareDetector:
         except (IndexError, TypeError):
             # If we can't get the time values, return None
             return None
-        
+
         # Check that we actually got time values
         if start_time is None or peak_time is None or end_time is None:
             return None

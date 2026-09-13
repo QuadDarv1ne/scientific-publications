@@ -717,11 +717,7 @@ tracker = StarlinkTracker()
 satellites = tracker.update_tle_data()
 
 # Прогнозирование прохождений для Нью-Йорка
-passes = tracker.predict_passes(
-    latitude=40.7128, 
-    longitude=-74.0060,
-    hours_ahead=48
-)
+passes = tracker.predict_passes(latitude=40.7128, longitude=-74.0060, hours_ahead=48)
 
 # Вывод результатов
 for p in passes[:10]:
@@ -743,7 +739,7 @@ stats = processor.analyze_constellation(satellites)
 print(f"Total satellites: {stats['total_satellites']}")
 
 # Экспорт в CSV
-processor.export_to_csv(satellites, 'starlink_data.csv')
+processor.export_to_csv(satellites, "starlink_data.csv")
 ```
 
 #### Управление конфигурацией
@@ -754,8 +750,8 @@ from src.utils.config_manager import get_config, get_config_value
 config = get_config()
 
 # Получение определенных значений
-latitude = get_config_value('observer', 'default_latitude', 0.0)
-celestrak_url = get_config_value('data_sources', 'celestrak_url')
+latitude = get_config_value("observer", "default_latitude", 0.0)
+celestrak_url = get_config_value("data_sources", "celestrak_url")
 ```
 
 #### Планирование
@@ -834,10 +830,7 @@ notifier = NotificationSystem()
 
 # Отправка тестового уведомления
 success = notifier.notify_upcoming_pass(
-    "STARLINK-TEST",
-    datetime.now() + timedelta(minutes=30),
-    65.5,
-    42.3
+    "STARLINK-TEST", datetime.now() + timedelta(minutes=30), 65.5, 42.3
 )
 
 if success:
@@ -858,7 +851,7 @@ processor = DataProcessor()
 satellites = processor.load_satellite_data()
 
 # Экспорт в JSON
-processor.export_to_json(satellites, 'starlink_export.json')
+processor.export_to_json(satellites, "starlink_export.json")
 ```
 
 Структура результирующего JSON:
@@ -880,7 +873,7 @@ processor.export_to_json(satellites, 'starlink_export.json')
 #### Экспорт CSV
 ```python
 # Экспорт в CSV
-processor.export_to_csv(satellites, 'starlink_export.csv')
+processor.export_to_csv(satellites, "starlink_export.csv")
 ```
 
 ### Веб-экспорт

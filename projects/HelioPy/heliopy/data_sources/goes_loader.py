@@ -63,10 +63,7 @@ class GOESLoader(BaseLoader):
         GOESData
             Object with GOES data.
         """
-        if isinstance(date, str):
-            time = Time(date)
-        else:
-            time = Time(date)
+        time = Time(date) if isinstance(date, str) else Time(date)
 
         # В реальной реализации здесь будет загрузка данных GOES
         # Для базовой версии создаем структуру данных

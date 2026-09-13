@@ -1,19 +1,43 @@
 import unittest
-from src.web.web_app import app, LANGUAGES
 
+from src.web.web_app import LANGUAGES, app
 
 CRITICAL_KEYS = [
     # Common UI
-    'site_name', 'dashboard', 'settings', 'logout', 'close',
+    "site_name",
+    "dashboard",
+    "settings",
+    "logout",
+    "close",
     # Map
-    'satellite_map', 'map_layers', 'street_view', 'satellite_view', 'terrain_view',
-    'satellite_positions', 'satellite_details', 'loading_satellite_data',
-    'initialized_success', 'data_loaded_success', 'error_loading_satellite_data',
-    'active_satellite', 'inactive_satellite', 'moving_satellite', 'legend',
+    "satellite_map",
+    "map_layers",
+    "street_view",
+    "satellite_view",
+    "terrain_view",
+    "satellite_positions",
+    "satellite_details",
+    "loading_satellite_data",
+    "initialized_success",
+    "data_loaded_success",
+    "error_loading_satellite_data",
+    "active_satellite",
+    "inactive_satellite",
+    "moving_satellite",
+    "legend",
     # Settings extras
-    'timezone_utc', 'timezone_eastern', 'timezone_london', 'timezone_tokyo', 'timezone_moscow',
-    'sqlite_embedded', 'postgresql', 'mysql', 'placeholder_bot_token', 'placeholder_chat_id',
-    'smtp_placeholder', 'email_placeholder',
+    "timezone_utc",
+    "timezone_eastern",
+    "timezone_london",
+    "timezone_tokyo",
+    "timezone_moscow",
+    "sqlite_embedded",
+    "postgresql",
+    "mysql",
+    "placeholder_bot_token",
+    "placeholder_chat_id",
+    "smtp_placeholder",
+    "email_placeholder",
 ]
 
 
@@ -29,22 +53,22 @@ class TestLocalization(unittest.TestCase):
     def test_pages_render_in_en_and_ru(self):
         cases = [
             ("en", "/", b"Dashboard"),
-            ("ru", "/", "Панель управления".encode("utf-8")),
+            ("ru", "/", "Панель управления".encode()),
             ("en", "/map", b"Satellite Map"),
-            ("ru", "/map", "Карта спутников".encode("utf-8")),
+            ("ru", "/map", "Карта спутников".encode()),
             ("en", "/settings", b"Settings"),
-            ("ru", "/settings", "Настройки".encode("utf-8")),
+            ("ru", "/settings", "Настройки".encode()),
             ("en", "/performance", b"Performance"),
-            ("ru", "/performance", "Производительность".encode("utf-8")),
+            ("ru", "/performance", "Производительность".encode()),
         ]
         app.config.update(TESTING=True)
         for lang, endpoint, expected_text in cases:
             with self.subTest(lang=lang, endpoint=endpoint):
                 with app.test_client() as client:
                     with client.session_transaction() as sess:
-                        sess['authenticated'] = True
-                        sess['username'] = 'tester'
-                        sess['language'] = lang
+                        sess["authenticated"] = True
+                        sess["username"] = "tester"
+                        sess["language"] = lang
                     resp = client.get(endpoint, follow_redirects=True)
                     self.assertEqual(resp.status_code, 200)
                     self.assertIn(expected_text, resp.data)
@@ -53,19 +77,19 @@ class TestLocalization(unittest.TestCase):
         app.config.update(TESTING=True)
         with app.test_client() as client:
             with client.session_transaction() as sess:
-                sess['authenticated'] = True
-                sess['username'] = 'tester'
+                sess["authenticated"] = True
+                sess["username"] = "tester"
 
-            resp = client.get('/set_language/ru', follow_redirects=True)
+            resp = client.get("/set_language/ru", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
             with client.session_transaction() as sess:
-                self.assertEqual(sess.get('language'), 'ru')
+                self.assertEqual(sess.get("language"), "ru")
 
-            resp = client.get('/set_language/en', follow_redirects=True)
+            resp = client.get("/set_language/en", follow_redirects=True)
             self.assertEqual(resp.status_code, 200)
             with client.session_transaction() as sess:
-                self.assertEqual(sess.get('language'), 'en')
+                self.assertEqual(sess.get("language"), "en")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

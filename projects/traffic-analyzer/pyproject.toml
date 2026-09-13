@@ -69,18 +69,19 @@ exclude = [
 ]
 
 [tool.ruff.lint]
+# Набор правил согласован с корневым .ruff.toml (E, W, F, I, B, C4, UP, RUF).
+# PTH и N здесь не включены: код проекта написан в стиле os.path и со
+# сложившимися именами, массовый рефакторинг имён и путей не входит в
+# стандарт репозитория.
 select = [
     "E",     # pycodestyle errors
     "W",     # pycodestyle warnings
     "F",     # pyflakes
     "I",     # isort
-    "N",     # pep8-naming
     "UP",    # pyupgrade
     "B",     # flake8-bugbear
     "C4",    # flake8-comprehensions
     "SIM",   # flake8-simplify
-    "TCH",   # flake8-type-checking
-    "PTH",   # flake8-use-pathlib
     "RUF",   # Ruff-specific rules
 ]
 ignore = [
@@ -88,11 +89,21 @@ ignore = [
     "B008",   # do not perform function calls in argument defaults
     "B905",   # zip strict parameter
     "UP007",  # Use X | Y for type annotations (Python 3.10+)
+    # Русскоязычные строки, докстринги и комментарии: RUF001-003 реагируют на кириллицу,
+    # похожую на латиницу (а, е, о, с, р, х), то есть на нормальный текст, а не на ошибку.
+    "RUF001",  # ambiguous-unicode-character-string
+    "RUF002",  # ambiguous-unicode-character-docstring
+    "RUF003",  # ambiguous-unicode-character-comment
 ]
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401", "F403"]  # unused imports
 "test_*.py" = ["S101"]            # assert usage in tests
+
+[tool.ruff.format]
+# В индексе git файлы хранятся с LF (core.autocrlf=false); без этой настройки
+# форматтер на Windows пишет CRLF и переписывает файл целиком.
+line-ending = "lf"
 
 # ==================== MYPY ====================
 [tool.mypy]

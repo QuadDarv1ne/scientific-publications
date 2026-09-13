@@ -10,21 +10,24 @@
 
 Используйте main() для запуска из CLI: `python -m heliopy web`.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
-from flask import Flask, render_template, jsonify, request, session, redirect, url_for
+
+from flask import Flask, jsonify, redirect, render_template, request, session, url_for
+
 import heliopy
 from heliopy.events.flare_detector import FlareDetector
-from heliopy.utils.time_utils import TimeUtils
 from heliopy.utils.math_utils import MathUtils
-from heliopy.core.data_loader import DataLoader
+from heliopy.utils.time_utils import TimeUtils
 
 BASE_DIR = Path(__file__).parent
 # Определяем путь к шаблонам и статике внутри установленного пакета
 TEMPLATE_DIR = BASE_DIR / "templates"
 STATIC_DIR = BASE_DIR / "static"
-import json
+import json  # noqa: E402  # импорт после настройки sys.path/опциональных зависимостей
+
 
 def _load_translations() -> dict:
     translations = {}
@@ -36,6 +39,7 @@ def _load_translations() -> dict:
         except Exception:
             translations[code] = {}
     return translations
+
 
 TRANSLATIONS = _load_translations()
 
@@ -212,7 +216,7 @@ def api_helioviewer_sources():
                     "284Å": {"source_id": 8},
                     "304Å": {"source_id": 9},
                 }
-            }
+            },
         }
         return jsonify(sources)
     except Exception as e:
@@ -228,6 +232,7 @@ def api_plot_timeseries():
     """
     import math
     import time as _time
+
     lang = get_locale()
     tdict = TRANSLATIONS.get(lang, TRANSLATIONS.get("en", {}))
     # Генерация синтетических данных (sin+noise)
@@ -235,15 +240,17 @@ def api_plot_timeseries():
     base = _time.time()
     times = [base + i * 360 for i in range(n)]  # шаг 6 минут
     flux = [1e-6 + 5e-7 * math.sin(i / 5.0) + (1e-7 * math.sin(i / 2.0)) for i in range(n)]
-    return jsonify({
-        "times": times,
-        "flux": flux,
-        "labels": {
-            "x": tdict.get("chart_time", "Time"),
-            "y": tdict.get("chart_flux", "Flux"),
-            "title": tdict.get("chart_title_demo", "Synthetic Solar Flux Time Series")
+    return jsonify(
+        {
+            "times": times,
+            "flux": flux,
+            "labels": {
+                "x": tdict.get("chart_time", "Time"),
+                "y": tdict.get("chart_flux", "Flux"),
+                "title": tdict.get("chart_title_demo", "Synthetic Solar Flux Time Series"),
+            },
         }
-    })
+    )
 
 
 if __name__ == "__main__":  # Локальный запуск

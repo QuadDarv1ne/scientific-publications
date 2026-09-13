@@ -1,10 +1,11 @@
 import random
+
 import cv2
 import numpy as np
 
-from utils_local.utils import profile_time, FPS_Counter
-from elements.VideoEndBreakElement import VideoEndBreakElement
 from elements.FrameElement import FrameElement
+from elements.VideoEndBreakElement import VideoEndBreakElement
+from utils_local.utils import FPS_Counter, profile_time
 
 
 class ShowNode:
@@ -47,9 +48,9 @@ class ShowNode:
         # Выйти из обработки если это пришел VideoEndBreakElement а не FrameElement
         if isinstance(frame_element, VideoEndBreakElement):
             return frame_element
-        assert isinstance(
-            frame_element, FrameElement
-        ), f"ShowNode | Неправильный формат входного элемента {type(frame_element)}"
+        assert isinstance(frame_element, FrameElement), (
+            f"ShowNode | Неправильный формат входного элемента {type(frame_element)}"
+        )
 
         frame_result = frame_element.frame.copy()
 
@@ -72,7 +73,7 @@ class ShowNode:
 
         else:
             # Отображение результатов трекинга:
-            for box, class_name, id in zip(
+            for box, _class_name, id in zip(
                 frame_element.tracked_xyxy, frame_element.tracked_cls, frame_element.id_list
             ):
                 x1, y1, x2, y2 = box

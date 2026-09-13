@@ -2,13 +2,12 @@
 Модульные тесты для core модулей.
 """
 
-import pytest
 import numpy as np
-from heliopy.core.data_processor import DataProcessor
-from heliopy.core.coordinate_systems import CoordinateSystem
-from heliopy.core.units import SolarUnits
-from heliopy.utils.time_utils import TimeUtils
 from astropy.time import Time
+
+from heliopy.core.coordinate_systems import CoordinateSystem
+from heliopy.core.data_processor import DataProcessor
+from heliopy.utils.time_utils import TimeUtils
 
 
 class TestDataProcessor:

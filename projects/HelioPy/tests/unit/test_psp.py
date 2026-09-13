@@ -3,7 +3,6 @@ Unit tests for Parker Solar Probe data loader.
 """
 
 import unittest
-from unittest.mock import patch, MagicMock
 
 from heliopy.data_sources.psp_loader import PSPLoader
 
@@ -61,5 +60,5 @@ class TestPSPLoader(unittest.TestCase):
             self.loader.load_fld("2023-10-15", "invalid")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

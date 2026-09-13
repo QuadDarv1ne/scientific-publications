@@ -4,12 +4,15 @@
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import numpy as np
 from astropy.time import Time
 
 from heliopy.data_sources.base_loader import BaseLoader
+
+if TYPE_CHECKING:
+    from heliopy.space_weather.forecast_models import ACEData
 
 
 class ACELoader(BaseLoader):
@@ -43,10 +46,7 @@ class ACELoader(BaseLoader):
         ACEData
             Объект с данными ACE.
         """
-        if isinstance(date, str):
-            time = Time(date)
-        else:
-            time = Time(date)
+        time = Time(date) if isinstance(date, str) else Time(date)
 
         # В реальной реализации здесь будет загрузка данных ACE
         # Для базовой версии создаем структуру данных

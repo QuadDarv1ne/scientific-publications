@@ -1,22 +1,23 @@
-from typing import List, Dict, Any, Optional
-from ultralytics import YOLO
-import torch
-import numpy as np
 import logging
+from typing import Any, Dict
 
-from utils_local.utils import profile_time
+import numpy as np
+import torch
+from ultralytics import YOLO
+
+from byte_tracker.byte_tracker_model import BYTETracker as ByteTracker
 from elements.FrameElement import FrameElement
 from elements.VideoEndBreakElement import VideoEndBreakElement
-from byte_tracker.byte_tracker_model import BYTETracker as ByteTracker
+from utils_local.utils import profile_time
 
 
 class DetectionTrackingNodes:
     """
     Модуль инференса модели детекции YOLOv8 + ByteTracker для отслеживания объектов.
-    
+
     Выполняет детекцию объектов на кадрах видео и последующее отслеживание (tracking)
     обнаруженных объектов с присвоением уникальных идентификаторов.
-    
+
     Attributes:
         model: YOLO модель для детекции объектов
         tracker: ByteTracker для отслеживания объектов
@@ -30,35 +31,35 @@ class DetectionTrackingNodes:
     def __init__(self, config: Dict[str, Any]) -> None:
         """
         Инициализация модуля детекции и трекинга.
-        
+
         Args:
             config: Конфигурация с секциями detection_node и tracking_node
-        
+
         Raises:
             FileNotFoundError: Если файл весов модели не найден
             RuntimeError: При ошибке инициализации модели
         """
         self.logger = logging.getLogger(self.__class__.__name__)
-        
+
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.logger.info(f'Детекция будет производиться на {device}')
+        self.logger.info(f"Детекция будет производиться на {device}")
 
         config_yolo = config["detection_node"]
-        
+
         try:
-            self.model = YOLO(config_yolo["weight_pth"], task='detect')
+            self.model = YOLO(config_yolo["weight_pth"], task="detect")
             self.logger.info(f"YOLO модель загружена: {config_yolo['weight_pth']}")
         except Exception as e:
             self.logger.error(f"Ошибка при загрузке YOLO модели: {e}")
             raise RuntimeError(f"Не удалось загрузить модель: {e}") from e
-        
+
         self.classes = self.model.names
         self.conf = config_yolo["confidence"]
         self.iou = config_yolo["iou"]
         self.imgsz = config_yolo["imgsz"]
         self.classes_to_detect = config_yolo["classes_to_detect"]
 
-        config_bytetrack= config["tracking_node"]
+        config_bytetrack = config["tracking_node"]
 
         # ByteTrack param
         first_track_thresh = config_bytetrack["first_track_thresh"]
@@ -75,14 +76,20 @@ class DetectionTrackingNodes:
         # Выйти из обработки если это пришел VideoEndBreakElement а не FrameElement
         if isinstance(frame_element, VideoEndBreakElement):
             return frame_element
-        assert isinstance(
-            frame_element, FrameElement
-        ), f"DetectionTrackingNodes | Неправильный формат входного элемента {type(frame_element)}"
+        assert isinstance(frame_element, FrameElement), (
+            f"DetectionTrackingNodes | Неправильный формат входного элемента {type(frame_element)}"
+        )
 
         frame = frame_element.frame.copy()
 
-        outputs = self.model.predict(frame, imgsz=self.imgsz, conf=self.conf, verbose=False,
-                                     iou=self.iou, classes=self.classes_to_detect)
+        outputs = self.model.predict(
+            frame,
+            imgsz=self.imgsz,
+            conf=self.conf,
+            verbose=False,
+            iou=self.iou,
+            classes=self.classes_to_detect,
+        )
 
         frame_element.detected_conf = outputs[0].boxes.conf.cpu().tolist()
         detected_cls = outputs[0].boxes.cls.cpu().int().tolist()
@@ -115,10 +122,10 @@ class DetectionTrackingNodes:
     def _get_results_dor_tracker(self, results) -> np.ndarray:
         """
         Преобразование результатов детекции YOLO в формат для ByteTracker.
-        
+
         Args:
             results: Результаты детекции от YOLO модели
-        
+
         Returns:
             np.ndarray: Массив детекций в формате [x1, y1, x2, y2, confidence, class_id]
         """
@@ -128,7 +135,6 @@ class DetectionTrackingNodes:
             class_id = result.boxes.cls.cpu().numpy().astype(int)
             # трекаем те же классы что и детектируем
             if class_id[0] in self.classes_to_detect:
-
                 bbox = result.boxes.xyxy.cpu().numpy()
                 confidence = result.boxes.conf.cpu().numpy()
 

@@ -50,6 +50,7 @@ pip install -e .
 
 ```python
 import heliopy
+
 print(f"HelioPy версия: {heliopy.__version__}")
 ```
 

@@ -1,16 +1,16 @@
-from flask import Flask, render_template, Response
-from threading import Thread
-import numpy as np
-import cv2
-import signal
 import os
+import signal
+from threading import Thread
+
+import cv2
+import numpy as np
+from flask import Flask, Response, render_template
 
 from elements.FrameElement import FrameElement
 from elements.VideoEndBreakElement import VideoEndBreakElement
 
 
-class EndpointAction(object):
-
+class EndpointAction:
     def __init__(self, action):
         self.action = action
 
@@ -20,13 +20,14 @@ class EndpointAction(object):
         return response
 
 
-class VideoServer(object):
+class VideoServer:
     app = None
+
     def __init__(self, config):
         config_server = config["video_server_node"]
         self.app = Flask(__name__, template_folder=config_server["template_folder"])
-        self.app.add_url_rule('/', 'index', EndpointAction(self._index))
-        self.app.add_url_rule('/video', 'video', self._update_page)
+        self.app.add_url_rule("/", "index", EndpointAction(self._index))
+        self.app.add_url_rule("/video", "video", self._update_page)
 
         self.host_ip = config_server["host_ip"]
         self.port = config_server["port"]
@@ -38,17 +39,16 @@ class VideoServer(object):
 
     def _index(self) -> str:
         return render_template(self.index_page)
-  
+
     def _gen(self):
         while True:
-            ret, jpeg = cv2.imencode('.jpg', self._frame)
+            _ret, jpeg = cv2.imencode(".jpg", self._frame)
             encoded_image = jpeg.tobytes()
-            yield (b'--frame\r\n'
-                b'Content-Type: image/jpeg\r\n\r\n' + encoded_image + b'\r\n\r\n')
-            
+            yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + encoded_image + b"\r\n\r\n")
+
     def _update_page(self) -> Response:
-        return Response(self._gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
-    
+        return Response(self._gen(), mimetype="multipart/x-mixed-replace; boundary=frame")
+
     def update_image(self, image: np.array):
         self._frame = cv2.resize(image, self.output_size)
 
@@ -57,7 +57,7 @@ class VideoServer(object):
         if isinstance(frame_element, VideoEndBreakElement):
             return
         self.update_image(frame_element.frame_result)
-        
+
     def run(self):
         self.app_thread = Thread(target=self.app.run, daemon=True, args=(self.host_ip, self.port))
         self.app_thread.start()
@@ -65,7 +65,6 @@ class VideoServer(object):
     def stop_server(self):
         os.kill(os.getpid(), signal.SIGINT)
         self.app_thread.join()
-
 
 
 if __name__ == "__main__":

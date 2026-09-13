@@ -4,7 +4,7 @@ Universal data loader.
 
 from datetime import datetime
 from pathlib import Path
-from typing import Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import pandas as pd
 
@@ -15,6 +15,11 @@ from heliopy.data_sources.psp_loader import PSPLoader
 from heliopy.data_sources.sdo_loader import SDOLoader
 from heliopy.data_sources.soho_loader import SOHOLoader
 from heliopy.utils.config import get_config
+
+if TYPE_CHECKING:
+    from heliopy.events.flare_detector import GOESData
+    from heliopy.imaging.image_processor import SolarImage
+    from heliopy.space_weather.forecast_models import ACEData
 
 
 class DataLoader:
@@ -237,15 +242,18 @@ def load_goes(date: Union[str, datetime], **kwargs):
     loader = DataLoader()
     return loader.load_goes(date, **kwargs)
 
+
 def load_helioviewer(date: Union[str, datetime], source_id: int = 14, **kwargs):
     """Convenience function for loading Helioviewer data."""
     loader = DataLoader()
     return loader.load_helioviewer(date, source_id, **kwargs)
 
+
 def load_psp_sweap(date: Union[str, datetime], data_type: str = "spc", **kwargs):
     """Convenience function for loading PSP SWEAP data."""
     loader = DataLoader()
     return loader.load_psp_sweap(date, data_type, **kwargs)
+
 
 def load_psp_fld(date: Union[str, datetime], data_type: str = "mag_rtn", **kwargs):
     """Convenience function for loading PSP FIELDS data."""

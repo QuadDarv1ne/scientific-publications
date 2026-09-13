@@ -47,15 +47,9 @@ class OMNILoader(BaseLoader):
         DataFrame
             Данные OMNI.
         """
-        if isinstance(start_date, str):
-            start_time = Time(start_date)
-        else:
-            start_time = Time(start_date)
+        Time(start_date) if isinstance(start_date, str) else Time(start_date)
 
-        if isinstance(end_date, str):
-            end_time = Time(end_date)
-        else:
-            end_time = Time(end_date)
+        Time(end_date) if isinstance(end_date, str) else Time(end_date)
 
         # В реальной реализации здесь будет загрузка данных OMNI
         # Для базовой версии создаем пустой DataFrame

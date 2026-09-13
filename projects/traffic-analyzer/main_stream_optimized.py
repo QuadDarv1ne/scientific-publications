@@ -1,19 +1,19 @@
-from time import sleep, time
 from multiprocessing import Process, Queue
 from queue import Full as queue_is_full
+from time import sleep, time
 
 import hydra
 from tqdm import tqdm
 
-from nodes.VideoReader import VideoReader
-from nodes.ShowNode import ShowNode
-from nodes.VideoSaverNode import VideoSaverNode
-from nodes.DetectionTrackingNodes import DetectionTrackingNodes
-from nodes.TrackerInfoUpdateNode import TrackerInfoUpdateNode
+from elements.VideoEndBreakElement import VideoEndBreakElement
 from nodes.CalcStatisticsNode import CalcStatisticsNode
+from nodes.DetectionTrackingNodes import DetectionTrackingNodes
 from nodes.FlaskServerVideoNode import VideoServer
 from nodes.KafkaProducerNode import KafkaProducerNode
-from elements.VideoEndBreakElement import VideoEndBreakElement
+from nodes.ShowNode import ShowNode
+from nodes.TrackerInfoUpdateNode import TrackerInfoUpdateNode
+from nodes.VideoReader import VideoReader
+from nodes.VideoSaverNode import VideoSaverNode
 from utils_local.utils import check_and_set_env_var
 
 PRINT_PROFILE_INFO = False
@@ -28,10 +28,10 @@ def proc_frame_reader(queue_out: Queue, config: dict, time_sleep_start: int):
         ts0 = time()
         try:
             queue_out.put_nowait(frame_element)
-            #sleep(0.25)
-            
+            # sleep(0.25)
+
             if PRINT_PROFILE_INFO:
-                print(f"PROC_FRAME_READER: {(time()-ts0) * 1000:.0f} ms: ")
+                print(f"PROC_FRAME_READER: {(time() - ts0) * 1000:.0f} ms: ")
 
         except queue_is_full:
             if PRINT_PROFILE_INFO:
@@ -39,6 +39,7 @@ def proc_frame_reader(queue_out: Queue, config: dict, time_sleep_start: int):
 
         if isinstance(frame_element, VideoEndBreakElement):
             break
+
 
 def proc_proceessor(queue_in: Queue, config: dict):
     detection_node = DetectionTrackingNodes(config)
@@ -70,13 +71,12 @@ def proc_proceessor(queue_in: Queue, config: dict):
             video_server_node.process(frame_element)
         if PRINT_PROFILE_INFO:
             print(
-                f"PROC_PROCESSOR: {(time()-ts0) * 1000:.0f} ms: "
-                + f"get {(ts1-ts0) * 1000:.0f} | "
-                + f"nodes_inference {(time()-ts1) * 1000:.0f} | "
+                f"PROC_PROCESSOR: {(time() - ts0) * 1000:.0f} ms: "
+                + f"get {(ts1 - ts0) * 1000:.0f} | "
+                + f"nodes_inference {(time() - ts1) * 1000:.0f} | "
             )
         if isinstance(frame_element, VideoEndBreakElement):
             break
-
 
 
 @hydra.main(version_base=None, config_path="configs", config_name="app_config")
@@ -92,10 +92,7 @@ def main(config) -> None:
             name="proc_frame_reader",
         ),
         Process(
-            target=proc_proceessor,
-            args=(queue_frame, config),
-            name="proc_proceessor",
-            daemon=True
+            target=proc_proceessor, args=(queue_frame, config), name="proc_proceessor", daemon=True
         ),
     ]
 
@@ -115,4 +112,4 @@ if __name__ == "__main__":
     check_and_set_env_var("CAMERA_ID", 1)
     ts = time()
     main()
-    print(f"\n total time: {(time()-ts) / 60:.2} minute")
+    print(f"\n total time: {(time() - ts) / 60:.2} minute")

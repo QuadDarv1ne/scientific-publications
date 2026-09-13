@@ -27,7 +27,7 @@ class PSPLoader(BaseLoader):
         """
         super().__init__(cache_dir)
         self.base_url = "https://spdf.gsfc.nasa.gov/pub/data/psp/"
-        
+
     def load(self, *args, **kwargs):
         """Abstract method implementation."""
         pass
@@ -55,19 +55,15 @@ class PSPLoader(BaseLoader):
         if data_type not in ["spc", "spe"]:
             raise ValueError(f"Неподдерживаемый тип данных SWEAP: {data_type}")
 
-        if isinstance(date, str):
-            time = Time(date)
-        else:
-            time = Time(date)
+        time = Time(date) if isinstance(date, str) else Time(date)
 
         # В реальной реализации здесь будет загрузка данных PSP
         # Для базовой версии создаем структуру данных
-        columns = ["time", "density", "velocity", "temperature"] if data_type == "spc" else ["time", "energy", "flux"]
-        
+
         # Создаем синтетические данные для демонстрации
         n_points = 1440  # 24 часа с шагом 1 минута
-        times = pd.date_range(start=time.iso, periods=n_points, freq='1min')
-        
+        times = pd.date_range(start=time.iso, periods=n_points, freq="1min")
+
         if data_type == "spc":
             data = {
                 "time": times,
@@ -83,7 +79,7 @@ class PSPLoader(BaseLoader):
             }
 
         return pd.DataFrame(data)
-        
+
     def load_fld(
         self, date: Union[str, datetime], data_type: str = "mag_rtn", **kwargs
     ) -> pd.DataFrame:
@@ -107,19 +103,15 @@ class PSPLoader(BaseLoader):
         if data_type not in ["mag_rtn", "mag_sc"]:
             raise ValueError(f"Неподдерживаемый тип данных FIELDS: {data_type}")
 
-        if isinstance(date, str):
-            time = Time(date)
-        else:
-            time = Time(date)
+        time = Time(date) if isinstance(date, str) else Time(date)
 
         # В реальной реализации здесь будет загрузка данных PSP
         # Для базовой версии создаем структуру данных
-        columns = ["time", "Br", "Bt", "Bn", "Btot"] if "mag" in data_type else ["time", "E"]
-        
+
         # Создаем синтетические данные для демонстрации
         n_points = 1440  # 24 часа с шагом 1 минута
-        times = pd.date_range(start=time.iso, periods=n_points, freq='1min')
-        
+        times = pd.date_range(start=time.iso, periods=n_points, freq="1min")
+
         if "mag" in data_type:
             data = {
                 "time": times,

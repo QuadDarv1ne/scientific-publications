@@ -5,6 +5,7 @@ Real-time satellite tracking and visualization system for SpaceX Starlink conste
 """
 
 import argparse
+import hashlib
 import json
 import logging
 import math
@@ -12,75 +13,81 @@ import os
 import sys
 import time
 from datetime import datetime, timedelta
-from typing import List, Optional, Dict, Any
-import hashlib
-import statistics
+from typing import Any
 
 
 class StarlinkTrackerError(Exception):
     """Base exception class for Starlink Tracker errors."""
+
     pass
 
 
 class TLEDataError(StarlinkTrackerError):
     """Exception raised for TLE data related errors."""
+
     pass
 
 
 class PredictionError(StarlinkTrackerError):
     """Exception raised for prediction related errors."""
+
     pass
 
 
 class SchedulerError(StarlinkTrackerError):
     """Exception raised for scheduler related errors."""
+
     pass
 
 
 class VisualizationError(StarlinkTrackerError):
     """Exception raised for visualization related errors."""
+
     pass
+
 
 class AnomalyDetectionError(StarlinkTrackerError):
     """Exception raised for anomaly detection related errors."""
+
     pass
+
 
 # Import required libraries
 try:
+    import numpy as np  # noqa: F401  # проверка доступности зависимости
+    import pandas as pd  # noqa: F401  # проверка доступности зависимости
     import requests
-    import numpy as np
-    import pandas as pd
-    from skyfield.api import load, EarthSatellite, Topos
+    from skyfield.api import EarthSatellite, Topos, load
 except ImportError as e:
     print(f"Missing required library: {e}")
     print("Please install dependencies with: pip install -r requirements.txt")
     sys.exit(1)
 
 # Import our configuration manager
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-from utils.config_manager import get_config
+sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+from utils.config_manager import get_config  # noqa: E402  # импорт после настройки sys.path
 
 
 class TLECache:
     """Cache for TLE data with expiration and file-based persistence."""
-    
+
     def __init__(self, max_age_hours: int = 24, cache_dir: str = "data/tle_cache/"):
         self.cache = {}
         self.timestamps = {}
         self.max_age = timedelta(hours=max_age_hours)
         self.cache_dir = cache_dir
         self.logger = logging.getLogger(__name__)
-        
+
         # Ensure cache directory exists
         os.makedirs(cache_dir, exist_ok=True)
-    
+
     def _get_cache_filename(self, url: str) -> str:
         """Generate a safe filename for cached TLE data."""
         # Create a hash of the URL for the filename
         url_hash = hashlib.md5(url.encode()).hexdigest()
         return os.path.join(self.cache_dir, f"tle_cache_{url_hash}.txt")
-    
-    def get(self, url: str) -> Optional[str]:
+
+    def get(self, url: str) -> str | None:
         """Retrieve cached TLE data from memory or file if not expired."""
         # First check in-memory cache
         if url in self.cache:
@@ -92,7 +99,7 @@ class TLECache:
                 self.logger.debug(f"TLE in-memory cache expired for {url}, age: {age}")
                 del self.cache[url]
                 del self.timestamps[url]
-        
+
         # Check file-based cache
         cache_file = self._get_cache_filename(url)
         if os.path.exists(cache_file):
@@ -100,7 +107,7 @@ class TLECache:
                 file_time = datetime.fromtimestamp(os.path.getmtime(cache_file))
                 age = datetime.now() - file_time
                 if age < self.max_age:
-                    with open(cache_file, 'r', encoding='utf-8') as f:
+                    with open(cache_file, encoding="utf-8") as f:
                         data = f.read()
                     # Store in memory cache for faster access next time
                     self.cache[url] = data
@@ -112,37 +119,38 @@ class TLECache:
                     os.remove(cache_file)  # Remove expired cache file
             except Exception as e:
                 self.logger.warning(f"Error reading TLE cache file for {url}: {e}")
-        
+
         return None
-    
+
     def put(self, url: str, data: str) -> None:
         """Store TLE data in both memory and file cache."""
         # Store in memory cache
         self.cache[url] = data
         self.timestamps[url] = datetime.now()
         self.logger.debug(f"TLE data cached in memory for {url}")
-        
+
         # Store in file cache
         try:
             cache_file = self._get_cache_filename(url)
-            with open(cache_file, 'w', encoding='utf-8') as f:
+            with open(cache_file, "w", encoding="utf-8") as f:
                 f.write(data)
             self.logger.debug(f"TLE data cached in file for {url}")
         except Exception as e:
             self.logger.warning(f"Error writing TLE cache file for {url}: {e}")
-    
+
     def clear(self) -> None:
         """Clear all cached TLE data from both memory and files."""
         # Clear memory cache
         self.cache.clear()
         self.timestamps.clear()
         self.logger.debug("TLE memory cache cleared")
-        
+
         # Clear file cache
         try:
             for filename in os.listdir(self.cache_dir):
-                if (filename.startswith("tle_cache_") and filename.endswith(".txt")) or \
-                   (filename.startswith("starlink_tle_") and filename.endswith(".txt")):
+                if (filename.startswith("tle_cache_") and filename.endswith(".txt")) or (
+                    filename.startswith("starlink_tle_") and filename.endswith(".txt")
+                ):
                     os.remove(os.path.join(self.cache_dir, filename))
             self.logger.debug("TLE file cache cleared")
         except Exception as e:
@@ -156,172 +164,211 @@ class StarlinkTracker:
         self.satellites = []
         self.ts = load.timescale()  # Initialize time scale
         self.earth = None
-        
+
         # Setup logging
         self.logger = logging.getLogger(__name__)
-        
+
         # Load Earth data
         try:
-            self.earth = load('earth.bsp')
+            self.earth = load("earth.bsp")
             self.logger.info("Earth data loaded successfully")
         except Exception as e:
             self.logger.warning(f"Could not load earth.bsp: {e}")
-            self.logger.info("Continuing with reduced functionality - satellite tracking will still work")
+            self.logger.info(
+                "Continuing with reduced functionality - satellite tracking will still work"
+            )
             self.earth = None
-        
+
         # Create data directory if it doesn't exist
         try:
-            os.makedirs(self.config['data_sources']['tle_cache_path'], exist_ok=True)
-            self.logger.info(f"Data directory ensured: {self.config['data_sources']['tle_cache_path']}")
+            os.makedirs(self.config["data_sources"]["tle_cache_path"], exist_ok=True)
+            self.logger.info(
+                f"Data directory ensured: {self.config['data_sources']['tle_cache_path']}"
+            )
         except Exception as e:
             self.logger.error(f"Failed to create data directory: {e}")
             raise
-        
+
         # Initialize scheduler
         self.scheduler = None
-        
+
         # Initialize TLE cache
-        self.tle_cache = TLECache(max_age_hours=6, cache_dir=self.config['data_sources']['tle_cache_path'])
-        
+        self.tle_cache = TLECache(
+            max_age_hours=6, cache_dir=self.config["data_sources"]["tle_cache_path"]
+        )
+
         # Cache for prediction results
         self.prediction_cache = {}
         self.prediction_cache_timestamps = {}
         self.prediction_cache_max_age = timedelta(minutes=15)
-        
+
         # File-based cache for prediction results
-        self.prediction_cache_dir = os.path.join(self.config['data_sources']['tle_cache_path'], 'predictions')
+        self.prediction_cache_dir = os.path.join(
+            self.config["data_sources"]["tle_cache_path"], "predictions"
+        )
         try:
             os.makedirs(self.prediction_cache_dir, exist_ok=True)
             self.logger.info(f"Prediction cache directory ensured: {self.prediction_cache_dir}")
         except Exception as e:
             self.logger.error(f"Failed to create prediction cache directory: {e}")
             raise
-        
+
         # Anomaly detection history
         self.anomaly_history = []
         self.anomaly_history_max_size = 100
-    
+
     def _get_connection_params(self):
         """Get connection parameters for enhanced network resilience."""
         return [
-            {'timeout': 30, 'retries': 3, 'verify': True, 'pool_connections': 10, 'pool_maxsize': 20},
-            {'timeout': 45, 'retries': 2, 'verify': True, 'pool_connections': 5, 'pool_maxsize': 10},
-            {'timeout': 60, 'retries': 1, 'verify': False, 'pool_connections': 2, 'pool_maxsize': 5},  # Last resort: disable SSL verification
-            {'timeout': 90, 'retries': 1, 'verify': True, 'pool_connections': 3, 'pool_maxsize': 8, 'headers': {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}}  # Browser-like request
+            {
+                "timeout": 30,
+                "retries": 3,
+                "verify": True,
+                "pool_connections": 10,
+                "pool_maxsize": 20,
+            },
+            {
+                "timeout": 45,
+                "retries": 2,
+                "verify": True,
+                "pool_connections": 5,
+                "pool_maxsize": 10,
+            },
+            {
+                "timeout": 60,
+                "retries": 1,
+                "verify": False,
+                "pool_connections": 2,
+                "pool_maxsize": 5,
+            },  # Last resort: disable SSL verification
+            {
+                "timeout": 90,
+                "retries": 1,
+                "verify": True,
+                "pool_connections": 3,
+                "pool_maxsize": 8,
+                "headers": {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                },
+            },  # Browser-like request
         ]
-    
-    def _download_with_auth(self, source_config: Dict[str, Any]) -> Optional[str]:
+
+    def _download_with_auth(self, source_config: dict[str, Any]) -> str | None:
         """Download data from an authenticated source."""
         try:
-            source_name = source_config.get('name', 'Unknown')
-            url = source_config.get('url', '')
-            auth_method = source_config.get('auth_method', 'login')
-            
+            source_name = source_config.get("name", "Unknown")
+            url = source_config.get("url", "")
+            auth_method = source_config.get("auth_method", "login")
+
             self.logger.info(f"Downloading from authenticated source: {source_name}")
-            
-            if auth_method == 'login':
+
+            if auth_method == "login":
                 # Space-Track.org authentication
-                username = source_config.get('username', '')
-                password = source_config.get('password', '')
-                
+                username = source_config.get("username", "")
+                password = source_config.get("password", "")
+
                 if not username or not password:
                     self.logger.warning(f"Missing credentials for {source_name}")
                     return None
-                
+
                 # Create session
                 session = requests.Session()
-                
+
                 # Set headers to mimic a browser
-                session.headers.update({
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.5',
-                    'Accept-Encoding': 'gzip, deflate',
-                    'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1',
-                })
-                
+                session.headers.update(
+                    {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+                        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                        "Accept-Language": "en-US,en;q=0.5",
+                        "Accept-Encoding": "gzip, deflate",
+                        "Connection": "keep-alive",
+                        "Upgrade-Insecure-Requests": "1",
+                    }
+                )
+
                 # Login
                 login_url = "https://www.space-track.org/ajaxauth/login"
-                login_data = {
-                    'identity': username,
-                    'password': password
-                }
-                
+                login_data = {"identity": username, "password": password}
+
                 # Try multiple times with different strategies
                 for attempt in range(3):
                     try:
                         login_response = session.post(login_url, data=login_data, timeout=30)
                         login_response.raise_for_status()
-                        
+
                         # Download data
                         response = session.get(url, timeout=60)
                         response.raise_for_status()
-                        
+
                         return response.text
                     except requests.exceptions.RequestException as e:
                         self.logger.warning(f"Attempt {attempt + 1} failed for {source_name}: {e}")
                         if attempt < 2:  # Don't sleep on the last attempt
-                            time.sleep(2 ** attempt)  # Exponential backoff
+                            time.sleep(2**attempt)  # Exponential backoff
                         continue
-                
+
                 return None
             else:
-                self.logger.warning(f"Unsupported authentication method for {source_name}: {auth_method}")
+                self.logger.warning(
+                    f"Unsupported authentication method for {source_name}: {auth_method}"
+                )
                 return None
-                
+
         except Exception as e:
-            self.logger.error(f"Error downloading from authenticated source {source_config.get('name', 'Unknown')}: {e}")
+            self.logger.error(
+                f"Error downloading from authenticated source {source_config.get('name', 'Unknown')}: {e}"
+            )
             return None
-    
+
     def _is_valid_tle_data(self, data: str) -> bool:
         """Validate TLE data format with optimized checking."""
         if not data or not isinstance(data, str):
             return False
-        
-        lines = data.strip().split('\n')
-        
+
+        lines = data.strip().split("\n")
+
         # Quick check for minimum data
         if len(lines) < 3:
             return False
-        
+
         # Check if lines follow TLE format - optimized version
         valid_groups = 0
         line_count = len(lines)
-        
+
         # Process in chunks of 3 lines for better performance
         i = 0
         while i < line_count - 2:  # Ensure we have at least 3 lines
             name_line = lines[i].strip()
-            line1 = lines[i+1].strip()
-            line2 = lines[i+2].strip()
-            
+            line1 = lines[i + 1].strip()
+            line2 = lines[i + 2].strip()
+
             # Basic validation
             if name_line and line1 and line2:
                 # Check TLE line formats with early exit
-                if line1.startswith('1 ') and line2.startswith('2 '):
+                if line1.startswith("1 ") and line2.startswith("2 "):
                     # Check line lengths with early exit
                     if len(line1) >= 69 and len(line2) >= 69:
                         valid_groups += 1
                         # Early exit if we have enough valid groups
                         if valid_groups >= 10:  # Found enough valid data
                             return True
-            
+
             i += 3  # Move to next potential TLE group
-        
+
         return valid_groups > 0
-    
-    def _generate_prediction_cache_key(self, latitude: float, longitude: float, 
-                                     hours_ahead: int, min_elevation: float) -> str:
+
+    def _generate_prediction_cache_key(
+        self, latitude: float, longitude: float, hours_ahead: int, min_elevation: float
+    ) -> str:
         """Generate a cache key for prediction results."""
         key_data = f"{latitude}_{longitude}_{hours_ahead}_{min_elevation}"
         return hashlib.md5(key_data.encode()).hexdigest()
-    
+
     def _get_prediction_cache_filename(self, cache_key: str) -> str:
         """Generate a filename for cached prediction results."""
         return os.path.join(self.prediction_cache_dir, f"prediction_{cache_key}.json")
-    
-    def _load_prediction_from_file(self, cache_key: str) -> Optional[List[Dict[str, Any]]]:
+
+    def _load_prediction_from_file(self, cache_key: str) -> list[dict[str, Any]] | None:
         """Load prediction results from file cache."""
         cache_file = self._get_prediction_cache_filename(cache_key)
         if os.path.exists(cache_file):
@@ -329,19 +376,19 @@ class StarlinkTracker:
                 file_time = datetime.fromtimestamp(os.path.getmtime(cache_file))
                 age = datetime.now() - file_time
                 if age < self.prediction_cache_max_age:
-                    with open(cache_file, 'r') as f:
+                    with open(cache_file) as f:
                         data = json.load(f)
                     # Convert time strings back to datetime objects
                     for item in data:
-                        item['time'] = datetime.fromisoformat(item['time'])
+                        item["time"] = datetime.fromisoformat(item["time"])
                     return data
                 else:
                     os.remove(cache_file)  # Remove expired cache file
             except Exception as e:
                 self.logger.warning(f"Error reading prediction cache file: {e}")
         return None
-    
-    def _save_prediction_to_file(self, cache_key: str, data: List[Dict[str, Any]]) -> None:
+
+    def _save_prediction_to_file(self, cache_key: str, data: list[dict[str, Any]]) -> None:
         """Save prediction results to file cache."""
         try:
             cache_file = self._get_prediction_cache_filename(cache_key)
@@ -349,21 +396,21 @@ class StarlinkTracker:
             serializable_data = []
             for item in data:
                 item_copy = item.copy()
-                item_copy['time'] = item_copy['time'].isoformat()
+                item_copy["time"] = item_copy["time"].isoformat()
                 serializable_data.append(item_copy)
-            with open(cache_file, 'w') as f:
+            with open(cache_file, "w") as f:
                 json.dump(serializable_data, f)
         except Exception as e:
             self.logger.warning(f"Error writing prediction cache file: {e}")
-    
-    def update_tle_data(self, force=False) -> List[EarthSatellite]:
+
+    def update_tle_data(self, force=False) -> list[EarthSatellite]:
         """Download latest TLE data from multiple sources with enhanced connectivity."""
         try:
             cache_file = os.path.join(
-                self.config['data_sources']['tle_cache_path'], 
-                f"starlink_tle_{datetime.now().strftime('%Y%m%d')}.txt"
+                self.config["data_sources"]["tle_cache_path"],
+                f"starlink_tle_{datetime.now().strftime('%Y%m%d')}.txt",
             )
-            
+
             # Check if we have recent cached data
             if not force and os.path.exists(cache_file):
                 try:
@@ -373,14 +420,14 @@ class StarlinkTracker:
                         return self._load_tle_from_file(cache_file)
                 except Exception as e:
                     self.logger.warning(f"Error checking cache file timestamp: {e}")
-            
+
             # Try primary source first
-            urls_to_try = [self.config['data_sources']['celestrak_url']]
-            
+            urls_to_try = [self.config["data_sources"]["celestrak_url"]]
+
             # Add backup URLs if available
-            if 'backup_urls' in self.config['data_sources']:
-                urls_to_try.extend(self.config['data_sources']['backup_urls'])
-            
+            if "backup_urls" in self.config["data_sources"]:
+                urls_to_try.extend(self.config["data_sources"]["backup_urls"])
+
             # Try each URL with different connection parameters
             for url in urls_to_try:
                 for params in self._get_connection_params():
@@ -390,138 +437,165 @@ class StarlinkTracker:
                         if cached_tle and not force:
                             self.logger.info(f"Using cached TLE data from memory cache for {url}")
                             # Save to file
-                            with open(cache_file, 'w', encoding='utf-8') as f:
-                                f.write(cached_tle or '')
+                            with open(cache_file, "w", encoding="utf-8") as f:
+                                f.write(cached_tle or "")
                             return self._load_tle_from_file(cache_file)
-                        
-                        self.logger.info(f"Downloading latest TLE data from {url} with params {params}")
-                        
+
+                        self.logger.info(
+                            f"Downloading latest TLE data from {url} with params {params}"
+                        )
+
                         # Try different HTTP methods and headers
                         headers = {
-                            'User-Agent': 'Starlink-Satellite-Tracker/1.0',
-                            'Accept': 'text/plain',
-                            'Connection': 'keep-alive'
+                            "User-Agent": "Starlink-Satellite-Tracker/1.0",
+                            "Accept": "text/plain",
+                            "Connection": "keep-alive",
                         }
-                        
+
                         # Use custom headers if provided in params
-                        if 'headers' in params:
-                            headers.update(params['headers'])
-                        
+                        if "headers" in params:
+                            headers.update(params["headers"])
+
                         # Configure session with connection pooling for better performance
                         session = requests.Session()
-                        
+
                         # Set up adapter with connection pooling
-                        if 'pool_connections' in params and 'pool_maxsize' in params:
+                        if "pool_connections" in params and "pool_maxsize" in params:
                             from requests.adapters import HTTPAdapter
+
                             adapter = HTTPAdapter(
-                                pool_connections=params['pool_connections'],
-                                pool_maxsize=params['pool_maxsize']
+                                pool_connections=params["pool_connections"],
+                                pool_maxsize=params["pool_maxsize"],
                             )
-                            session.mount('http://', adapter)
-                            session.mount('https://', adapter)
-                        
+                            session.mount("http://", adapter)
+                            session.mount("https://", adapter)
+
                         # Attempt with GET request using session
-                        response = session.get(url, timeout=params['timeout'], 
-                                             headers=headers, verify=params['verify'])
-                        
+                        response = session.get(
+                            url, timeout=params["timeout"], headers=headers, verify=params["verify"]
+                        )
+
                         # If GET fails, try with different headers
                         if response.status_code != 200:
-                            headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                            response = requests.get(url, timeout=params['timeout'], 
-                                                  headers=headers, verify=params['verify'])
-                        
+                            headers["User-Agent"] = (
+                                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+                            )
+                            response = requests.get(
+                                url,
+                                timeout=params["timeout"],
+                                headers=headers,
+                                verify=params["verify"],
+                            )
+
                         # If still failing, try POST request (some servers prefer it)
                         if response.status_code != 200:
-                            response = requests.post(url, timeout=params['timeout'], 
-                                                   headers=headers, verify=params['verify'])
-                        
+                            response = requests.post(
+                                url,
+                                timeout=params["timeout"],
+                                headers=headers,
+                                verify=params["verify"],
+                            )
+
                         response.raise_for_status()
-                        
+
                         # Validate TLE data format
                         if not self._is_valid_tle_data(response.text):
                             self.logger.warning(f"Invalid TLE format received from {url}")
                             continue
-                        
+
                         # Cache the TLE data
                         self.tle_cache.put(url, response.text)
-                        
-                        with open(cache_file, 'w', encoding='utf-8') as f:
+
+                        with open(cache_file, "w", encoding="utf-8") as f:
                             f.write(response.text)
-                        
+
                         return self._load_tle_from_file(cache_file)
                     except requests.exceptions.RequestException as e:
-                        self.logger.warning(f"Network error downloading TLE data from {url} with params {params}: {e}")
+                        self.logger.warning(
+                            f"Network error downloading TLE data from {url} with params {params}: {e}"
+                        )
                         continue
                     except Exception as e:
-                        self.logger.warning(f"Failed to download TLE data from {url} with params {params}: {e}")
+                        self.logger.warning(
+                            f"Failed to download TLE data from {url} with params {params}: {e}"
+                        )
                         continue
-            
+
             # Try authenticated sources if available
-            if 'additional_sources' in self.config['data_sources']:
-                for source in self.config['data_sources']['additional_sources']:
-                    if source.get('requires_auth', False):
+            if "additional_sources" in self.config["data_sources"]:
+                for source in self.config["data_sources"]["additional_sources"]:
+                    if source.get("requires_auth", False):
                         try:
-                            self.logger.info(f"Attempting authenticated download from {source['name']}")
+                            self.logger.info(
+                                f"Attempting authenticated download from {source['name']}"
+                            )
                             auth_data = self._download_with_auth(source)
                             if auth_data and self._is_valid_tle_data(auth_data):
                                 # Cache the TLE data
-                                self.tle_cache.put(source['url'], auth_data)
-                                
-                                with open(cache_file, 'w', encoding='utf-8') as f:
+                                self.tle_cache.put(source["url"], auth_data)
+
+                                with open(cache_file, "w", encoding="utf-8") as f:
                                     f.write(auth_data)
-                                
+
                                 return self._load_tle_from_file(cache_file)
                         except Exception as e:
-                            self.logger.warning(f"Failed to download from authenticated source {source['name']}: {e}")
+                            self.logger.warning(
+                                f"Failed to download from authenticated source {source['name']}: {e}"
+                            )
                             continue
-            
+
             # If all sources failed, try to use cached data if available
             if os.path.exists(cache_file):
                 self.logger.info("Using cached TLE data due to download failure")
                 return self._load_tle_from_file(cache_file)
             else:
-                raise TLEDataError("Failed to download TLE data from all sources and no cached data available")
-                
+                raise TLEDataError(
+                    "Failed to download TLE data from all sources and no cached data available"
+                )
+
         except TLEDataError:
             # Re-raise custom exceptions
             raise
         except Exception as e:
             self.logger.error(f"Error updating TLE data: {e}")
-            raise TLEDataError(f"Failed to update TLE data: {str(e)}") from e
-    
-    def _load_tle_from_file(self, filename) -> List[EarthSatellite]:
+            raise TLEDataError(f"Failed to update TLE data: {e!s}") from e
+
+    def _load_tle_from_file(self, filename) -> list[EarthSatellite]:
         """Load TLE data from file and create satellite objects with optimized processing."""
         try:
             self.satellites = []
-            with open(filename, 'r', encoding='utf-8') as f:
+            with open(filename, encoding="utf-8") as f:
                 lines = f.readlines()
-            
+
             # Filter out empty lines and strip whitespace in one pass
             lines = [line.rstrip() for line in lines if line.strip()]
-            
+
             # Process TLE data in groups of 3 lines with optimized validation
             loaded_count = 0
             error_count = 0
             line_count = len(lines)
-            
+
             # Pre-allocate list with estimated size for better performance
             estimated_satellites = line_count // 3
             if estimated_satellites > 0:
                 self.satellites = [None] * estimated_satellites
-            
+
             valid_satellites = []
-            
+
             i = 0
             while i < line_count - 2:  # Ensure we have at least 3 lines
                 name = lines[i]
-                line1 = lines[i+1]
-                line2 = lines[i+2]
-                
+                line1 = lines[i + 1]
+                line2 = lines[i + 2]
+
                 # Validate lines before creating satellite object with early exits
-                if (name and 
-                    line1.startswith('1 ') and len(line1) >= 69 and
-                    line2.startswith('2 ') and len(line2) >= 69):
-                    
+                if (
+                    name
+                    and line1.startswith("1 ")
+                    and len(line1) >= 69
+                    and line2.startswith("2 ")
+                    and len(line2) >= 69
+                ):
                     try:
                         satellite = EarthSatellite(line1, line2, name, self.ts)
                         valid_satellites.append(satellite)
@@ -532,27 +606,27 @@ class StarlinkTracker:
                 else:
                     self.logger.warning(f"Skipping invalid TLE data group starting with: {name}")
                     error_count += 1
-                
+
                 i += 3  # Move to next potential TLE group
-                
+
                 # Early exit for performance if we have enough satellites
                 if loaded_count >= 1000:  # Reasonable limit for Starlink constellation
                     break
-            
+
             self.satellites = valid_satellites
             self.logger.info(f"Loaded {loaded_count} satellites, {error_count} errors")
             return self.satellites
-            
+
         except Exception as e:
             self.logger.error(f"Error loading TLE from file {filename}: {e}")
             raise
-    
+
     def start_scheduler(self) -> bool:
         """Start the automated scheduler for background tasks."""
         try:
             # Import scheduler here to avoid circular imports
             from utils.scheduler import StarlinkScheduler
-            
+
             self.scheduler = StarlinkScheduler(self.config, self)
             success = self.scheduler.start_scheduler()
             if success:
@@ -562,8 +636,8 @@ class StarlinkTracker:
             return success if success is not None else True
         except Exception as e:
             self.logger.error(f"Failed to start scheduler: {e}")
-            raise SchedulerError(f"Failed to start scheduler: {str(e)}") from e
-    
+            raise SchedulerError(f"Failed to start scheduler: {e!s}") from e
+
     def stop_scheduler(self) -> bool:
         """Stop the automated scheduler."""
         try:
@@ -579,15 +653,23 @@ class StarlinkTracker:
                 return True
         except Exception as e:
             self.logger.error(f"Error stopping scheduler: {e}")
-            raise SchedulerError(f"Failed to stop scheduler: {str(e)}") from e
-    
-    def predict_passes(self, latitude: float, longitude: float, altitude: float = 0, 
-                      hours_ahead: int = 24, min_elevation: float = 10) -> List[Dict[str, Any]]:
+            raise SchedulerError(f"Failed to stop scheduler: {e!s}") from e
+
+    def predict_passes(
+        self,
+        latitude: float,
+        longitude: float,
+        altitude: float = 0,
+        hours_ahead: int = 24,
+        min_elevation: float = 10,
+    ) -> list[dict[str, Any]]:
         """Predict satellite passes over a location with optimized processing."""
         try:
             # Generate cache key
-            cache_key = self._generate_prediction_cache_key(latitude, longitude, hours_ahead, min_elevation)
-            
+            cache_key = self._generate_prediction_cache_key(
+                latitude, longitude, hours_ahead, min_elevation
+            )
+
             # Check if we have cached results in memory
             if cache_key in self.prediction_cache:
                 cache_age = datetime.now() - self.prediction_cache_timestamps[cache_key]
@@ -598,55 +680,61 @@ class StarlinkTracker:
                     # Remove expired cache entry
                     del self.prediction_cache[cache_key]
                     del self.prediction_cache_timestamps[cache_key]
-            
+
             # Check file-based cache
             file_cached_data = self._load_prediction_from_file(cache_key)
             if file_cached_data:
-                self.logger.info(f"Using file-based cached prediction results")
+                self.logger.info("Using file-based cached prediction results")
                 # Store in memory cache for faster access next time
                 self.prediction_cache[cache_key] = file_cached_data
-                self.prediction_cache_timestamps[cache_key] = datetime.now() - timedelta(minutes=5)  # Assume it's 5 minutes old
+                self.prediction_cache_timestamps[cache_key] = datetime.now() - timedelta(
+                    minutes=5
+                )  # Assume it's 5 minutes old
                 return file_cached_data
-            
+
             if not self.satellites:
                 raise PredictionError("No satellites loaded. Call update_tle_data() first.")
-            
+
             if self.earth is None:
                 raise PredictionError("Earth data not loaded. Check internet connection.")
-            
+
             if self.ts is None:
                 raise PredictionError("Time scale not initialized.")
-            
+
             # Validate input parameters
             if not (-90 <= latitude <= 90):
                 raise PredictionError(f"Invalid latitude: {latitude}. Must be between -90 and 90.")
             if not (-180 <= longitude <= 180):
-                raise PredictionError(f"Invalid longitude: {longitude}. Must be between -180 and 180.")
+                raise PredictionError(
+                    f"Invalid longitude: {longitude}. Must be between -180 and 180."
+                )
             if hours_ahead <= 0:
                 raise PredictionError(f"Invalid hours_ahead: {hours_ahead}. Must be positive.")
             if min_elevation < 0:
-                raise PredictionError(f"Invalid min_elevation: {min_elevation}. Must be non-negative.")
-            
+                raise PredictionError(
+                    f"Invalid min_elevation: {min_elevation}. Must be non-negative."
+                )
+
             # Set observer location
             observer = self.earth + Topos(latitude, longitude, elevation_m=altitude)
-            
+
             # Time range for predictions
             t0 = self.ts.now()
             t1 = self.ts.from_datetime(datetime.now() + timedelta(hours=hours_ahead))
-            
+
             passes = []
-            
+
             # Pre-filter satellites that are likely to be visible for better performance
             # This reduces the number of expensive find_events calculations
             visible_satellites = []
             for satellite in self.satellites:
                 try:
                     # Quick position check to see if satellite might be visible
-                    geocentric = satellite.at(t0)
+                    satellite.at(t0)
                     difference = satellite - observer
                     topocentric = difference.at(t0)
                     alt, az, distance = topocentric.altaz()
-                    
+
                     # If satellite is above horizon or close to it, include it for detailed analysis
                     if alt.degrees > -5:  # Include satellites within 5 degrees below horizon
                         visible_satellites.append(satellite)
@@ -654,79 +742,88 @@ class StarlinkTracker:
                     # If we can't determine position quickly, include satellite for safety
                     visible_satellites.append(satellite)
                     continue
-            
-            self.logger.info(f"Pre-filtered from {len(self.satellites)} to {len(visible_satellites)} satellites for detailed analysis")
-            
+
+            self.logger.info(
+                f"Pre-filtered from {len(self.satellites)} to {len(visible_satellites)} satellites for detailed analysis"
+            )
+
             # Process only potentially visible satellites for better performance
             for satellite in visible_satellites:
                 try:
                     # Find events (rise, culmination, set)
-                    times, events = satellite.find_events(observer, t0, t1, 
-                                                        altitude_degrees=min_elevation)
-                    
+                    times, events = satellite.find_events(
+                        observer, t0, t1, altitude_degrees=min_elevation
+                    )
+
                     # Process events more efficiently
-                    for ti, event in zip(times, events):
+                    for ti, event in zip(times, events, strict=False):
                         if event == 0:  # Rise
                             # Get satellite position at rise time
                             difference = satellite - observer
                             topocentric = difference.at(ti)
                             alt, az, distance = topocentric.altaz()
-                            
+
                             # Calculate additional information only if needed
                             velocity = self._calculate_velocity(satellite, ti, observer)
-                            brightness = self._estimate_brightness(satellite, alt.degrees, distance.km)
-                            
-                            passes.append({
-                                'satellite': satellite.name,
-                                'time': ti.utc_datetime(),
-                                'altitude': round(alt.degrees, 2),
-                                'azimuth': round(az.degrees, 2),
-                                'distance': round(distance.km, 2),
-                                'velocity': round(velocity, 2),
-                                'brightness': round(brightness, 2)
-                            })
+                            brightness = self._estimate_brightness(
+                                satellite, alt.degrees, distance.km
+                            )
+
+                            passes.append(
+                                {
+                                    "satellite": satellite.name,
+                                    "time": ti.utc_datetime(),
+                                    "altitude": round(alt.degrees, 2),
+                                    "azimuth": round(az.degrees, 2),
+                                    "distance": round(distance.km, 2),
+                                    "velocity": round(velocity, 2),
+                                    "brightness": round(brightness, 2),
+                                }
+                            )
                 except Exception as e:
                     self.logger.warning(f"Error predicting passes for {satellite.name}: {e}")
                     continue
-            
+
             # Sort passes by time
-            passes.sort(key=lambda x: x['time'])
-            
+            passes.sort(key=lambda x: x["time"])
+
             # Limit results for better performance on large datasets
             if len(passes) > 1000:  # Reasonable limit for display
                 passes = passes[:1000]
                 self.logger.info("Limited results to 1000 passes for performance")
-            
+
             # Cache the results
             self.prediction_cache[cache_key] = passes
             self.prediction_cache_timestamps[cache_key] = datetime.now()
-            
+
             # Save to file cache
             self._save_prediction_to_file(cache_key, passes)
-            
-            self.logger.info(f"Predicted {len(passes)} passes for {len(visible_satellites)} analyzed satellites")
+
+            self.logger.info(
+                f"Predicted {len(passes)} passes for {len(visible_satellites)} analyzed satellites"
+            )
             return passes
-            
+
         except PredictionError:
             # Re-raise custom exceptions
             raise
         except Exception as e:
             self.logger.error(f"Error predicting passes: {e}")
-            raise PredictionError(f"Failed to predict satellite passes: {str(e)}") from e
-    
+            raise PredictionError(f"Failed to predict satellite passes: {e!s}") from e
+
     def _calculate_velocity(self, satellite: EarthSatellite, time, observer=None) -> float:
         """Calculate satellite velocity relative to observer or Earth center."""
         try:
             # Get positions at two nearby times
             t1 = time
             t2 = self.ts.from_datetime(time.utc_datetime() + timedelta(seconds=1))
-            
+
             if observer is not None:
                 # Calculate velocity relative to observer
                 difference = satellite - observer
                 pos1 = difference.at(t1)
                 pos2 = difference.at(t2)
-                
+
                 # Calculate distance traveled in 1 second
                 dist1 = pos1.distance().km
                 dist2 = pos2.distance().km
@@ -735,45 +832,47 @@ class StarlinkTracker:
                 # Calculate orbital velocity (relative to Earth center)
                 geocentric1 = satellite.at(t1)
                 geocentric2 = satellite.at(t2)
-                
+
                 # Get position vectors
                 x1, y1, z1 = geocentric1.position.km
                 x2, y2, z2 = geocentric2.position.km
-                
+
                 # For orbital velocity, we should calculate the magnitude of the velocity vector
-                vx = (x2 - x1)  # km/s
-                vy = (y2 - y1)  # km/s
-                vz = (z2 - z1)  # km/s
+                vx = x2 - x1  # km/s
+                vy = y2 - y1  # km/s
+                vz = z2 - z1  # km/s
                 velocity = math.sqrt(vx**2 + vy**2 + vz**2)  # km/s
-            
+
             return velocity
         except Exception as e:
             self.logger.warning(f"Error calculating velocity: {e}")
             return 0.0
-    
-    def _estimate_brightness(self, satellite: EarthSatellite, altitude: float, distance: float) -> float:
+
+    def _estimate_brightness(
+        self, satellite: EarthSatellite, altitude: float, distance: float
+    ) -> float:
         """Estimate satellite brightness (magnitude)."""
         try:
             # Simplified brightness estimation model
             # This is a very rough approximation
             base_magnitude = 2.0  # Typical Starlink brightness
-            
+
             # Adjust for altitude (higher = dimmer)
             altitude_factor = math.cos(math.radians(90 - altitude))
-            
+
             # Adjust for distance (further = dimmer)
             distance_factor = (500 / distance) ** 2  # Assume 500km as reference
-            
+
             # Combine factors
             brightness = base_magnitude - 2.5 * math.log10(altitude_factor * distance_factor)
-            
+
             # Clamp to reasonable range
             return max(-2.0, min(10.0, brightness))
         except Exception as e:
             self.logger.warning(f"Error estimating brightness: {e}")
             return 5.0  # Default magnitude
-    
-    def get_satellite_info(self, satellite_name: str) -> Optional[Dict[str, Any]]:
+
+    def get_satellite_info(self, satellite_name: str) -> dict[str, Any] | None:
         """Get detailed information about a specific satellite."""
         try:
             for satellite in self.satellites:
@@ -782,109 +881,118 @@ class StarlinkTracker:
                     t = self.ts.now()
                     geocentric = satellite.at(t)
                     subpoint = geocentric.subpoint()
-                    
+
                     # Get orbital elements
                     elements = satellite.orbit_elements_at(t)
-                    
+
                     # Calculate additional orbital parameters
                     velocity = self._calculate_velocity(satellite, t)  # Calculate orbital velocity
-                    brightness = self._estimate_brightness(satellite, 45, subpoint.elevation.km)  # Estimate at 45° elevation
-                    
+                    brightness = self._estimate_brightness(
+                        satellite, 45, subpoint.elevation.km
+                    )  # Estimate at 45° elevation
+
                     # Check for anomalies if enabled
                     is_anomaly = False
                     anomaly_details = None
-                    if self.config.get('advanced', {}).get('enable_anomaly_detection', False):
-                        is_anomaly, anomaly_details = self._detect_anomalies(satellite, t, subpoint, elements)
-                    
+                    if self.config.get("advanced", {}).get("enable_anomaly_detection", False):
+                        is_anomaly, anomaly_details = self._detect_anomalies(
+                            satellite, t, subpoint, elements
+                        )
+
                     info = {
-                        'name': satellite.name,
-                        'norad_id': satellite.model.satnum,
-                        'position': {
-                            'latitude': subpoint.latitude.degrees,
-                            'longitude': subpoint.longitude.degrees,
-                            'altitude': subpoint.elevation.km
+                        "name": satellite.name,
+                        "norad_id": satellite.model.satnum,
+                        "position": {
+                            "latitude": subpoint.latitude.degrees,
+                            "longitude": subpoint.longitude.degrees,
+                            "altitude": subpoint.elevation.km,
                         },
-                        'orbit': {
-                            'inclination': elements.inclination.degrees,
-                            'eccentricity': elements.eccentricity,
-                            'period': elements.period_in_days * 24 * 60,  # minutes
-                            'semi_major_axis': elements.semi_major_axis.km,
-                            'right_ascension': elements.longitude_of_ascending_node.degrees,
-                            'argument_of_perigee': elements.argument_of_perigee.degrees,
-                            'mean_anomaly': elements.mean_anomaly.degrees,
-                            'mean_motion': elements.mean_motion.radians_per_day * 180 / math.pi / 86400  # rev/s
+                        "orbit": {
+                            "inclination": elements.inclination.degrees,
+                            "eccentricity": elements.eccentricity,
+                            "period": elements.period_in_days * 24 * 60,  # minutes
+                            "semi_major_axis": elements.semi_major_axis.km,
+                            "right_ascension": elements.longitude_of_ascending_node.degrees,
+                            "argument_of_perigee": elements.argument_of_perigee.degrees,
+                            "mean_anomaly": elements.mean_anomaly.degrees,
+                            "mean_motion": elements.mean_motion.radians_per_day
+                            * 180
+                            / math.pi
+                            / 86400,  # rev/s
                         },
-                        'characteristics': {
-                            'velocity': velocity,  # km/s
-                            'brightness': brightness,  # magnitude
-                            'radar_cross_section': 'N/A'  # Would require additional data
+                        "characteristics": {
+                            "velocity": velocity,  # km/s
+                            "brightness": brightness,  # magnitude
+                            "radar_cross_section": "N/A",  # Would require additional data
                         },
-                        'updated': t.utc_datetime().isoformat()
+                        "updated": t.utc_datetime().isoformat(),
                     }
-                    
+
                     # Add anomaly information if detected
                     if is_anomaly:
-                        info['anomaly'] = anomaly_details
-                        
+                        info["anomaly"] = anomaly_details
+
                     return info
             return None
         except Exception as e:
             self.logger.error(f"Error getting satellite info for {satellite_name}: {e}")
             return None
-    
+
     def visualize_orbits(self, hours: float = 2):
         """Create 3D visualization of satellite orbits."""
         try:
             import matplotlib.pyplot as plt
-            from mpl_toolkits.mplot3d import Axes3D
-        except ImportError:
+            from mpl_toolkits.mplot3d import (
+                Axes3D,  # noqa: F401  # проверка доступности зависимости
+            )
+        except ImportError as e:
             self.logger.error("Matplotlib not installed. Cannot create visualization.")
-            raise VisualizationError("Matplotlib not installed. Cannot create visualization.")
-        
+            raise VisualizationError("Matplotlib not installed. Cannot create visualization.") from e
+
         try:
             if not self.satellites:
                 raise VisualizationError("No satellites loaded. Call update_tle_data() first.")
-            
+
             if self.ts is None:
                 raise VisualizationError("Time scale not initialized.")
-            
+
             fig = plt.figure(figsize=(12, 10))
-            ax = fig.add_subplot(111, projection='3d')
-            
+            ax = fig.add_subplot(111, projection="3d")
+
             # Time range for orbit calculation
             t0 = self.ts.now()
             t1 = self.ts.from_datetime(datetime.now() + timedelta(hours=hours))
-            times = self.ts.linspace(t0, t1, self.config['visualization']['orbit_points'])
-            
+            times = self.ts.linspace(t0, t1, self.config["visualization"]["orbit_points"])
+
             # Plot orbits for first 10 satellites
             satellites_to_plot = self.satellites[:10]
-            
+
             for satellite in satellites_to_plot:
                 try:
                     geocentric = satellite.at(times)
                     x, y, z = geocentric.position.km
-                    
+
                     ax.plot(x, y, z, label=satellite.name.split()[0])
                 except Exception as e:
                     self.logger.warning(f"Error plotting orbit for {satellite.name}: {e}")
                     continue
-            
-            ax.set_xlabel('X (km)')
-            ax.set_ylabel('Y (km)')
-            ax.set_zlabel('Z (km)')
-            ax.set_title('Starlink Satellite Orbits')
+
+            ax.set_xlabel("X (km)")
+            ax.set_ylabel("Y (km)")
+            ax.set_zlabel("Z (km)")
+            ax.set_title("Starlink Satellite Orbits")
             ax.legend()
-            
+
             self.logger.info(f"Visualized orbits for {len(satellites_to_plot)} satellites")
             plt.show()
-            
+
         except VisualizationError:
             # Re-raise custom exceptions
             raise
         except Exception as e:
             self.logger.error(f"Error visualizing orbits: {e}")
-            raise VisualizationError(f"Failed to visualize satellite orbits: {str(e)}") from e
-    
+            raise VisualizationError(f"Failed to visualize satellite orbits: {e!s}") from e
+
     def clear_caches(self) -> None:
         """Clear all caches."""
         self.tle_cache.clear()
@@ -900,84 +1008,96 @@ class StarlinkTracker:
         except Exception as e:
             self.logger.warning(f"Error clearing prediction file cache: {e}")
         self.logger.info("All caches cleared")
-    
-    def _detect_anomalies(self, satellite, time_point, subpoint, elements) -> tuple[bool, Optional[Dict[str, Any]]]:
+
+    def _detect_anomalies(
+        self, satellite, time_point, subpoint, elements
+    ) -> tuple[bool, dict[str, Any] | None]:
         """Detect anomalies in satellite behavior."""
         try:
             # Check if we have historical data for this satellite
             satellite_name = satellite.name
-            
+
             # Get recent anomaly history for this satellite
-            recent_anomalies = [
-                entry for entry in self.anomaly_history 
-                if entry.get('satellite') == satellite_name 
-                and (datetime.now() - entry.get('timestamp', datetime.min)).total_seconds() < 86400  # Last 24 hours
+            [
+                entry
+                for entry in self.anomaly_history
+                if entry.get("satellite") == satellite_name
+                and (datetime.now() - entry.get("timestamp", datetime.min)).total_seconds()
+                < 86400  # Last 24 hours
             ]
-            
+
             anomalies = []
-            
+
             # Check altitude anomaly (too high or too low)
             altitude_km = subpoint.elevation.km
             if altitude_km < 400 or altitude_km > 600:  # Normal Starlink altitude range
-                anomalies.append({
-                    'type': 'altitude_anomaly',
-                    'value': altitude_km,
-                    'expected_range': '400-600 km',
-                    'severity': 'high' if altitude_km < 300 or altitude_km > 700 else 'medium'
-                })
-            
+                anomalies.append(
+                    {
+                        "type": "altitude_anomaly",
+                        "value": altitude_km,
+                        "expected_range": "400-600 km",
+                        "severity": "high" if altitude_km < 300 or altitude_km > 700 else "medium",
+                    }
+                )
+
             # Check velocity anomaly
             velocity = self._calculate_velocity(satellite, time_point)
             if velocity < 6.5 or velocity > 8.5:  # Normal orbital velocity range
-                anomalies.append({
-                    'type': 'velocity_anomaly',
-                    'value': velocity,
-                    'expected_range': '6.5-8.5 km/s',
-                    'severity': 'high' if velocity < 5 or velocity > 9 else 'medium'
-                })
-            
+                anomalies.append(
+                    {
+                        "type": "velocity_anomaly",
+                        "value": velocity,
+                        "expected_range": "6.5-8.5 km/s",
+                        "severity": "high" if velocity < 5 or velocity > 9 else "medium",
+                    }
+                )
+
             # Check inclination anomaly
             inclination = elements.inclination.degrees
             if inclination < 50 or inclination > 60:  # Normal Starlink inclination range
-                anomalies.append({
-                    'type': 'inclination_anomaly',
-                    'value': inclination,
-                    'expected_range': '50-60 degrees',
-                    'severity': 'high' if inclination < 40 or inclination > 70 else 'medium'
-                })
-            
+                anomalies.append(
+                    {
+                        "type": "inclination_anomaly",
+                        "value": inclination,
+                        "expected_range": "50-60 degrees",
+                        "severity": "high" if inclination < 40 or inclination > 70 else "medium",
+                    }
+                )
+
             # Check eccentricity anomaly
             eccentricity = elements.eccentricity
             if eccentricity > 0.01:  # Normal eccentricity should be very low
-                anomalies.append({
-                    'type': 'eccentricity_anomaly',
-                    'value': eccentricity,
-                    'expected_range': '< 0.01',
-                    'severity': 'high' if eccentricity > 0.05 else 'medium'
-                })
-            
+                anomalies.append(
+                    {
+                        "type": "eccentricity_anomaly",
+                        "value": eccentricity,
+                        "expected_range": "< 0.01",
+                        "severity": "high" if eccentricity > 0.05 else "medium",
+                    }
+                )
+
             # If anomalies found, add to history
             if anomalies:
                 anomaly_entry = {
-                    'satellite': satellite_name,
-                    'timestamp': datetime.now(),
-                    'anomalies': anomalies,
-                    'position': {
-                        'latitude': subpoint.latitude.degrees,
-                        'longitude': subpoint.longitude.degrees,
-                        'altitude': altitude_km
-                    }
+                    "satellite": satellite_name,
+                    "timestamp": datetime.now(),
+                    "anomalies": anomalies,
+                    "position": {
+                        "latitude": subpoint.latitude.degrees,
+                        "longitude": subpoint.longitude.degrees,
+                        "altitude": altitude_km,
+                    },
                 }
-                
+
                 # Add to history (maintain max size)
                 self.anomaly_history.append(anomaly_entry)
                 if len(self.anomaly_history) > self.anomaly_history_max_size:
                     self.anomaly_history.pop(0)  # Remove oldest entry
-                
+
                 return True, anomaly_entry
-            
+
             return False, None
-            
+
         except Exception as e:
             self.logger.warning(f"Error detecting anomalies for {satellite.name}: {e}")
             return False, None
@@ -985,38 +1105,38 @@ class StarlinkTracker:
 
 def main():
     """Main entry point for the Starlink Tracker."""
-    parser = argparse.ArgumentParser(description='Starlink Satellite Tracker')
-    parser.add_argument('--update', action='store_true', 
-                       help='Force update TLE data')
-    parser.add_argument('--visualize', action='store_true', 
-                       help='Show 3D visualization (default: False)')
-    parser.add_argument('--notify', action='store_true', 
-                       help='Send notifications for upcoming passes')
-    parser.add_argument('--schedule', action='store_true', 
-                       help='Start scheduler for automated tasks')
-    parser.add_argument('--debug', action='store_true', 
-                       help='Enable debug logging')
-    
+    parser = argparse.ArgumentParser(description="Starlink Satellite Tracker")
+    parser.add_argument("--update", action="store_true", help="Force update TLE data")
+    parser.add_argument(
+        "--visualize", action="store_true", help="Show 3D visualization (default: False)"
+    )
+    parser.add_argument(
+        "--notify", action="store_true", help="Send notifications for upcoming passes"
+    )
+    parser.add_argument(
+        "--schedule", action="store_true", help="Start scheduler for automated tasks"
+    )
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
+
     args = parser.parse_args()
-    
+
     # Setup logging
     level = logging.DEBUG if args.debug else logging.INFO
-    logging.basicConfig(level=level, 
-                       format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    
+    logging.basicConfig(level=level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
     try:
         # Initialize tracker
         tracker = StarlinkTracker()
         logger = logging.getLogger(__name__)
         logger.info("Starlink Tracker initialized successfully")
-        
+
         # Update TLE data
         tracker.update_tle_data(force=args.update)
-        
+
         # Show visualization if requested
         if args.visualize:
             tracker.visualize_orbits()
-        
+
         # Start scheduler if requested
         if args.schedule:
             try:
@@ -1035,19 +1155,21 @@ def main():
             except SchedulerError as e:
                 print(f"Scheduler error: {e}")
                 sys.exit(1)
-        
+
         # Example: Predict passes for a location (Moscow in this example)
         if args.notify or not any([args.visualize, args.update, args.schedule]):
             try:
                 passes = tracker.predict_passes(latitude=55.7558, longitude=37.6173)
                 print(f"Found {len(passes)} upcoming passes:")
                 for p in passes[:10]:  # Show first 10
-                    print(f"  {p['satellite']}: {p['time'].strftime('%Y-%m-%d %H:%M:%S')} "
-                          f"at {p['altitude']:.1f}° alt, {p['azimuth']:.1f}° az")
+                    print(
+                        f"  {p['satellite']}: {p['time'].strftime('%Y-%m-%d %H:%M:%S')} "
+                        f"at {p['altitude']:.1f}° alt, {p['azimuth']:.1f}° az"
+                    )
             except PredictionError as e:
                 print(f"Prediction error: {e}")
                 sys.exit(1)
-    
+
     except TLEDataError as e:
         logging.error(f"TLE data error: {e}")
         sys.exit(1)

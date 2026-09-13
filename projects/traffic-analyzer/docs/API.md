@@ -16,14 +16,14 @@ config = {
         "classes_to_detect": [2, 3, 5, 7],  # car, motorcycle, bus, truck
         "confidence": 0.1,
         "iou": 0.7,
-        "imgsz": 640
+        "imgsz": 640,
     },
     "tracking_node": {
         "first_track_thresh": 0.5,
         "second_track_thresh": 0.1,
         "match_thresh": 0.95,
-        "track_buffer": 125
-    }
+        "track_buffer": 125,
+    },
 }
 
 detector = DetectionTrackingNodes(config)
@@ -76,9 +76,9 @@ while True:
 from elements.FrameElement import FrameElement
 
 frame_element = FrameElement(
-    frame=frame,           # numpy.ndarray: BGR изображение
-    frame_number=1,        # int: Номер кадра
-    timestamp=time.time()  # float: Временная метка
+    frame=frame,  # numpy.ndarray: BGR изображение
+    frame_number=1,  # int: Номер кадра
+    timestamp=time.time(),  # float: Временная метка
 )
 ```
 
@@ -192,8 +192,8 @@ show_node = ShowNode(config)
 for frame_element in video_reader.process():
     frame_element = detector.process(frame_element)
     frame_element = show_node.process(frame_element)
-    
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+
+    if cv2.waitKey(1) & 0xFF == ord("q"):
         break
 ```
 
@@ -204,14 +204,7 @@ from ultralytics import YOLO
 
 model = YOLO("weights/yolov8m.pt")
 
-results = model.predict(
-    frame,
-    imgsz=640,
-    conf=0.1,
-    iou=0.7,
-    classes=[2, 3, 5, 7],
-    verbose=False
-)
+results = model.predict(frame, imgsz=640, conf=0.1, iou=0.7, classes=[2, 3, 5, 7], verbose=False)
 
 boxes = results[0].boxes.xyxy.cpu().numpy()
 confidences = results[0].boxes.conf.cpu().numpy()
