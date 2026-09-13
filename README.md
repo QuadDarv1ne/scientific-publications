@@ -14,6 +14,32 @@
 ## НАУЧНЫЕ ПУБЛИКАЦИИ
 
 
+### 2026
+
+- **СРАВНИТЕЛЬНЫЙ АНАЛИЗ ТЕХНОЛОГИЙ ИДЕНТИФИКАЦИИ И ТРАНЗАКЦИЙ: SIM-КАРТЫ, БАНКОВСКИЕ КАРТЫ И eSIM**
+
+  *COMPARATIVE ANALYSIS OF IDENTIFICATION AND TRANSACTION TECHNOLOGIES: SIM CARDS, BANK CARDS AND eSIM*
+
+  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXXX)
+
+  ![Рисунок 1: Архитектура физической SIM-карты](<papers/2026/COMPARATIVE ANALYSIS OF IDENTIFICATION AND TRANSACTION TECHNOLOGIES - SIM CARDS, BANK CARDS AND eSIM/img/sim_emv_esim_fig1_sim_architecture.png>)
+
+  ![Рисунок 2: Архитектура EMV-транзакции: поток данных и криптография](<papers/2026/COMPARATIVE ANALYSIS OF IDENTIFICATION AND TRANSACTION TECHNOLOGIES - SIM CARDS, BANK CARDS AND eSIM/img/sim_emv_esim_fig2_emv_transaction_flow.png>)
+
+  ![Рисунок 3: Архитектура экосистемы eSIM: SM-DP+, LPA и профиль оператора](<papers/2026/COMPARATIVE ANALYSIS OF IDENTIFICATION AND TRANSACTION TECHNOLOGIES - SIM CARDS, BANK CARDS AND eSIM/img/sim_emv_esim_fig3_esim_ecosystem.png>)
+
+  ![Рисунок 4: Прогноз рыночной доли физических SIM-карт и eSIM/iSIM до 2030 года](<papers/2026/COMPARATIVE ANALYSIS OF IDENTIFICATION AND TRANSACTION TECHNOLOGIES - SIM CARDS, BANK CARDS AND eSIM/img/sim_emv_esim_fig4_market_forecast_2030.png>)
+
+  > **Комплексный сравнительный анализ трёх ключевых технологий идентификации и транзакций:** физических SIM-карт (файловая система UICC, алгоритмы COMP128/Milenage), банковских EMV-карт (криптографический стек 3-DES/AES, 3-D Secure 2.x) и встроенных eSIM-модулей (экосистема GSMA SGP.22, сервер SM-DP+).
+
+  > Прослежена историческая эволюция от магнитной полосы 1960-х годов до современных решений iSIM и soft-SIM; выполнено моделирование угроз на основе MITRE ATT&CK и количественное сравнение по пяти метрикам (криптостойкость, латентность аутентификации, пропускная способность, стоимость развёртывания, устойчивость к атакам) с нормализацией в шкалу 0–100.
+
+  > **Результаты показывают:** eSIM лидирует по комплексной оценке — 73,6 из 100 против 61,9 у SIM-карты и 61,3 у EMV-карты — за счёт низкой стоимости развёртывания, поддержки OTA-обновлений и мультипрофильности. При этом EMV сохраняет лидерство в безопасности крупных финансовых транзакций, а классические SIM-карты обладают наиболее зрелой инфраструктурой.
+
+  > Отдельно оценена принципиальная возможность аутентификации личности по паспортным данным через SIM/eSIM (Mobile ID в Эстонии, Aadhaar-linked SIM в Индии, eIDAS 2.0 в ЕС) и показан перспективный путь конвергенции eSIM/iSIM с Self-Sovereign Identity и постквантовым шифрованием (`Kyber`, `Dilithium`, ГОСТ «Кузнечик»).
+
+---
+
 ### 2025
 
 - **КОМПЛЕКСНЫЙ АНАЛИЗ АКТИВАЦИОННЫХ ФУНКЦИЙ В СОВРЕМЕННЫХ АРХИТЕКТУРАХ ГЛУБОКИХ НЕЙРОННЫХ СЕТЕЙ И ИХ ВЛИЯНИЕ НА КАЧЕСТВО И ЭФФЕКТИВНОСТЬ РАСПОЗНАВАНИЯ ЭМОЦИЙ**
