@@ -20,7 +20,7 @@
 
   *COMPARATIVE ANALYSIS OF IDENTIFICATION AND TRANSACTION TECHNOLOGIES: SIM CARDS, BANK CARDS AND eSIM*
 
-  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXXX)
+  [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22735364.svg)](https://doi.org/10.5281/zenodo.22735364)
 
   ![Рисунок 1: Архитектура физической SIM-карты](<papers/2026/COMPARATIVE ANALYSIS OF IDENTIFICATION AND TRANSACTION TECHNOLOGIES - SIM CARDS, BANK CARDS AND eSIM/img/sim_emv_esim_fig1_sim_architecture.png>)
 
